@@ -29,7 +29,6 @@ class FCN_Policy(Policy):
   def forward(self, x):
     x = F.relu(self.affine_1(x))
     action_scores = self.affine_2(x)
-    print(action_scores)
     return F.softmax(action_scores, dim=1)
 
 
@@ -69,15 +68,16 @@ class SNAIL_Policy(Policy):
 
 # GRU
 class GRU_Policy(Policy):
-  def __init__(self, num_arms, hidden_size = 256):
+  def __init__(self, num_arms, init_state, hidden_size = 256):
     super(GRU_Policy, self).__init__(num_arms)
     self.is_recurrent = True
     self.hidden_size = hidden_size
-    self.gru = nn.GRU(input_size=1, hidden_size=hidden_size)
-    self.prev_state = torch.randn(1, 1, hidden_size)
+    self.init_state = init_state
 
-    # Fully connected layer
+    self.gru = nn.GRU(input_size=1, hidden_size=hidden_size)
     self.affine = nn.Linear(hidden_size, num_arms)
+
+    self.prev_state = self.init_state
 
 
   def forward(self, x):
@@ -88,4 +88,4 @@ class GRU_Policy(Policy):
 
 
   def reset_hidden_state(self):
-    self.prev_state = torch.randn(1, 1, self.hidden_size)
+    self.prev_state = self.init_state

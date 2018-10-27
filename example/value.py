@@ -13,11 +13,23 @@ class Value(nn.Module):
 
 
 class GRU_Value(Value):
-  def __init__(self, num_arms, hidden_size = 256):
+  def __init__(self, num_arms, init_state, hidden_size = 256):
     super(GRU_Value, self).__init__(num_arms)
     self.is_recurrent = True
     self.hidden_size = hidden_size
-    self.gru = nn.GRU(input_size=1, hidden_size=hidden_size)
-    self.prev_state = torch.randn(1, 1, hidden_size)
+    self.init_state = init_state
 
+    self.gru = nn.GRU(input_size=1, hidden_size=hidden_size)
     self.value = nn.Linear(hidden_size, 1)
+
+    self.prev_state = self.init_state
+
+
+  def forward(self, x):
+    x, h = self.gru(x, self.prev_state)
+    self.prev_state = h
+    return self.value(x)
+
+
+  def reset_hidden_state(self):
+    self.prev_state = self.init_state
