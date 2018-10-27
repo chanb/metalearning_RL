@@ -49,6 +49,7 @@ class BernoulliBanditEnv(gym.Env):
         assert self.action_space.contains(action)
         mean = self._means[action]
         reward = self.np_random.binomial(1, mean)
+
         observation = np.zeros(1, dtype=np.float32)
 
         return observation, reward, True, self._task
