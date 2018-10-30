@@ -3,7 +3,7 @@ from gym.envs.registration import register
 # Bandit
 # ----------------------------------------
 
-for k in [5, 10, 50]:
+for k in [5, 10, 50, 100, 500]:
     register(
         'Bandit-K{0}-v0'.format(k),
         entry_point='envs.bandit:BernoulliBanditEnv',
