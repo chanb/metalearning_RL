@@ -4,10 +4,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class CasualConv1d(nn.Module):
+class CausalConv1d(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size, 
                  stride=1, dilation=1, groups=1, bias=True):
-        super(CasualConv1d, self).__init__()
+        super(CausalConv1d, self).__init__()
         self.dilation = dilation
         padding = dilation * (kernel_size - 1)
         self.conv1d = nn.Conv1d(in_channels, out_channels, kernel_size, stride,
@@ -22,8 +22,8 @@ class CasualConv1d(nn.Module):
 class DenseBlock(nn.Module):
     def __init__(self, in_channels, dilation, filters, kernel_size=2):
         super(DenseBlock, self).__init__()
-        self.casualconv1 = CasualConv1d(in_channels, filters, kernel_size, dilation=dilation)
-        self.casualconv2 = CasualConv1d(in_channels, filters, kernel_size, dilation=dilation)
+        self.casualconv1 = CausalConv1d(in_channels, filters, kernel_size, dilation=dilation)
+        self.casualconv2 = CausalConv1d(in_channels, filters, kernel_size, dilation=dilation)
 
     def forward(self, input):
         # input is dimensions (N, in_channels, T)
