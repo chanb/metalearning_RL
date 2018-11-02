@@ -165,7 +165,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
 # Attempt to modify policy so it doesn't go too far
 def ppo(rl_category, num_actions, opt_learning_rate, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size):
-  model = GRU_ActorCritic(num_actions, torch.randn(1, 1, 256))
+  model = GRU_ActorCritic(max_traj_len, num_actions, torch.randn(1, 1, 256))
   optimizer = optim.Adam(model.parameters(), lr=opt_learning_rate)
 
   # Meta-Learning
