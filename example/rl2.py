@@ -17,12 +17,12 @@ parser = argparse.ArgumentParser(description='PyTorch REINFORCE Multi-armed Band
 parser.add_argument('--num_arms', type=int, default=5, help='number of arms for MAB (default: 5)')
 parser.add_argument('--max_traj', type=int, default=10, help='maximum number of trajectories to run (default: 10)')
 parser.add_argument('--seed', type=int, default=0, help='random seed (default: 0)')
-parser.add_argument('--max_iter', type=int, default=1, help='maximum trajectory length (default: 1)')
+parser.add_argument('--max_traj_len', type=int, default=1, help='maximum trajectory length (default: 1)')
 parser.add_argument('--gamma', type=float, default=0.99, help='discount factor (default: 0.99)')
 parser.add_argument('--learning_rate', type=float, default=1e-2, help='learning rate for gradient descent (default: 1e-2)')
 parser.add_argument('--max_task', type=int, default=5, help='number of similar tasks to run (default: 5)')
 parser.add_argument('--algo', type=str, default='reinforce', help='algorithm to use [reinforce/ppo] (default: reinforce)')
-parser.add_argument('--mini_batch_size', type=int, default=1, help='minimum batch size (default: 5) - needs to be <= max_iter')
+parser.add_argument('--mini_batch_size', type=int, default=1, help='minimum batch size (default: 5) - needs to be <= max_traj_len')
 parser.add_argument('--ppo_epochs', type=int, default=1, help='ppo epoch (default: 1)')
 
 
@@ -63,7 +63,7 @@ def reinforce():
 
       rewards = []
       actions = []
-      for horizon in range(args.max_iter):
+      for horizon in range(args.max_traj_len):
         action = select_action(policy, state)
         state, reward, done, info = env.step(action)
         
@@ -104,6 +104,7 @@ def reinforce():
     if policy.is_recurrent:
       policy.reset_hidden_state()
 
+# Computes the advantage where lambda = 1
 def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
   values = values + [next_value]
   gae = 0
@@ -127,6 +128,7 @@ def ppo_iter(mini_batch_size, states, actions, log_probs, returns, advantages):
     yield states[rand_ids, :], actions[rand_ids, :], log_probs[rand_ids, :], returns[rand_ids, :], advantages[rand_ids, :]
 
 def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantages, clip_param=0.2):
+  # Use Clipping Surrogate Objective to update
   for i in range(ppo_epochs):
     for state, action, log_prob, ret, advantage in ppo_iter(mini_batch_size, states, actions, log_probs, returns, advantages):
       dist, value = model(state)
@@ -138,10 +140,23 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
       surr_1 = ratio * advantage
       surr_2 = torch.clamp(ratio, 1.0 - clip_param, 1.0 + clip_param) * advantage
 
+      # Clipped Surrogate Objective Loss
       actor_loss = torch.min(surr_1, surr_2).mean()
+      # Squared Loss Function
       critic_loss = (ret - value).pow(2).mean()
+
+      # print('ret and value')
+      # print(ret)
+      # print(value)
       
+      # This is L(Clip) + L(VF) + L(S)
       loss = 0.5 * critic_loss + actor_loss - 0.001 * entropy
+
+      # print("loss")
+      # print(loss)
+      # print(critic_loss)
+      # print(actor_loss)
+      # print(entropy)
 
       optimizer.zero_grad()
       loss.backward(retain_graph=model.is_recurrent)
@@ -169,7 +184,7 @@ def ppo():
       masks = []
       entropy = 0
 
-      for _ in range(args.max_iter):
+      for _ in range(args.max_traj_len):
         state = torch.from_numpy(state).float().unsqueeze(0)
 
         if model.is_recurrent:
@@ -178,7 +193,7 @@ def ppo():
         states.append(state)
 
         dist, value = model(state)
-        print(dist.probs)
+        # print(dist.probs)
         action = dist.sample()
         log_prob = dist.log_prob(action)
         

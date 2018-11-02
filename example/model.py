@@ -21,6 +21,7 @@ class GRU_ActorCritic(nn.Module):
     mu = self.actor(x)
     print('actor')
     print(mu)
+    print(val)
     
     # std = self.log_std.exp().expand_as(mu)
     # dist = Normal(mu.squeeze(), std.squeeze())

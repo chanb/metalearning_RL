@@ -26,8 +26,12 @@ class GRU_Value(Value):
 
 
   def forward(self, x):
+    print('states')
+    print(x)
     x, h = self.gru(x, self.prev_state)
     self.prev_state = h
+    print(x)
+    print(h)
     return self.value(x)
 
 
