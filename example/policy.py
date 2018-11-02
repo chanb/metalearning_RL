@@ -68,13 +68,13 @@ class SNAIL_Policy(Policy):
 
 # GRU
 class GRU_Policy(Policy):
-  def __init__(self, num_arms, init_state, hidden_size = 256):
+  def __init__(self, max_traj_len, num_arms, init_state, hidden_size = 256):
     super(GRU_Policy, self).__init__(num_arms)
     self.is_recurrent = True
     self.hidden_size = hidden_size
     self.init_state = init_state
 
-    self.gru = nn.GRU(input_size=1, hidden_size=hidden_size)
+    self.gru = nn.GRU(input_size=max_traj_len, hidden_size=hidden_size)
     self.affine = nn.Linear(hidden_size, num_arms)
 
     self.prev_state = self.init_state
