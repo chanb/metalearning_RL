@@ -15,15 +15,16 @@ from model import GRU_ActorCritic
 parser = argparse.ArgumentParser(description='PyTorch REINFORCE Multi-armed Bandit')
 
 parser.add_argument('--num_arms', type=int, default=5, help='number of arms for MAB (default: 5)')
-parser.add_argument('--max_traj', type=int, default=10, help='maximum number of trajectories to run (default: 10)')
+parser.add_argument('--max_num_traj', type=int, default=10, help='maximum number of trajectories to run (default: 10)')
 parser.add_argument('--seed', type=int, default=0, help='random seed (default: 0)')
 parser.add_argument('--max_traj_len', type=int, default=1, help='maximum trajectory length (default: 1)')
 parser.add_argument('--gamma', type=float, default=0.99, help='discount factor (default: 0.99)')
 parser.add_argument('--learning_rate', type=float, default=1e-2, help='learning rate for gradient descent (default: 1e-2)')
-parser.add_argument('--max_task', type=int, default=5, help='number of similar tasks to run (default: 5)')
+parser.add_argument('--num_tasks', type=int, default=5, help='number of similar tasks to run (default: 5)')
 parser.add_argument('--algo', type=str, default='reinforce', help='algorithm to use [reinforce/ppo] (default: reinforce)')
 parser.add_argument('--mini_batch_size', type=int, default=1, help='minimum batch size (default: 5) - needs to be <= max_traj_len')
 parser.add_argument('--ppo_epochs', type=int, default=1, help='ppo epoch (default: 1)')
+parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
 
 
 args = parser.parse_args()
@@ -47,23 +48,23 @@ def select_action(policy, state):
   policy.saved_log_probs.append(m.log_prob(action))
   return action.item()
 
-def reinforce():
+def reinforce(rl_category, num_actions, opt_learning_rate, num_tasks, max_num_traj, max_traj_len, discount_factor):
   # TODO: Add randomize number of trajectories to run
-  policy = GRU_Policy(args.num_arms, torch.randn(1, 1, 256))
-  optimizer = optim.Adam(policy.parameters(), lr=args.learning_rate)
+  policy = GRU_Policy(num_actions, torch.randn(1, 1, 256))
+  optimizer = optim.Adam(policy.parameters(), lr=opt_learning_rate)
 
   # Meta-Learning
-  for task in range(args.max_task):
+  for task in range(num_tasks):
     print("Task {} ==========================================================================================================".format(task))
-    env = gym.make("Bandit-K{}-v0".format(args.num_arms))
+    env = gym.make(rl_category)
 
     # REINFORCE
-    for traj in range(args.max_traj):
+    for traj in range(max_num_traj):
       state = env.reset()
 
       rewards = []
       actions = []
-      for horizon in range(args.max_traj_len):
+      for horizon in range(max_traj_len):
         action = select_action(policy, state)
         state, reward, done, info = env.step(action)
         
@@ -79,7 +80,7 @@ def reinforce():
       traj_len = len(discounted_rewards)
       
       for r in rewards[::-1]:
-        R = r + args.gamma * R
+        R = r + discount_factor * R
         discounted_rewards.insert(0, R)
       
       discounted_rewards = torch.tensor(discounted_rewards)
@@ -163,17 +164,17 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
       optimizer.step()
 
 # Attempt to modify policy so it doesn't go too far
-def ppo():
-  model = GRU_ActorCritic(args.num_arms, torch.randn(1, 1, 256))
-  optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+def ppo(rl_category, num_actions, opt_learning_rate, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size):
+  model = GRU_ActorCritic(num_actions, torch.randn(1, 1, 256))
+  optimizer = optim.Adam(model.parameters(), lr=opt_learning_rate)
 
   # Meta-Learning
-  for task in range(args.max_task):
+  for task in range(num_tasks):
     print("Task {} ==========================================================================================================".format(task))
-    env = gym.make("Bandit-K{}-v0".format(args.num_arms))
+    env = gym.make(rl_category)
 
     # PPO (Using actor critic style)
-    for _ in range(args.max_traj):
+    for _ in range(max_num_traj):
       state = env.reset()
 
       log_probs = []
@@ -184,7 +185,7 @@ def ppo():
       masks = []
       entropy = 0
 
-      for _ in range(args.max_traj_len):
+      for _ in range(max_traj_len):
         state = torch.from_numpy(state).float().unsqueeze(0)
 
         if model.is_recurrent:
@@ -240,16 +241,26 @@ def ppo():
       print(rewards)
       
       # This is where we compute loss and update the model
-      ppo_update(model, optimizer, args.ppo_epochs, args.mini_batch_size, states, actions, log_probs, returns, advantage)
+      ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage)
 
     if model.is_recurrent:
       model.reset_hidden_state()
 
 def main():
+  task = ''
+  if args.task == 'bandit':
+    task = "Bandit-K{}-v0".format(args.num_arms)
+    num_actions = args.num_arms
+  elif args.task == 'mdp':
+    task = "TabularMDP-v0"
+    num_actions = 5
+  else:
+    print('Invalid Task')
+    return
   if args.algo == 'reinforce':
-    reinforce()
+    reinforce(task, num_actions, args.learning_rate, args.num_tasks, args.max_num_traj, args.max_traj_len, args.gamma)
   elif args.algo == 'ppo':
-    ppo()
+    ppo(task, num_actions, args.learning_rate, args.num_tasks, args.max_num_traj, args.max_traj_len, args.ppo_epochs, args.mini_batch_size)
   else:
     print('Invalid learning algorithm')
 
