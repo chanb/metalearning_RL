@@ -17,7 +17,7 @@ def weight_init(module):
       
 # Generic policy
 class Policy(nn.Module):
-  def __init__(self, output_size, input_size = 1):
+  def __init__(self, input_size, output_size):
     super(Policy, self).__init__()
     self.is_recurrent = False
     self.saved_log_probs = []
@@ -31,8 +31,8 @@ class Policy(nn.Module):
 
 # Fully Connected Network
 class FCN_Policy(Policy):
-  def __init__(self, output_size):
-    super(FCN_Policy, self).__init__(output_size)
+  def __init__(self, output_size, input_size = 1):
+    super(FCN_Policy, self).__init__(input_size, output_size)
 
     self.affine_1 = nn.Linear(1, 128)
     self.affine_2 = nn.Linear(128, output_size)
@@ -47,8 +47,8 @@ class FCN_Policy(Policy):
 # SNAIL
 class SNAIL_Policy(Policy):
   # K arms, trajectory of length N
-  def __init__(self, output_size, traj_len):
-    super(SNAIL_Policy, self).__init__(output_size)
+  def __init__(self, output_size, traj_len, input_size = 1):
+    super(SNAIL_Policy, self).__init__(input_size, output_size)
     self.K = output_size
     self.N = traj_len
 
@@ -81,7 +81,7 @@ class SNAIL_Policy(Policy):
 # GRU
 class GRU_Policy(Policy):
   def __init__(self, output_size, init_state, input_size=1, hidden_size=256):
-    super(GRU_Policy, self).__init__(output_size)
+    super(GRU_Policy, self).__init__(input_size, output_size)
     self.is_recurrent = True
     self.hidden_size = hidden_size
     self.init_state = init_state
@@ -111,8 +111,8 @@ class CategoricalMLPPolicy(Policy):
   https://github.com/cbfinn/maml_rl2/blob/9c8e2ebd741cb0c7b8bf2d040c4caeeb8e06cc95/sandbox/rocky/tf/policies/maml_minimal_categorical_mlp_policy.py
   """
 
-  def __init__(self, output_size, input_size=1, hidden_sizes=(), nonlinearity=F.relu):
-    super(CategoricalMLPPolicy, self).__init__(input_size=input_size, output_size=output_size)
+  def __init__(self, input_size, output_size, hidden_sizes=(), nonlinearity=F.relu):
+    super(CategoricalMLPPolicy, self).__init__(input_size, output_size)
     self.hidden_sizes = hidden_sizes
     self.nonlinearity = nonlinearity
     self.num_layers = len(hidden_sizes) + 1

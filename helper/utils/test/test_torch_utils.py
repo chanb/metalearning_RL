@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from helper import weighted_mean
+from helper.utils.torch_utils import weighted_mean, weighted_normalize
 
 
 def test_weighted_mean_no_dim():
