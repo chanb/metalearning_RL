@@ -6,10 +6,9 @@ import torch
 import torch.optim as optim
 from torch.distributions import Categorical
 
-from policy import GRU_Policy
-from model import GRU_ActorCritic
-
 import helper.envs
+from helper.policies import GRUPolicy
+from helper.models import GRUActorCritic
 
 parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
 
@@ -49,7 +48,7 @@ def select_action(policy, state):
 
 def reinforce(rl_category, num_actions, opt_learning_rate, num_tasks, max_num_traj, max_traj_len, discount_factor):
   # TODO: Add randomize number of trajectories to run
-  policy = GRU_Policy(num_actions, torch.randn(1, 1, 256))
+  policy = GRUPolicy(num_actions, torch.randn(1, 1, 256))
   optimizer = optim.Adam(policy.parameters(), lr=opt_learning_rate)
 
   # Meta-Learning
@@ -164,7 +163,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
 # Attempt to modify policy so it doesn't go too far
 def ppo(rl_category, num_actions, opt_learning_rate, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size):
-  model = GRU_ActorCritic(num_actions, torch.randn(1, 1, 256))
+  model = GRUActorCritic(num_actions, torch.randn(1, 1, 256))
   optimizer = optim.Adam(model.parameters(), lr=opt_learning_rate)
 
   # Meta-Learning

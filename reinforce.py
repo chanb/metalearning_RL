@@ -6,7 +6,7 @@ import torch
 import torch.optim as optim
 from torch.distributions import Categorical
 
-from policy import FCN_Policy
+from helper.policies import FCNPolicy
 
 parser = argparse.ArgumentParser(description='PyTorch REINFORCE Multi-armed Bandit')
 
@@ -35,7 +35,7 @@ def select_action(policy, state):
 
 
 def main():
-  policy = FCN_Policy(10)
+  policy = FCNPolicy(10)
   optimizer = optim.Adam(policy.parameters(), lr=args.learning_rate)
   
   # REINFORCE

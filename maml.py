@@ -3,7 +3,7 @@ import torch
 import json
 
 from helper.metalearner import MetaLearner
-from policy import CategoricalMLPPolicy
+from helper.policies import CategoricalMLPPolicy
 from helper.baseline import LinearFeatureBaseline
 from helper.sampler import BatchSampler
 
