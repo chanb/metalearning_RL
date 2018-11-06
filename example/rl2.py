@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
-from torch.autograd import Variable
 
 from policy import FCN_Policy, GRU_Policy
 from model import GRU_ActorCritic
@@ -41,17 +40,17 @@ def select_action(policy, state):
   if policy.is_recurrent:
     state = state.unsqueeze(0)
 
-  probs = policy(Variable(state))
+  probs = policy(state)
   m = Categorical(probs)
   # print(m.probs)
   action = m.sample()
   # print(action)
   policy.saved_log_probs.append(m.log_prob(action))
-  return action.data.numpy()[0]
+  return action.item()
 
 def reinforce(rl_category, num_actions, opt_learning_rate, num_tasks, max_num_traj, max_traj_len, discount_factor):
   # TODO: Add randomize number of trajectories to run
-  policy = GRU_Policy(max_traj_len, num_actions, Variable(torch.randn(1, 1, 256)))
+  policy = GRU_Policy(num_actions, torch.randn(1, 1, 256))
   optimizer = optim.Adam(policy.parameters(), lr=opt_learning_rate)
 
   # Meta-Learning
