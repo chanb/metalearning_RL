@@ -6,13 +6,13 @@ import torch.nn.functional as F
 from torch.distributions import Categorical
 
 class GRU_ActorCritic(nn.Module):
-  def __init__(self, num_arms, init_state, input_size = 1, hidden_size=256, std=0.0):
+  def __init__(self, output_size, init_state, input_size=1, hidden_size=256, std=0.0):
     super(GRU_ActorCritic, self).__init__()
 
-    self.critic = value.GRU_Value(num_arms, init_state, input_size, hidden_size)
-    self.actor = policy.GRU_Policy(num_arms, init_state, input_size, hidden_size)
+    self.critic = value.GRU_Value(output_size, init_state, input_size, hidden_size)
+    self.actor = policy.GRU_Policy(output_size, init_state, input_size, hidden_size)
 
-    self.log_std = nn.Parameter(torch.ones(1, num_arms) * std)
+    self.log_std = nn.Parameter(torch.ones(1, output_size) * std)
     self.is_recurrent = True
 
 

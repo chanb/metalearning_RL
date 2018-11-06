@@ -1,20 +1,19 @@
-import envs
 import gym
 import numpy as np
 import argparse
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
 
-from policy import FCN_Policy, GRU_Policy
+from policy import GRU_Policy
 from model import GRU_ActorCritic
 
-parser = argparse.ArgumentParser(description='PyTorch REINFORCE Multi-armed Bandit')
+import helper.envs
 
-parser.add_argument('--num_arms', type=int, default=5, help='number of arms for MAB (default: 5)')
+parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
+
+parser.add_argument('--num_actions', type=int, default=5, help='number of arms for MAB or number of actions for MDP (default: 5)')
 parser.add_argument('--max_num_traj', type=int, default=10, help='maximum number of trajectories to run (default: 10)')
 parser.add_argument('--seed', type=int, default=0, help='random seed (default: 0)')
 parser.add_argument('--max_traj_len', type=int, default=1, help='maximum trajectory length (default: 1)')
@@ -249,8 +248,8 @@ def ppo(rl_category, num_actions, opt_learning_rate, num_tasks, max_num_traj, ma
 def main():
   task = ''
   if args.task == 'bandit':
-    task = "Bandit-K{}-v0".format(args.num_arms)
-    num_actions = args.num_arms
+    task = "Bandit-K{}-v0".format(args.num_actions)
+    num_actions = args.num_actions
   elif args.task == 'mdp':
     task = "TabularMDP-v0"
     num_actions = 5

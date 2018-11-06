@@ -1,15 +1,12 @@
-import envs
 import gym
 import numpy as np
 import argparse
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 from torch.distributions import Categorical
 
-from policy import FCN_Policy, SNAIL_Policy, GRU_Policyß
+from policy import FCN_Policy
 
 parser = argparse.ArgumentParser(description='PyTorch REINFORCE Multi-armed Bandit')
 
