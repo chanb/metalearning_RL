@@ -24,13 +24,13 @@ class CausalConv1d(nn.Module):
 class DenseBlock(nn.Module):
     def __init__(self, in_channels, dilation, filters, kernel_size=2):
         super(DenseBlock, self).__init__()
-        self.casualconv1 = CausalConv1d(in_channels, filters, kernel_size, dilation=dilation)
-        self.casualconv2 = CausalConv1d(in_channels, filters, kernel_size, dilation=dilation)
+        self.causalconv1 = CausalConv1d(in_channels, filters, kernel_size, dilation=dilation)
+        self.causalconv2 = CausalConv1d(in_channels, filters, kernel_size, dilation=dilation)
 
     def forward(self, input):
         # input is dimensions (N, in_channels, T)
-        xf = self.casualconv1(input)
-        xg = self.casualconv2(input)
+        xf = self.causalconv1(input)
+        xg = self.causalconv2(input)
         activations = F.tanh(xf) * F.sigmoid(xg)  # shape: (N, filters, T)
         return torch.cat((input, activations), dim=1)
 

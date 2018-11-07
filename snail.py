@@ -7,10 +7,10 @@ import torch.optim as optim
 from torch.distributions import Categorical
 
 import helper.envs
-from helper.policies import GRUPolicy
+from helper.policies import SNAILPolicy, FCNPolicy
 from helper.models import GRUActorCritic
 
-parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
+parser = argparse.ArgumentParser(description='SNAIL for MAB and MDP')
 
 parser.add_argument('--num_actions', type=int, default=5,
                     help='number of arms for MAB or number of actions for MDP (default: 5)')
@@ -53,8 +53,9 @@ def select_action(policy, state):
 
 def reinforce(rl_category, num_actions, opt_learning_rate, num_tasks, max_num_traj, max_traj_len, discount_factor):
     # TODO: Add randomize number of trajectories to run
-    policy = GRUPolicy(num_actions, torch.randn(1, 1, 256))
-    optimizer = optim.Adam(policy.parameters(), lr=opt_learning_rate)
+
+    snail_policy = SNAILPolicy(num_actions, max_num_traj*max_traj_len)
+    snail_optimizer = optim.Adam(snail_policy.parameters(), lr=opt_learning_rate)
 
     # Meta-Learning
     for task in range(num_tasks):
@@ -62,19 +63,28 @@ def reinforce(rl_category, num_actions, opt_learning_rate, num_tasks, max_num_tr
             "Task {} ==========================================================================================================".format(
                 task))
         env = gym.make(rl_category)
-
+        fcn_policy = FCNPolicy(num_actions, hidden_size=32) # Reset the FCN for each task
+        fcn_optimizer = optim.Adam(fcn_policy.parameters(), lr=opt_learning_rate)
+        policy_losses = []
         # REINFORCE
+        states_set = []
+        actions_set = []
+        rewards_set = []
         for traj in range(max_num_traj):
             state = env.reset()
 
             rewards = []
             actions = []
             for horizon in range(max_traj_len):
-                action = select_action(policy, state)
+                action = select_action(fcn_policy, state)
                 state, reward, done, info = env.step(action)
 
                 actions.append(action)
                 rewards.append(reward)
+
+                states_set.append(state[0])
+                actions_set.append(action)
+                rewards_set.append(reward)
                 if (done):
                     break
 
@@ -94,21 +104,26 @@ def reinforce(rl_category, num_actions, opt_learning_rate, num_tasks, max_num_tr
                 discounted_rewards = (discounted_rewards - discounted_rewards.mean()) / (discounted_rewards.std() + eps)
 
             # Compute loss and take gradient step
-            for log_prob, reward in zip(policy.saved_log_probs, discounted_rewards):
+            for log_prob, reward in zip(fcn_policy.saved_log_probs, discounted_rewards):
                 policy_loss.append(-log_prob * reward)
-            optimizer.zero_grad()
+            fcn_optimizer.zero_grad()
             policy_loss = torch.cat(policy_loss).sum()
-            policy_loss.backward(retain_graph=policy.is_recurrent)
-            optimizer.step()
-            del policy.saved_log_probs[:]
+            policy_losses.append(policy_loss)
+            policy_loss.backward()
+            fcn_optimizer.step()
+            del fcn_policy.saved_log_probs[:]
 
             print(actions)
             print(rewards)
 
             print('Episode {}\tLast length: {:5d}\tTask: {}'.format(traj, horizon, task))
 
-        if policy.is_recurrent:
-            policy.reset_hidden_state()
+            snail_policy(states_set, actions_set, rewards_set)
+            snail_optimizer.zero_grad()
+            # Not sure what to do here.
+            snail_optimizer.step()
+
+
 
 
 # Computes the advantage where lambda = 1

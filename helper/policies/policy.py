@@ -17,5 +17,5 @@ class Policy(nn.Module):
         self.output_size = output_size
         self.input_size = input_size
 
-    def forward(self, x):
-        return torch.tensor(1 / self.output_size).repeat(self.output_size)
+    #def forward(self, x):
+    #    return torch.tensor(1 / self.output_size).repeat(self.output_size)

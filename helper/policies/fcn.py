@@ -5,11 +5,11 @@ from helper.policies.policy import Policy
 
 
 class FCNPolicy(Policy):
-    def __init__(self, output_size, input_size=1):
+    def __init__(self, output_size, input_size=1, hidden_size=128):
         super(FCNPolicy, self).__init__(input_size, output_size)
 
-        self.affine_1 = nn.Linear(1, 128)
-        self.affine_2 = nn.Linear(128, output_size)
+        self.affine_1 = nn.Linear(1, hidden_size)
+        self.affine_2 = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
         x = F.relu(self.affine_1(x))
