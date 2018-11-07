@@ -7,6 +7,7 @@ from helper.utils.torch_utils import (weighted_mean, detach_distribution,
                                       weighted_normalize)
 from helper.utils.optimization import conjugate_gradient
 
+
 class MetaLearner(object):
     """Meta-learner
 
@@ -26,6 +27,7 @@ class MetaLearner(object):
         Pieter Abbeel, "Trust Region Policy Optimization", 2015
         (https://arxiv.org/abs/1502.05477)
     """
+
     def __init__(self, sampler, policy, baseline, gamma=0.95,
                  fast_lr=0.5, tau=1.0, device='cpu'):
         self.sampler = sampler
@@ -50,7 +52,7 @@ class MetaLearner(object):
         if log_probs.dim() > 2:
             log_probs = torch.sum(log_probs, dim=2)
         loss = -weighted_mean(log_probs * advantages, dim=0,
-            weights=episodes.mask)
+                              weights=episodes.mask)
 
         return loss
 
@@ -64,7 +66,7 @@ class MetaLearner(object):
         loss = self.inner_loss(episodes)
         # Get the new parameters after a one-step gradient update
         params = self.policy.update_params(loss, step_size=self.fast_lr,
-            first_order=first_order)
+                                           first_order=first_order)
 
         return params
 
@@ -105,10 +107,11 @@ class MetaLearner(object):
 
     def hessian_vector_product(self, episodes, damping=1e-2):
         """Hessian-vector product, based on the Perlmutter method."""
+
         def _product(vector):
             kl = self.kl_divergence(episodes)
             grads = torch.autograd.grad(kl, self.policy.parameters(),
-                create_graph=True)
+                                        create_graph=True)
             flat_grad_kl = parameters_to_vector(grads)
 
             grad_kl_v = torch.dot(flat_grad_kl, vector)
@@ -116,6 +119,7 @@ class MetaLearner(object):
             flat_grad2_kl = parameters_to_vector(grad2s)
 
             return flat_grad2_kl + damping * vector
+
         return _product
 
     def surrogate_loss(self, episodes, old_pis=None):
@@ -135,23 +139,23 @@ class MetaLearner(object):
                 values = self.baseline(valid_episodes)
                 advantages = valid_episodes.gae(values, tau=self.tau)
                 advantages = weighted_normalize(advantages,
-                    weights=valid_episodes.mask)
+                                                weights=valid_episodes.mask)
 
                 log_ratio = (pi.log_prob(valid_episodes.actions)
-                    - old_pi.log_prob(valid_episodes.actions))
+                             - old_pi.log_prob(valid_episodes.actions))
                 if log_ratio.dim() > 2:
                     log_ratio = torch.sum(log_ratio, dim=2)
                 ratio = torch.exp(log_ratio)
 
                 loss = -weighted_mean(ratio * advantages, dim=0,
-                    weights=valid_episodes.mask)
+                                      weights=valid_episodes.mask)
                 losses.append(loss)
 
                 mask = valid_episodes.mask
                 if valid_episodes.actions.dim() > 2:
                     mask = mask.unsqueeze(2)
                 kl = weighted_mean(kl_divergence(pi, old_pi), dim=0,
-                    weights=mask)
+                                   weights=mask)
                 kls.append(kl)
 
         return (torch.mean(torch.stack(losses, dim=0)),
@@ -168,9 +172,9 @@ class MetaLearner(object):
 
         # Compute the step direction with Conjugate Gradient
         hessian_vector_product = self.hessian_vector_product(episodes,
-            damping=cg_damping)
+                                                             damping=cg_damping)
         stepdir = conjugate_gradient(hessian_vector_product, grads,
-            cg_iters=cg_iters)
+                                     cg_iters=cg_iters)
 
         # Compute the Lagrange multiplier
         shs = 0.5 * torch.dot(stepdir, hessian_vector_product(stepdir))

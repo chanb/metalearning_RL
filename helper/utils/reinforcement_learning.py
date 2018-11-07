@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def value_iteration(transitions, rewards, gamma=0.95, theta=1e-5):
     rewards = np.expand_dims(rewards, axis=2)
     values = np.zeros(transitions.shape[0], dtype=np.float32)
@@ -11,6 +12,7 @@ def value_iteration(transitions, rewards, gamma=0.95, theta=1e-5):
         values = new_values
 
     return values
+
 
 def value_iteration_finite_horizon(transitions, rewards, horizon=10, gamma=0.95):
     rewards = np.expand_dims(rewards, axis=2)

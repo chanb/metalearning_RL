@@ -27,6 +27,7 @@ def test_weighted_mean_no_dim():
     assert mean_th.dim() == 0
     assert np.allclose(mean_th.item(), mean_np)
 
+
 def test_weighted_mean_dim():
     lengths = [2, 3, 5, 7, 11]
     # Inputs

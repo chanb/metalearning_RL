@@ -5,20 +5,23 @@ import multiprocessing as mp
 from helper.envs.subproc_vec_env import SubprocVecEnv
 from helper.episode import BatchEpisodes
 
+
 def make_env(env_name):
     def _make_env():
         return gym.make(env_name)
+
     return _make_env
+
 
 class BatchSampler(object):
     def __init__(self, env_name, batch_size, num_workers=mp.cpu_count() - 1):
         self.env_name = env_name
         self.batch_size = batch_size
         self.num_workers = num_workers
-        
+
         self.queue = mp.Queue()
         self.envs = SubprocVecEnv([make_env(env_name) for _ in range(num_workers)],
-            queue=self.queue)
+                                  queue=self.queue)
         self._env = gym.make(env_name)
 
     def sample(self, policy, params=None, gamma=0.95, device='cpu'):

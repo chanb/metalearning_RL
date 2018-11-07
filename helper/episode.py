@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
+
 class BatchEpisodes(object):
     def __init__(self, batch_size, gamma=0.95, device='cpu'):
         self.batch_size = batch_size
@@ -24,7 +25,7 @@ class BatchEpisodes(object):
         if self._observations is None:
             observation_shape = self._observations_list[0][0].shape
             observations = np.zeros((len(self), self.batch_size)
-                + observation_shape, dtype=np.float32)
+                                    + observation_shape, dtype=np.float32)
             for i in range(self.batch_size):
                 length = len(self._observations_list[i])
                 observations[:length, i] = np.stack(self._observations_list[i], axis=0)
@@ -36,7 +37,7 @@ class BatchEpisodes(object):
         if self._actions is None:
             action_shape = self._actions_list[0][0].shape
             actions = np.zeros((len(self), self.batch_size)
-                + action_shape, dtype=np.float32)
+                               + action_shape, dtype=np.float32)
             for i in range(self.batch_size):
                 length = len(self._actions_list[i])
                 actions[:length, i] = np.stack(self._actions_list[i], axis=0)

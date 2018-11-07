@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+
 class LinearFeatureBaseline(nn.Module):
     """Linear baseline based on handcrafted features, as described in [1] 
     (Supplementary Material 2).
@@ -9,6 +10,7 @@ class LinearFeatureBaseline(nn.Module):
         "Benchmarking Deep Reinforcement Learning for Continuous Control", 2016 
         (https://arxiv.org/abs/1604.06778)
     """
+
     def __init__(self, input_size, reg_coeff=1e-5):
         super(LinearFeatureBaseline, self).__init__()
         self.input_size = input_size
@@ -27,7 +29,7 @@ class LinearFeatureBaseline(nn.Module):
         al = cum_sum / 100.0
 
         return torch.cat([observations, observations ** 2,
-            al, al ** 2, al ** 3, ones], dim=2)
+                          al, al ** 2, al ** 3, ones], dim=2)
 
     def fit(self, episodes):
         # sequence_length * batch_size x feature_size
@@ -37,7 +39,7 @@ class LinearFeatureBaseline(nn.Module):
 
         reg_coeff = self._reg_coeff
         eye = torch.eye(self.feature_size, dtype=torch.float32,
-            device=self.linear.weight.device)
+                        device=self.linear.weight.device)
         for _ in range(5):
             try:
                 coeffs, _ = torch.gels(
@@ -49,9 +51,9 @@ class LinearFeatureBaseline(nn.Module):
                 reg_coeff += 10
         else:
             raise RuntimeError('Unable to solve the normal equations in '
-                '`LinearFeatureBaseline`. The matrix X^T*X (with X the design '
-                'matrix) is not full-rank, regardless of the regularization '
-                '(maximum regularization: {0}).'.format(reg_coeff))
+                               '`LinearFeatureBaseline`. The matrix X^T*X (with X the design '
+                               'matrix) is not full-rank, regardless of the regularization '
+                               '(maximum regularization: {0}).'.format(reg_coeff))
         self.linear.weight.data = coeffs.data.t()
 
     def forward(self, episodes):

@@ -9,10 +9,12 @@ from helper.sampler import BatchSampler
 
 from tensorboardX import SummaryWriter
 
+
 def total_rewards(episodes_rewards, aggregation=torch.mean):
     rewards = torch.mean(torch.stack([aggregation(torch.sum(rewards, dim=0))
-        for rewards in episodes_rewards], dim=0))
+                                      for rewards in episodes_rewards], dim=0))
     return rewards.item()
+
 
 def main(args):
     writer = SummaryWriter('./logs/{0}'.format(args.output_folder))
@@ -33,24 +35,25 @@ def main(args):
     baseline = LinearFeatureBaseline(
         int(np.prod(sampler.envs.observation_space.shape)))
 
-    metalearner = MetaLearner(sampler, policy, baseline, gamma=args.gamma, fast_lr=args.fast_lr, tau=args.tau, device=args.device)
+    metalearner = MetaLearner(sampler, policy, baseline, gamma=args.gamma, fast_lr=args.fast_lr, tau=args.tau,
+                              device=args.device)
 
     for batch in range(args.num_batches):
         tasks = sampler.sample_tasks(num_tasks=args.meta_batch_size)
         episodes = metalearner.sample(tasks, first_order=args.first_order)
         metalearner.step(episodes, max_kl=args.max_kl, cg_iters=args.cg_iters,
-            cg_damping=args.cg_damping, ls_max_steps=args.ls_max_steps,
-            ls_backtrack_ratio=args.ls_backtrack_ratio)
+                         cg_damping=args.cg_damping, ls_max_steps=args.ls_max_steps,
+                         ls_backtrack_ratio=args.ls_backtrack_ratio)
 
         # Tensorboard
         writer.add_scalar('total_rewards/before_update',
-            total_rewards([ep.rewards for ep, _ in episodes]), batch)
+                          total_rewards([ep.rewards for ep, _ in episodes]), batch)
         writer.add_scalar('total_rewards/after_update',
-            total_rewards([ep.rewards for _, ep in episodes]), batch)
+                          total_rewards([ep.rewards for _, ep in episodes]), batch)
 
         # Save policy network
         with open(os.path.join(save_folder,
-                'policy-{0}.pt'.format(batch)), 'wb') as f:
+                               'policy-{0}.pt'.format(batch)), 'wb') as f:
             torch.save(policy.state_dict(), f)
 
 
@@ -73,7 +76,8 @@ if __name__ == '__main__':
 
     # Task-specific
     parser.add_argument('--fast-batch-size', type=int, default=20, help='batch size for each individual task')
-    parser.add_argument('--fast-lr', type=float, default=0.5, help='learning rate for the 1-step gradient update of MAML')
+    parser.add_argument('--fast-lr', type=float, default=0.5,
+                        help='learning rate for the 1-step gradient update of MAML')
 
     # Optimization
     parser.add_argument('--num-batches', type=int, default=200, help='number of batches')
@@ -82,11 +86,13 @@ if __name__ == '__main__':
     parser.add_argument('--cg-iters', type=int, default=10, help='number of iterations of conjugate gradient')
     parser.add_argument('--cg-damping', type=float, default=1e-5, help='damping in conjugate gradient')
     parser.add_argument('--ls-max-steps', type=int, default=15, help='maximum number of iterations for line search')
-    parser.add_argument('--ls-backtrack-ratio', type=float, default=0.8, help='maximum number of iterations for line search')
+    parser.add_argument('--ls-backtrack-ratio', type=float, default=0.8,
+                        help='maximum number of iterations for line search')
 
     # Miscellaneous
     parser.add_argument('--output-folder', type=str, default='maml', help='name of the output folder')
-    parser.add_argument('--num-workers', type=int, default=mp.cpu_count() - 1, help='number of workers for trajectories sampling')
+    parser.add_argument('--num-workers', type=int, default=mp.cpu_count() - 1,
+                        help='number of workers for trajectories sampling')
     parser.add_argument('--device', type=str, default='cpu', help='set the device (cpu or cuda)')
 
     args = parser.parse_args()
@@ -98,7 +104,7 @@ if __name__ == '__main__':
         os.makedirs('./saves')
     # Device
     args.device = torch.device(args.device
-        if torch.cuda.is_available() else 'cpu')
+                               if torch.cuda.is_available() else 'cpu')
     # Slurm
     if 'SLURM_JOB_ID' in os.environ:
         args.output_folder += '-{0}'.format(os.environ['SLURM_JOB_ID'])
