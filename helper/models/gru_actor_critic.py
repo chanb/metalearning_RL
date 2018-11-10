@@ -19,10 +19,6 @@ class GRUActorCritic(nn.Module):
     def forward(self, x):
         val = self.critic(x)
         mu = self.actor(x)
-        print('actor')
-        print(mu)
-        print(val)
-
         # std = self.log_std.exp().expand_as(mu)
         # dist = Normal(mu.squeeze(), std.squeeze())
         return Categorical(F.softmax(mu, dim=1)), val
