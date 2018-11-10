@@ -23,8 +23,6 @@ def select_action(policy, state):
 
 def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, discount_factor):
     # TODO: Add randomize number of trajectories to run
-    all_rewards = []
-
     # Meta-Learning
     for task in range(num_tasks):
         task_total_rewards = []
@@ -74,11 +72,9 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
 
             print(actions)
             print(rewards)
-            task_total_rewards.append(sum(rewards))
 
             print('Episode {}\tLast length: {:5d}\tTask: {}'.format(traj, horizon, task))
 
-        all_rewards.append(sum(task_total_rewards))
         if policy.is_recurrent:
             policy.reset_hidden_state()
-    return all_rewards, policy
+    return policy

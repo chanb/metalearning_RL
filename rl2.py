@@ -10,6 +10,7 @@ import helper.envs
 from helper.policies import GRUPolicy
 from helper.models import GRUActorCritic
 from helper.algo import ppo, reinforce
+import os
 
 parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
 
@@ -51,18 +52,23 @@ def main():
     if args.algo == 'reinforce':
         policy = GRUPolicy(num_actions, torch.randn(1, 1, 256))
         optimizer = optim.Adam(policy.parameters(), lr=args.learning_rate)
-        all_rewards, model = reinforce(policy, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
+        model = reinforce(policy, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
                   args.gamma)
     elif args.algo == 'ppo':
         model = GRUActorCritic(num_actions, torch.randn(1, 1, 256))
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-        all_rewards, model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
+        model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
             args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau)
     else:
         print('Invalid learning algorithm')
 
-    print(all_rewards)
-    min_val = min(all_rewards)
+    out_folder = './saves/rl2'
+    if not os.path.exists(out_folder):
+        os.makedirs(out_folder)
+
+    if (model):
+        torch.save(model.state_dict(), '{}/{}.pt'.format(out_folder, args.algo))
+
 
 if __name__ == '__main__':
     main()
