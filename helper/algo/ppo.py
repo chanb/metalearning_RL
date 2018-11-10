@@ -72,9 +72,13 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
 # Attempt to modify policy so it doesn't go too far
 def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size, gamma, tau):
+    all_rewards = []
+    all_actions = []
+
     # Meta-Learning
     for task in range(num_tasks):
         task_total_rewards = []
+        task_total_actions = []
         if (task % 50 == 0):
           print(
             "Task {} ==========================================================================================================".format(
@@ -112,6 +116,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
                 log_probs.append(log_prob.unsqueeze(0).unsqueeze(0))
                 actions.append(action.unsqueeze(0).unsqueeze(0))
+                task_total_actions.append(action.data.item())
                 values.append(value)
                 rewards.append(reward)
                 masks.append(1 - done)
@@ -147,10 +152,13 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
             # print(states)
             # print(log_probs)
             # print(rewards)
+            task_total_rewards.append(sum(rewards))
 
             # This is where we compute loss and update the model
             ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage)
 
+        all_rewards.append(task_total_rewards)
+        all_actions.append(task_total_actions)
         if model.is_recurrent:
             model.reset_hidden_state()
-    return model
+    return all_rewards, all_actions, model

@@ -14,18 +14,21 @@ def select_action(policy, state):
 
     probs = policy(state)
     m = Categorical(probs)
-    # print(m.probs)
+    print(m.probs)
     action = m.sample()
-    # print(action)
     policy.saved_log_probs.append(m.log_prob(action))
     return action.item()
 
 
 def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, discount_factor):
     # TODO: Add randomize number of trajectories to run
+    all_rewards = []
+    all_actions = []
+
     # Meta-Learning
     for task in range(num_tasks):
         task_total_rewards = []
+        task_total_actions = []
         print(
             "Task {} ==========================================================================================================".format(
                 task))
@@ -42,6 +45,7 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
                 state, reward, done, info = env.step(action)
 
                 actions.append(action)
+                task_total_actions.append(action)
                 rewards.append(reward)
                 if (done):
                     break
@@ -64,17 +68,23 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
             # Compute loss and take gradient step
             for log_prob, reward in zip(policy.saved_log_probs, discounted_rewards):
                 policy_loss.append(-log_prob * reward)
+
             optimizer.zero_grad()
             policy_loss = torch.cat(policy_loss).sum()
+            print(policy_loss)
             policy_loss.backward(retain_graph=policy.is_recurrent)
             optimizer.step()
             del policy.saved_log_probs[:]
 
             print(actions)
             print(rewards)
+            task_total_rewards.append(sum(rewards))
+            
 
             print('Episode {}\tLast length: {:5d}\tTask: {}'.format(traj, horizon, task))
 
+        all_rewards.append(task_total_rewards)
+        all_actions.append(task_total_actions)
         if policy.is_recurrent:
             policy.reset_hidden_state()
-    return policy
+    return all_rewards, all_actions, policy

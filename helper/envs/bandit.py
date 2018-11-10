@@ -29,6 +29,12 @@ class BernoulliBanditEnv(gym.Env):
 
         self._task = task
         self._means = task.get('mean', np.full((k,), 0.5, dtype=np.float32))
+
+        # Add some randomness into each arm
+        for i in range(k):
+            self._means[i] = np.random.uniform(0, 0.5)
+        self._means[np.random.randint(0, k-1)] = 1
+        print(self._means)
         self.seed()
 
     def seed(self, seed=None):
