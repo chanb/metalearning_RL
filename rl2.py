@@ -38,7 +38,7 @@ args = parser.parse_args()
 # torch.manual_seed(args.seed)
 eps = np.finfo(np.float32).eps.item()
 
-def main():
+def meta_train():
     task = ''
     if args.task == 'bandit':
         task = "Bandit-K{}-v0".format(args.num_actions)
@@ -67,8 +67,11 @@ def main():
         os.makedirs(out_folder)
 
     if (model):
-        torch.save(model.state_dict(), '{}/{}.pt'.format(out_folder, args.algo))
+        torch.save(model.state_dict(), '{}/{}_{}.pt'.format(out_folder, args.algo, args.task))
 
+def eval():
+    pass
 
 if __name__ == '__main__':
-    main()
+    meta_train()
+    eval()
