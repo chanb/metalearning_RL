@@ -19,6 +19,7 @@ parser.add_argument('--max_num_traj', type=int, default=10, help='maximum number
 parser.add_argument('--seed', type=int, default=0, help='random seed (default: 0)')
 parser.add_argument('--max_traj_len', type=int, default=1, help='maximum trajectory length (default: 1)')
 parser.add_argument('--gamma', type=float, default=0.99, help='discount factor (default: 0.99)')
+parser.add_argument('--tau', type=float, default=0.95, help='lambda in GAE (default: 0.95)')
 parser.add_argument('--learning_rate', type=float, default=1e-2,
                     help='learning rate for gradient descent (default: 1e-2)')
 parser.add_argument('--num_tasks', type=int, default=5, help='number of similar tasks to run (default: 5)')
@@ -56,11 +57,12 @@ def main():
         model = GRUActorCritic(num_actions, torch.randn(1, 1, 256))
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
         all_rewards, model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
-            args.ppo_epochs, args.mini_batch_size)
+            args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau)
     else:
         print('Invalid learning algorithm')
 
     print(all_rewards)
+    min_val = min(all_rewards)
 
 if __name__ == '__main__':
     main()

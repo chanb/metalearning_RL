@@ -6,7 +6,7 @@ import torch
 import torch.optim as optim
 from torch.distributions import Categorical
 
-# Computes the advantage where lambda = 1
+# Computes the advantage where lambda = tau
 def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
     values = values + [next_value]
     gae = 0
@@ -71,7 +71,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
 
 # Attempt to modify policy so it doesn't go too far
-def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size):
+def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size, gamma, tau):
     all_rewards = []
 
     # Meta-Learning
@@ -126,7 +126,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 state = state.unsqueeze(0)
 
             _, next_val = model(state)
-            returns = compute_gae(next_val, rewards, masks, values)
+            returns = compute_gae(next_val, rewards, masks, values, gamma, tau)
 
             # print(values)
             # print(returns)
