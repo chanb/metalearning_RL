@@ -6,7 +6,7 @@ import torch
 import torch.optim as optim
 from torch.distributions import Categorical
 
-def select_action(policy, state):
+def select_action(policy, state, traj):
     state = torch.from_numpy(state).float().unsqueeze(0)
 
     if policy.is_recurrent:
@@ -14,7 +14,8 @@ def select_action(policy, state):
 
     probs = policy(state)
     m = Categorical(probs)
-    print(m.probs)
+    if (traj % 10 == 0):
+      print(m.probs)
     action = m.sample()
     policy.saved_log_probs.append(m.log_prob(action))
     return action.item()
@@ -41,7 +42,7 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
             rewards = []
             actions = []
             for horizon in range(max_traj_len):
-                action = select_action(policy, state)
+                action = select_action(policy, state, traj)
                 state, reward, done, info = env.step(action)
 
                 actions.append(action)
@@ -71,17 +72,17 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
 
             optimizer.zero_grad()
             policy_loss = torch.cat(policy_loss).sum()
-            print(policy_loss)
             policy_loss.backward(retain_graph=policy.is_recurrent)
             optimizer.step()
             del policy.saved_log_probs[:]
 
-            print(actions)
-            print(rewards)
             task_total_rewards.append(sum(rewards))
             
-
-            print('Episode {}\tLast length: {:5d}\tTask: {}'.format(traj, horizon, task))
+            if (traj % 10 == 0):
+              print(policy_loss)
+              print(actions)
+              print(rewards)
+              print('Episode {}\tLast length: {:5d}\tTask: {}'.format(traj, horizon, task))
 
         all_rewards.append(task_total_rewards)
         all_actions.append(task_total_actions)

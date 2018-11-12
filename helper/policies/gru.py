@@ -16,7 +16,7 @@ class GRUPolicy(Policy):
                 
         self.affine = nn.Linear(hidden_size, output_size)
         
-        I.xavier_normal(self.affine.weight)
+        I.xavier_normal_(self.affine.weight)
 
         self.prev_state = self.init_state
 

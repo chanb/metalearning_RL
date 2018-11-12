@@ -21,7 +21,7 @@ class GRUActorCritic(nn.Module):
         mu = self.actor(x)
         # std = self.log_std.exp().expand_as(mu)
         # dist = Normal(mu.squeeze(), std.squeeze())
-        return Categorical(F.softmax(mu, dim=1)), val
+        return mu, val
 
     def reset_hidden_state(self):
         self.critic.reset_hidden_state()

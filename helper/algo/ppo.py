@@ -34,14 +34,16 @@ def ppo_iter(mini_batch_size, states, actions, log_probs, returns, advantages):
 
 def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantages,
                clip_param=0.2):
+    # print("PPO UPDATE========================================")
     # Use Clipping Surrogate Objective to update
     for i in range(ppo_epochs):
         for state, action, log_prob, ret, advantage in ppo_iter(mini_batch_size, states, actions, log_probs, returns,
-                                                                advantages):
+                                                                advantages):            
+            # print(action)
             dist, value = model(state)
-
-            entropy = dist.entropy().mean()
-            new_log_probs = dist.log_prob(action)
+            m = Categorical(dist)
+            entropy = m.entropy().mean()
+            new_log_probs = m.log_prob(action)
 
             ratio = (new_log_probs - log_probs).exp()
             surr_1 = ratio * advantage
@@ -60,6 +62,8 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
             loss = 0.5 * critic_loss + actor_loss - 0.001 * entropy
 
             # print("loss")
+            # print(dist)
+            # print(action)
             # print(loss)
             # print(critic_loss)
             # print(actor_loss)
@@ -86,7 +90,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
         env = gym.make(rl_category)
 
         # PPO (Using actor critic style)
-        for _ in range(max_num_traj):
+        for traj in range(max_num_traj):
             state = env.reset()
 
             log_probs = []
@@ -97,7 +101,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
             masks = []
             entropy = 0
 
-            for _ in range(max_traj_len):
+            for horizon in range(max_traj_len):
                 state = torch.from_numpy(state).float().unsqueeze(0)
 
                 if model.is_recurrent:
@@ -106,13 +110,15 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 states.append(state)
 
                 dist, value = model(state)
-                print(dist.probs)
-                action = dist.sample()
-                log_prob = dist.log_prob(action)
+                m = Categorical(dist)
+                if (traj % 10 == 1 or traj % 10 == 0):
+                  print(dist)
+                action = m.sample()
+                log_prob = m.log_prob(action)
 
                 state, reward, done, _ = env.step(action.item())
-
-                entropy += dist.entropy().mean()
+                
+                entropy += m.entropy().mean()
 
                 log_probs.append(log_prob.unsqueeze(0).unsqueeze(0))
                 actions.append(action.unsqueeze(0).unsqueeze(0))
@@ -144,14 +150,16 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
             advantage = returns - values
 
-            # print("DATA =====================")
-            # print(returns)
-            # print(values)
-            # print(advantage)
-            print(actions)
-            # print(states)
-            # print(log_probs)
-            print(rewards)
+            if (traj % 10 == 1 or traj % 10 == 0):
+              # print("DATA =====================")
+              # print(returns)
+              # print(values)
+              # print(advantage)
+              print([actions.squeeze().data.item()])
+              # print(states)
+              # print(log_probs)
+              print(rewards)
+              print('Episode {}\tLast length: {:5d}\tTask: {}'.format(traj, horizon, task))
             task_total_rewards.append(sum(rewards))
 
             # This is where we compute loss and update the model
