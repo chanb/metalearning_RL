@@ -79,10 +79,10 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
     for task in range(num_tasks):
         task_total_rewards = []
         task_total_actions = []
-        if (task % 50 == 0):
-          print(
-            "Task {} ==========================================================================================================".format(
-                task))
+        
+        print(
+          "Task {} ==========================================================================================================".format(
+            task))
         env = gym.make(rl_category)
 
         # PPO (Using actor critic style)
@@ -106,7 +106,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 states.append(state)
 
                 dist, value = model(state)
-                # print(dist.probs)
+                print(dist.probs)
                 action = dist.sample()
                 log_prob = dist.log_prob(action)
 
@@ -148,10 +148,10 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
             # print(returns)
             # print(values)
             # print(advantage)
-            # print(actions)
+            print(actions)
             # print(states)
             # print(log_probs)
-            # print(rewards)
+            print(rewards)
             task_total_rewards.append(sum(rewards))
 
             # This is where we compute loss and update the model
