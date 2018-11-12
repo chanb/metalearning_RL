@@ -12,12 +12,8 @@ class GRUPolicy(Policy):
         self.init_state = init_state
 
         self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size)
-        
-                
         self.affine = nn.Linear(hidden_size, output_size)
-        
         I.xavier_normal_(self.affine.weight)
-
         self.prev_state = self.init_state
 
     def forward(self, x):
@@ -27,5 +23,4 @@ class GRUPolicy(Policy):
         return F.softmax(x, dim=1)
 
     def reset_hidden_state(self):
-        #self.gru.reset_parameters()
         self.prev_state = self.init_state

@@ -19,8 +19,6 @@ class GRUActorCritic(nn.Module):
     def forward(self, x):
         val = self.critic(x)
         mu = self.actor(x)
-        # std = self.log_std.exp().expand_as(mu)
-        # dist = Normal(mu.squeeze(), std.squeeze())
         return mu, val
 
     def reset_hidden_state(self):

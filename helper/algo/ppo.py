@@ -111,7 +111,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
                 dist, value = model(state)
                 m = Categorical(dist)
-                if (traj % 10 == 1 or traj % 10 == 0):
+                if (traj % 10 == 0):
                   print(dist)
                 action = m.sample()
                 log_prob = m.log_prob(action)
@@ -150,7 +150,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
             advantage = returns - values
 
-            if (traj % 10 == 1 or traj % 10 == 0):
+            if (traj % 10 == 0):
               # print("DATA =====================")
               # print(returns)
               # print(values)
