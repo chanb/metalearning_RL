@@ -32,6 +32,7 @@ parser.add_argument('--ppo_epochs', type=int, default=1, help='ppo epoch (defaul
 parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
 
 parser.add_argument('--max_num_traj_eval', type=int, default=1000, help='maximum number of trajectories during evaluation (default: 1000)')
+parser.add_argument('--clip_param', type=float, default=0.2, help='clipping parameter for PPO (default: 0.2)')
 
 args = parser.parse_args()
 
@@ -60,10 +61,12 @@ def meta_train():
         _, _, model = reinforce(policy, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
                   args.gamma)
     elif args.algo == 'ppo':
-        model = GRUActorCritic(num_actions, torch.randn(1, 1, 256))
+        model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 4)
+        # model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 3 + num_actions)
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+        # optimizer = optim.SGD(model.parameters(), lr=args.learning_rate)
         _, _, model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
-            args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau)
+            args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau, args.clip_param)
     else:
         print('Invalid learning algorithm')
 
@@ -93,7 +96,7 @@ def eval():
                   args.gamma)
     elif args.algo == 'ppo':    
         all_rewards, all_actions, _ = ppo(model, optimizer, task, num_actions, 1, args.max_num_traj_eval, args.max_traj_len,
-            args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau)
+            args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau, args.clip_param, eval=True)
     else:
         print('Invalid learning algorithm')
     print(all_rewards)
