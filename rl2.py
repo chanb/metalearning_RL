@@ -71,6 +71,8 @@ def meta_train():
         os.makedirs(out_folder)
 
     if (model):
+        if os.path.exists(out_model):
+            os.remove(out_model)
         torch.save(model, out_model)
 
 def eval():

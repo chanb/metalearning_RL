@@ -145,7 +145,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
             state = torch.from_numpy(state).float().unsqueeze(0)
             if model.is_recurrent:
-                done_entry = torch.tensor([[done]]).float()
+                done_entry = torch.tensor([[0]]).float()
                 reward_entry = torch.tensor([[reward]]).float()
                 action_vector = torch.FloatTensor(num_actions)
                 action_vector.zero_()
