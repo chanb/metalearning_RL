@@ -90,6 +90,8 @@ def eval():
         print('Invalid Task')
         return
 
+    if model.is_recurrent:
+        model.reset_hidden_state()
     if args.algo == 'reinforce':
         all_rewards, all_actions, _ = reinforce(model, optimizer, task, num_actions, 1, args.max_num_traj_eval, args.max_traj_len,
                   args.gamma)
