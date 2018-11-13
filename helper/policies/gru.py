@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as I
@@ -9,7 +10,6 @@ class GRUPolicy(Policy):
         super(GRUPolicy, self).__init__(input_size, output_size)
         self.is_recurrent = True
         self.hidden_size = hidden_size
-        self.init_state = init_state
 
         self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size)
         self.relu1 = nn.ReLU()
@@ -17,7 +17,7 @@ class GRUPolicy(Policy):
         self.relu2 = nn.ReLU()
 
         #I.xavier_normal_(self.affine.weight)
-        self.prev_state = self.init_state
+        self.prev_state = init_state
         self.apply(weight_init)
 
     def forward(self, x):
@@ -25,8 +25,10 @@ class GRUPolicy(Policy):
         self.prev_state = h
         x = self.relu1(x)
         x = self.affine(x)
-        x = self.relu2(x)
-        return x
+        x = self.relu2(x).squeeze(0)
+        #print(x)
+        #print(F.softmax(x, dim=1))
+        return F.softmax(x, dim=1)
 
     def reset_hidden_state(self):
-        self.prev_state = self.init_state
+        self.prev_state = torch.randn(1, 1, 256)

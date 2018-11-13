@@ -6,10 +6,14 @@ def weight_init(module):
     if isinstance(module, nn.Linear):
         nn.init.xavier_uniform_(module.weight)
         module.bias.data.zero_()
-
-     #   nn.init.orthogonal_(module.weight, 1)
-     #   module.bias.data.zero_()
-
+    elif isinstance(module, nn.GRU):
+        for name, param in module.named_parameters():
+            if 'weight_ih' in name:
+                nn.init.xavier_uniform_(param.data)
+            elif 'weight_hh' in name:
+                nn.init.orthogonal_(param.data)
+            elif 'bias' in name:
+                param.data.fill_(0)
 
 # Generic policy
 class Policy(nn.Module):
