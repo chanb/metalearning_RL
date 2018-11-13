@@ -6,9 +6,9 @@ def weight_init(module):
     if isinstance(module, nn.Linear):
         nn.init.xavier_uniform_(module.weight)
         module.bias.data.zero_()
-    else:
-        nn.init.orthogonal_(module.weight, 1)
-        module.bias.data.zero_()
+
+     #   nn.init.orthogonal_(module.weight, 1)
+     #   module.bias.data.zero_()
 
 
 # Generic policy
