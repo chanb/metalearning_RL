@@ -36,9 +36,6 @@ parser.add_argument('--clip_param', type=float, default=0.2, help='clipping para
 
 args = parser.parse_args()
 
-# Create environment and initialize seed
-# env.seed(args.seed)
-# torch.manual_seed(args.seed)
 eps = np.finfo(np.float32).eps.item()
 out_folder = './saves/rl2'
 out_model = '{}/{}_{}.pt'.format(out_folder, args.algo, args.task)
@@ -61,8 +58,8 @@ def meta_train():
         _, _, model = reinforce(policy, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
                   args.gamma)
     elif args.algo == 'ppo':
-        model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 4)
-        # model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 3 + num_actions)
+        # model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 4)
+        model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 3 + num_actions)
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
         # optimizer = optim.SGD(model.parameters(), lr=args.learning_rate)
         _, _, model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,

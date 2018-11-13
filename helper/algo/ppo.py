@@ -98,19 +98,19 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 state = torch.from_numpy(state).float().unsqueeze(0)
 
                 if model.is_recurrent:
-                    # done_entry = torch.tensor([[done]]).float()
-                    # reward_entry = torch.tensor([[reward]]).float()
-                    # action_vector = torch.FloatTensor(num_actions)
-                    # action_vector.zero_()
-                    # if (action > -1):
-                    #     action_vector[action] = 1
+                    done_entry = torch.tensor([[done]]).float()
+                    reward_entry = torch.tensor([[reward]]).float()
+                    action_vector = torch.FloatTensor(num_actions)
+                    action_vector.zero_()
+                    if (action > -1):
+                        action_vector[action] = 1
                     
-                    # action_vector = action_vector.unsqueeze(0)
+                    action_vector = action_vector.unsqueeze(0)
                     
-                    # state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
-                    # state = state.unsqueeze(0)
-                    state = torch.cat((state, state, state, torch.Tensor([[0.]])), 1)
+                    state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
                     state = state.unsqueeze(0)
+                    # state = torch.cat((state, state, state, torch.Tensor([[0.]])), 1)
+                    # state = state.unsqueeze(0)
 
                 states.append(state)
 
@@ -145,16 +145,16 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
             state = torch.from_numpy(state).float().unsqueeze(0)
             if model.is_recurrent:
-                # done_entry = torch.tensor([[done]]).float()
-                # reward_entry = torch.tensor([[reward]]).float()
-                # action_vector = torch.FloatTensor(num_actions)
-                # action_vector.zero_()
-                # action_vector[action] = 1
-                # action_vector = action_vector.unsqueeze(0)
-                # state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
-                # state = state.unsqueeze(0)
-                state = torch.cat((state, torch.Tensor([[action]]).float(), torch.Tensor([[reward]]).float(), torch.Tensor([[1.]])), 1)
+                done_entry = torch.tensor([[done]]).float()
+                reward_entry = torch.tensor([[reward]]).float()
+                action_vector = torch.FloatTensor(num_actions)
+                action_vector.zero_()
+                action_vector[action] = 1
+                action_vector = action_vector.unsqueeze(0)
+                state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
                 state = state.unsqueeze(0)
+                # state = torch.cat((state, torch.Tensor([[action]]).float(), torch.Tensor([[reward]]).float(), torch.Tensor([[1.]])), 1)
+                # state = state.unsqueeze(0)
 
             _, next_val = model(state)
 
@@ -179,7 +179,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
             #    print('Episode {}\tLast length: {:5d}\tTask: {}'.format(traj, horizon, task))
             #elif (traj % 100 == 0):
             #    print('Episode {}\tLast length: {:5d}\tTask: {}'.format(traj, horizon, task))
-            #task_total_rewards.append(sum(rewards))
+            task_total_rewards.append(sum(rewards))
 
             # This is where we compute loss and update the model
             ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage, clip_param=clip_param)

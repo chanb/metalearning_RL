@@ -26,7 +26,7 @@ class GRUPolicy(Policy):
         x = self.relu1(x)
         x = self.affine(x)
         x = self.relu2(x)
-        return F.softmax(x, dim=1)
+        return x
 
     def reset_hidden_state(self):
         self.prev_state = self.init_state
