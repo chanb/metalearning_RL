@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.nn.init as I
-from helper.policies.policy import Policy
+from helper.policies.policy import Policy, weight_init
 
 
 class GRUPolicy(Policy):
@@ -12,14 +12,20 @@ class GRUPolicy(Policy):
         self.init_state = init_state
 
         self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size)
+        self.relu1 = nn.ReLU()
         self.affine = nn.Linear(hidden_size, output_size)
-        I.xavier_normal_(self.affine.weight)
+        self.relu2 = nn.ReLU()
+
+        #I.xavier_normal_(self.affine.weight)
         self.prev_state = self.init_state
+        self.apply(weight_init)
 
     def forward(self, x):
         x, h = self.gru(x, self.prev_state)
         self.prev_state = h
-        x = self.affine(x).squeeze(0)
+        x = self.relu1(x)
+        x = self.affine(x)
+        x = self.relu2(x)
         return F.softmax(x, dim=1)
 
     def reset_hidden_state(self):

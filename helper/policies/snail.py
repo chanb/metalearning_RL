@@ -15,17 +15,18 @@ class LinearEmbedding(Policy):
 
 class SNAILPolicy(Policy):
     # K arms, trajectory of length N
-    def __init__(self, output_size, traj_len, input_size=1, hidden_size=32):
+    def __init__(self, output_size, traj_len, encoder, input_size=1, hidden_size=32):
         super(SNAILPolicy, self).__init__(input_size, output_size)
         self.K = output_size
         self.N = traj_len
         self.hidden_size = hidden_size
 
-        num_filters = int(math.floor(math.log(output_size * traj_len + 1)))
-        num_channels = output_size + 2 #add 2 because we're adding observation and rewards
+        num_channels = output_size + 2 # add 2 because we're adding observation and rewards
 
-        #self.affine_1 = LinearEmbedding(num_channels, hidden_size)
-        #num_channels += hidden_size
+        self.encoder = encoder
+        num_channels += hidden_size
+
+        num_filters = int(math.floor(math.log(output_size * traj_len + 1)))
 
         self.tc_1 = TCBlock(num_channels, self.N, hidden_size)
         num_channels += num_filters * hidden_size
