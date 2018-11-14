@@ -104,22 +104,12 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                     
                     state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
                     state = state.unsqueeze(0)
-                    # state = torch.cat((state, state, state, torch.Tensor([[0.]])), 1)
-                    # state = state.unsqueeze(0)
 
                 states.append(state)
 
                 dist, value = model(state)
                 m = Categorical(dist)
-
                 action = m.sample()
-                
-                #if (not eval and (traj == 0 or traj + 1 == max_num_traj)):
-                #    print("Distribution ==========")
-                #    print(dist)
-                if (eval and (traj % 100 == 0 or traj + 1 == max_num_traj)):
-                    print("Distribution ==========")
-                    print(dist)
 
                 log_prob = m.log_prob(action)
 
@@ -147,8 +137,6 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 action_vector = action_vector.unsqueeze(0)
                 state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
                 state = state.unsqueeze(0)
-                # state = torch.cat((state, torch.Tensor([[action]]).float(), torch.Tensor([[reward]]).float(), torch.Tensor([[1.]])), 1)
-                # state = state.unsqueeze(0)
 
             _, next_val = model(state)
 
@@ -160,19 +148,6 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
             actions = torch.cat(actions)
             advantage = returns - values
 
-            # if (traj % 10 == 0):
-              # print("DATA =====================")
-              # print(returns)
-              # print(values)
-              # print(advantage)
-            #   print([actions.squeeze().data.item()])
-              # print(states)
-              # print(log_probs)
-            #   print(rewards)
-            #if (not eval):
-            #    print('Episode {}\tLast length: {:5d}\tTask: {}'.format(traj, horizon, task))
-            #elif (traj % 100 == 0):
-            #    print('Episode {}\tLast length: {:5d}\tTask: {}'.format(traj, horizon, task))
             task_total_rewards.append(sum(rewards))
 
             # This is where we compute loss and update the model

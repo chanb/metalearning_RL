@@ -33,6 +33,7 @@ parser.add_argument('--task', type=str, default='bandit', help='the task to lear
 
 parser.add_argument('--max_num_traj_eval', type=int, default=1000, help='maximum number of trajectories during evaluation (default: 1000)')
 parser.add_argument('--clip_param', type=float, default=0.2, help='clipping parameter for PPO (default: 0.2)')
+parser.add_argument('--eval', type=bool, default=True, help='do evaulation only (default: True)')
 
 args = parser.parse_args()
 
@@ -108,7 +109,8 @@ def eval():
 
 
 if __name__ == '__main__':
-    print("TRAINING MODEL ========================================================================")
-    meta_train()
+    if (not args.eval):
+        print("TRAINING MODEL ========================================================================")
+        meta_train()
     print("TESTING MODEL ========================================================================")
     eval()
