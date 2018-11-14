@@ -6,7 +6,7 @@ from helper.policies.policy import weight_init
 
 
 class GRUValue(Value):
-    def __init__(self, output_size, init_state, input_size=1, hidden_size=256):
+    def __init__(self, output_size, init_state, input_size=1, hidden_size=256, non_linearity='sigmoid'):
         super(GRUValue, self).__init__(output_size)
         self.is_recurrent = True
         self.hidden_size = hidden_size
@@ -14,7 +14,13 @@ class GRUValue(Value):
         self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size)
         self.relu1 = nn.ReLU()
         self.value = nn.Linear(hidden_size, 1)
-        self.sigmoid = nn.Sigmoid()
+        if non_linearity == 'sigmoid':
+            self.non_linearity = nn.Sigmoid()
+        elif non_linearity == 'tanh':
+            self.non_linearity = nn.Tanh()
+        else:
+            self.non_linearity = nn.ReLU()
+        
         self.prev_state = init_state
         self.apply(weight_init)
 
@@ -22,7 +28,7 @@ class GRUValue(Value):
         x, h = self.gru(x, self.prev_state)
         self.prev_state = h
         x = self.relu1(x)
-        return self.sigmoid(self.value(x))
+        return self.non_linearity(self.value(x))
 
     def reset_hidden_state(self):
         self.prev_state = torch.randn(1, 1, 256)

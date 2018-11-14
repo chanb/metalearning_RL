@@ -33,7 +33,8 @@ parser.add_argument('--task', type=str, default='bandit', help='the task to lear
 
 parser.add_argument('--max_num_traj_eval', type=int, default=1000, help='maximum number of trajectories during evaluation (default: 1000)')
 parser.add_argument('--clip_param', type=float, default=0.2, help='clipping parameter for PPO (default: 0.2)')
-parser.add_argument('--eval', type=bool, default=True, help='do evaulation only (default: True)')
+parser.add_argument('--eval', type=int, default=1, help='do evaulation only (default: 1)')
+parser.add_argument('--non_linearity', help='non linearity function following last output layer')
 
 args = parser.parse_args()
 
@@ -47,13 +48,19 @@ def meta_train():
         task = "Bandit-K{}-v0".format(args.num_actions)
         num_actions = args.num_actions
         num_states = 1
+        non_linearity = 'sigmoid'
     elif args.task == 'mdp':
         task = "TabularMDP-v0"
         num_actions = 5
         num_states = 10
+        non_linearity = 'tanh'
     else:
         print('Invalid Task')
         return
+        
+    if (args.non_linearity):
+        non_linearity = args.non_linearity
+
     if args.algo == 'reinforce':
         # policy = FCNPolicy(num_actions, 1)
         policy = GRUPolicy(num_actions, torch.randn(1, 1, 256))
@@ -62,7 +69,7 @@ def meta_train():
                   args.gamma)
     elif args.algo == 'ppo':
         # model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 4)
-        model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 2 + num_states + num_actions)
+        model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 2 + num_states + num_actions, non_linearity=non_linearity)
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
         # optimizer = optim.SGD(model.parameters(), lr=args.learning_rate)
         _, _, model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,

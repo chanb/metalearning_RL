@@ -50,9 +50,9 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
             # This is L(Clip) + L(VF) + L(S)
             loss = -0.5 * critic_loss + actor_loss + 0.001 * entropy
 
-            #if (eval):
-            #    print("ret: {} val: {}".format(ret, value))
-            #    print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), loss.squeeze().data.item()))
+            # if (eval):
+                # print("ret: {} val: {}".format(ret, value))
+                # print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), loss.squeeze().data.item()))
 
             optimizer.zero_grad()
             loss.backward(retain_graph=model.is_recurrent)
@@ -76,6 +76,8 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
         # PPO (Using actor critic style)
         for traj in range(max_num_traj):
+            if (traj % 50 == 0):
+                print("Trajectory {}".format(traj))
             state = env.reset()
             reward = 0.
             action = -1
