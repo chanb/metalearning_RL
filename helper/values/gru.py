@@ -14,8 +14,7 @@ class GRUValue(Value):
         self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size)
         self.relu1 = nn.ReLU()
         self.value = nn.Linear(hidden_size, 1)
-        self.relu2 = nn.ReLU()
-        #I.xavier_normal_(self.value.weight)
+        self.sigmoid = nn.Sigmoid()
         self.prev_state = init_state
         self.apply(weight_init)
 
@@ -23,7 +22,7 @@ class GRUValue(Value):
         x, h = self.gru(x, self.prev_state)
         self.prev_state = h
         x = self.relu1(x)
-        return self.value(x)
+        return self.sigmoid(self.value(x))
 
     def reset_hidden_state(self):
         self.prev_state = torch.randn(1, 1, 256)

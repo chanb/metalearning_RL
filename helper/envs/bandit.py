@@ -34,7 +34,7 @@ class BernoulliBanditEnv(gym.Env):
         for i in range(k):
             self._means[i] = np.random.uniform(0, 0.5)
             self._means[i] = 0
-        self._means[np.random.randint(0, k-1)] = 1
+        self._means[np.random.randint(0, k)] = 1
         print("Env Setup")
         print(self._means)
         self.seed()

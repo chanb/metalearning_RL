@@ -22,23 +22,16 @@ def ppo_iter(mini_batch_size, states, actions, log_probs, returns, advantages):
     batch_size = states.size(0)
     for _ in range(batch_size // mini_batch_size):
         rand_ids = np.random.randint(0, batch_size, mini_batch_size)
-        # print(rand_ids)
-        # print(states)
-        # print(actions)
-        # print(log_probs)
-        # print(returns)
-        # print(advantages)
         yield states[rand_ids, :], actions[rand_ids, :], log_probs[rand_ids, :], returns[rand_ids, :], advantages[
                                                                                                        rand_ids, :]
 
 
 def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantages,
-               clip_param=0.2):
+               clip_param=0.2, eval=False):
     # Use Clipping Surrogate Objective to update
     for i in range(ppo_epochs):
         for state, action, log_prob, ret, advantage in ppo_iter(mini_batch_size, states, actions, log_probs, returns,
                                                                 advantages):            
-            # print(action)
             dist, value = model(state)
             m = Categorical(dist)
             entropy = m.entropy().mean()
@@ -55,9 +48,11 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
             critic_loss = (ret - value).pow(2).mean()
 
             # This is L(Clip) + L(VF) + L(S)
-            loss = 0.5 * critic_loss + actor_loss - 0.001 * entropy
+            loss = -0.5 * critic_loss + actor_loss + 0.001 * entropy
 
-            # print("action: {} return: {} advantage: {} ratio: {} surr_1: {} surr_2: {} critic_loss: {} actor_loss: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), surr_1.squeeze().data.item(), surr_2.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), loss.squeeze().data.item()))
+            #if (eval):
+            #    print("ret: {} val: {}".format(ret, value))
+            #    print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), loss.squeeze().data.item()))
 
             optimizer.zero_grad()
             loss.backward(retain_graph=model.is_recurrent)
@@ -122,7 +117,6 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 if (not eval and (traj == 0 or traj + 1 == max_num_traj)):
                     print("Distribution ==========")
                     print(dist)
-                    # print(action.squeeze().data.item())
                 elif (traj % 100 == 0 or traj + 1 == max_num_traj):
                     print("Distribution ==========")
                     print(dist)
@@ -182,7 +176,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
             task_total_rewards.append(sum(rewards))
 
             # This is where we compute loss and update the model
-            ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage, clip_param=clip_param)
+            ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage, clip_param=clip_param, eval=eval)
         
         all_rewards.append(task_total_rewards)
         all_actions.append(task_total_actions)
