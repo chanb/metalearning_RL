@@ -114,10 +114,10 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
                 action = m.sample()
                 
-                if (not eval and (traj == 0 or traj + 1 == max_num_traj)):
-                    print("Distribution ==========")
-                    print(dist)
-                elif (traj % 100 == 0 or traj + 1 == max_num_traj):
+                #if (not eval and (traj == 0 or traj + 1 == max_num_traj)):
+                #    print("Distribution ==========")
+                #    print(dist)
+                if (eval and (traj % 100 == 0 or traj + 1 == max_num_traj)):
                     print("Distribution ==========")
                     print(dist)
 

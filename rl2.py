@@ -45,9 +45,11 @@ def meta_train():
     if args.task == 'bandit':
         task = "Bandit-K{}-v0".format(args.num_actions)
         num_actions = args.num_actions
+        num_states = 1
     elif args.task == 'mdp':
         task = "TabularMDP-v0"
         num_actions = 5
+        num_states = 10
     else:
         print('Invalid Task')
         return
@@ -59,7 +61,7 @@ def meta_train():
                   args.gamma)
     elif args.algo == 'ppo':
         # model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 4)
-        model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 3 + num_actions)
+        model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 2 + num_states + num_actions)
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
         # optimizer = optim.SGD(model.parameters(), lr=args.learning_rate)
         _, _, model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
