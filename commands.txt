@@ -4,8 +4,8 @@ Training 5-armed-bandit with REINFORCE: python rl2.py --learning_rate 0.001 --al
 
 Training MDP with PPO: python rl2.py --num_tasks 100 --max_num_traj 10 --max_num_traj_eval 0 --learning_rate 0.001 --algo ppo --ppo_epochs 2 --clip_param 0.2 --tau 0.3 --max_traj_len 10 --task mdp --eval 0
 
-Testing 5-armed-bandit with PPO (using specific saved model): python rl2.py --max_num_traj_eval 500 --learning_rate 0.001 --algo ppo --ppo_epochs 2 --clip_param 0.2 --tau 0.3 --max_traj_len 1 --task bandit --eval 1 --eval_model ./saves/rl2/ppo_bandit_5_sigmoid.pt
+Testing 5-armed-bandit with PPO (using specific saved model): python rl2.py --max_num_traj_eval 500 --learning_rate 0.001 --algo ppo --ppo_epochs 2 --clip_param 0.2 --tau 0.3 --max_traj_len 1 --task bandit --num_actions 5 --eval 1 --eval_model ./saves/rl2/ppo_bandit_5_sigmoid.pt
 
-Testing 5-armed-bandit with REINFORCE (using specific saved model): python rl2.py --max_num_traj_eval 500 --learning_rate 0.001 --algo reinforce --max_traj_len 1 --task bandit --eval 1 --eval_model ./saves/rl2/reinforce_bandit_5.pt
+Testing 5-armed-bandit with REINFORCE (using specific saved model): python rl2.py --max_num_traj_eval 500 --learning_rate 0.001 --algo reinforce --max_traj_len 1 --task bandit --num_actions 5 --eval 1 --eval_model ./saves/rl2/reinforce_bandit_5.pt
 
-Testing MDP with PPO (using specific saved model): 
+Testing MDP with PPO (using specific saved model): python rl2.py --max_num_traj_eval 300 --learning_rate 0.001 --algo ppo --ppo_epochs 2 --clip_param 0.2 --tau 0.3 --max_traj_len 1 --task mdp --eval 1 --eval_model ./saves/rl2/ppo_mdp_default.pt
