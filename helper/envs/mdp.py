@@ -36,6 +36,15 @@ class TabularMDPEnv(gym.Env):
                                                             dtype=np.float32))
         self._rewards_mean = task.get('rewards_mean', np.zeros((num_states,
                                                                 num_actions), dtype=np.float32))
+        
+        self._transitions = np.random.dirichlet(np.ones(self.num_states),
+                                               size=(self.num_states, self.num_actions))
+
+        self._rewards_mean = np.random.normal(1.0, 1.0,
+                                             size=(self.num_states, self.num_actions))
+        print('Env Setup')
+        print(self._transitions)
+        print(self._rewards_mean)
         self._state = 0
         self.seed()
 
@@ -50,6 +59,7 @@ class TabularMDPEnv(gym.Env):
                                              size=(num_tasks, self.num_states, self.num_actions))
         tasks = [{'transitions': transition, 'rewards_mean': reward_mean}
                  for (transition, reward_mean) in zip(transitions, rewards_mean)]
+        print("hi")
         return tasks
 
     def reset_task(self, task):
