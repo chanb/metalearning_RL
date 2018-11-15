@@ -6,7 +6,7 @@ from helper.policies.policy import weight_init
 
 
 class GRUValue(Value):
-    def __init__(self, output_size, init_state, input_size=1, hidden_size=256, non_linearity='sigmoid'):
+    def __init__(self, output_size, init_state, input_size=1, hidden_size=256, non_linearity='relu'):
         super(GRUValue, self).__init__(output_size)
         self.is_recurrent = True
         self.hidden_size = hidden_size

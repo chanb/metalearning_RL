@@ -7,7 +7,7 @@ from torch.distributions import Categorical
 
 
 class GRUActorCritic(nn.Module):
-    def __init__(self, output_size, init_state, input_size=1, hidden_size=256, std=0.0, non_linearity='sigmoid'):
+    def __init__(self, output_size, init_state, input_size=1, hidden_size=256, std=0.0, non_linearity='relu'):
         super(GRUActorCritic, self).__init__()
 
         self.critic = GRUValue(output_size, init_state, input_size, hidden_size, non_linearity=non_linearity)
