@@ -10,7 +10,6 @@ class GRUValue(Value):
         super(GRUValue, self).__init__(output_size)
         self.is_recurrent = True
         self.hidden_size = hidden_size
-
         self.gru = nn.GRU(input_size=input_size, hidden_size=hidden_size)
         self.relu1 = nn.ReLU()
         self.value = nn.Linear(hidden_size, 1)
@@ -20,7 +19,6 @@ class GRUValue(Value):
             self.non_linearity = nn.Tanh()
         else:
             self.non_linearity = nn.ReLU()
-        
         self.prev_state = init_state
         self.apply(weight_init)
 

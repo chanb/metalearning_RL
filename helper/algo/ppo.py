@@ -49,11 +49,11 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            loss = - actor_loss + 0.5 * critic_loss - 0.01 * entropy
+            loss = actor_loss - 0.5 * critic_loss + 0.001 * entropy
 
-            if (eval):
-                print("ret: {} val: {}".format(ret, value))
-                print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), loss.squeeze().data.item()))
+            # if (eval):
+            #     print("ret: {} val: {}".format(ret, value))
+            #     print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), entropy, loss.squeeze().data.item()))
 
             optimizer.zero_grad()
             loss.backward(retain_graph=model.is_recurrent)
