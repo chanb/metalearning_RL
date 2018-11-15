@@ -126,7 +126,7 @@ def evaluate_model(eval_model):
         os.makedirs(result_folder)
 
     with open(out_result, 'wb') as f:
-        pickle.dump([all_rewards, all_actions, all_states], f)
+        pickle.dump([all_rewards, all_actions, all_states, num_actions, num_states], f)
 
     idx = 0 
     for traj in all_states[0]:
