@@ -57,7 +57,7 @@ def meta_train():
     else:
         print('Invalid Task')
         return
-        
+
     if (args.non_linearity):
         non_linearity = args.non_linearity
 
