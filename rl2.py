@@ -103,15 +103,19 @@ def eval():
     if model.is_recurrent:
         model.reset_hidden_state()
     if args.algo == 'reinforce':
-        all_rewards, all_actions, _ = reinforce(model, optimizer, task, num_actions, 1, args.max_num_traj_eval, args.max_traj_len,
+        all_rewards, all_states, _ = reinforce(model, optimizer, task, num_actions, 1, args.max_num_traj_eval, args.max_traj_len,
                   args.gamma)
     elif args.algo == 'ppo':    
-        all_rewards, all_actions, _ = ppo(model, optimizer, task, num_actions, 1, args.max_num_traj_eval, args.max_traj_len,
+        all_rewards, all_states, _ = ppo(model, optimizer, task, num_actions, 1, args.max_num_traj_eval, args.max_traj_len,
             args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau, args.clip_param, eval=True)
     else:
         print('Invalid learning algorithm')
     print(all_rewards)
-    print(all_actions)
+    # print(all_states[0])
+    idx = 0 
+    for traj in all_states[0]:
+        idx += 1
+        print('reward {}: {}\ntraj {} (length: {}): {}'.format(idx, all_rewards[0][idx - 1], idx, len(traj), traj.squeeze(1)))
     
 
 
