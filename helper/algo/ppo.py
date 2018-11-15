@@ -90,6 +90,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
             values = []
             states = []
             actions = []
+            clean_actions = []
             rewards = []
             masks = []
             entropy = 0
@@ -124,6 +125,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 entropy += m.entropy().mean()
                 log_probs.append(log_prob.unsqueeze(0).unsqueeze(0))
                 actions.append(action.unsqueeze(0).unsqueeze(0))
+                clean_actions.append(action.data.item())
                 
                 values.append(value)
                 rewards.append(reward)
@@ -155,7 +157,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
             task_total_rewards.append(sum(rewards))
             task_total_states.append(states)
-            task_total_actions.append(actions)
+            task_total_actions.append(clean_actions)
 
             # This is where we compute loss and update the model
             ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage, clip_param=clip_param, evaluate=evaluate)
