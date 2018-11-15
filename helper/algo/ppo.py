@@ -27,7 +27,7 @@ def ppo_iter(mini_batch_size, states, actions, log_probs, returns, advantages):
 
 
 def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantages,
-               clip_param=0.2, eval=False):
+               clip_param=0.2, evaluate=False):
     # Use Clipping Surrogate Objective to update
     for i in range(ppo_epochs):
         for state, action, log_prob, ret, advantage in ppo_iter(mini_batch_size, states, actions, log_probs, returns,
@@ -51,7 +51,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
             # Take negative because we're doing gradient descent
             loss = actor_loss - 0.5 * critic_loss + 0.001 * entropy
 
-            # if (eval):
+            # if (evaluate):
             #     print("ret: {} val: {}".format(ret, value))
             #     print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), entropy, loss.squeeze().data.item()))
 
@@ -61,14 +61,16 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
 
 # Attempt to modify policy so it doesn't go too far
-def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size, gamma, tau, clip_param, eval=False):
+def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size, gamma, tau, clip_param, evaluate=False):
     all_rewards = []
     all_states = []
+    all_actions = []
 
     # Meta-Learning
     for task in range(num_tasks):
         task_total_rewards = []
         task_total_states = []
+        task_total_actions = []
         
         print(
           "Task {} ==========================================================================================================".format(
@@ -153,12 +155,14 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
             task_total_rewards.append(sum(rewards))
             task_total_states.append(states)
+            task_total_actions.append(actions)
 
             # This is where we compute loss and update the model
-            ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage, clip_param=clip_param, eval=eval)
+            ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage, clip_param=clip_param, evaluate=evaluate)
         
         all_rewards.append(task_total_rewards)
         all_states.append(task_total_states)
+        all_actions.append(task_total_actions)
         if model.is_recurrent:
             model.reset_hidden_state()
-    return all_rewards, all_states, model
+    return all_rewards, all_states, all_actions, model

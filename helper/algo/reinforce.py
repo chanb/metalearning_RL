@@ -14,8 +14,6 @@ def select_action(policy, state, traj):
 
     probs = policy(state)
     m = Categorical(probs)
-    if (traj % 10 == 0):
-      print(m.probs)
     action = m.sample()
     policy.saved_log_probs.append(m.log_prob(action))
     return action.item()
@@ -24,12 +22,14 @@ def select_action(policy, state, traj):
 def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, discount_factor):
     # TODO: Add randomize number of trajectories to run
     all_rewards = []
+    all_states = []
     all_actions = []
 
     # Meta-Learning
     for task in range(num_tasks):
         task_total_rewards = []
         task_total_actions = []
+        task_total_states = []
         print(
             "Task {} ==========================================================================================================".format(
                 task))
@@ -37,17 +37,20 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
 
         # REINFORCE
         for traj in range(max_num_traj):
+            if (traj % 50 == 0):
+                print("Trajectory {}".format(traj))
             state = env.reset()
 
             rewards = []
             actions = []
+            states = []
             for horizon in range(max_traj_len):
                 action = select_action(policy, state, traj)
                 state, reward, done, info = env.step(action)
 
                 actions.append(action)
-                task_total_actions.append(action)
                 rewards.append(reward)
+                states.append(state)
                 if (done):
                     break
 
@@ -72,21 +75,18 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
 
             optimizer.zero_grad()
             policy_loss = torch.cat(policy_loss).sum()
-            print('loss: {} action: {}'.format(policy_loss, action))
+            
             policy_loss.backward(retain_graph=policy.is_recurrent)
             optimizer.step()
             del policy.saved_log_probs[:]
 
             task_total_rewards.append(sum(rewards))
-            
-            if (traj % 10 == 0):
-              print(policy_loss)
-              print(actions)
-              print(rewards)
-              print('Episode {}\tLast length: {:5d}\tTask: {}'.format(traj, horizon, task))
+            task_total_states.append(states)
+            task_total_actions.append(actions)
 
         all_rewards.append(task_total_rewards)
         all_actions.append(task_total_actions)
+        all_states.append(task_total_states)
         if policy.is_recurrent:
             policy.reset_hidden_state()
-    return all_rewards, all_actions, policy
+    return all_rewards, all_states, all_actions, policy

@@ -36,6 +36,8 @@ parser.add_argument('--clip_param', type=float, default=0.2, help='clipping para
 parser.add_argument('--eval', type=int, default=1, help='do evaulation only (default: 1)')
 parser.add_argument('--non_linearity', help='non linearity function following last output layer')
 
+parser.add_argument('--eval_model', help='the model to evaluate')
+
 args = parser.parse_args()
 
 eps = np.finfo(np.float32).eps.item()
@@ -53,7 +55,7 @@ def meta_train():
         task = "TabularMDP-v0"
         num_actions = 5
         num_states = 10
-        non_linearity = 'tanh'
+        non_linearity = 'none'
     else:
         print('Invalid Task')
         return
@@ -65,14 +67,14 @@ def meta_train():
         # policy = FCNPolicy(num_actions, 1)
         policy = GRUPolicy(num_actions, torch.randn(1, 1, 256))
         optimizer = optim.SGD(policy.parameters(), lr=args.learning_rate)
-        _, _, model = reinforce(policy, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
+        _, _, _, model = reinforce(policy, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
                   args.gamma)
     elif args.algo == 'ppo':
         # model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 4)
         model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 2 + num_states + num_actions, non_linearity=non_linearity)
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
         # optimizer = optim.SGD(model.parameters(), lr=args.learning_rate)
-        _, _, model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
+        _, _, _, model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
             args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau, args.clip_param)
     else:
         print('Invalid learning algorithm')
@@ -85,8 +87,12 @@ def meta_train():
             os.remove(out_model)
         torch.save(model, out_model)
 
-def eval():
-    model = torch.load(out_model)
+def evaluate_model(eval_model):
+    to_use = out_model
+    if (eval_model):
+        to_use = eval_model
+
+    model = torch.load(to_use)
     optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
     task = ''
@@ -103,19 +109,22 @@ def eval():
     if model.is_recurrent:
         model.reset_hidden_state()
     if args.algo == 'reinforce':
-        all_rewards, all_states, _ = reinforce(model, optimizer, task, num_actions, 1, args.max_num_traj_eval, args.max_traj_len,
+        all_rewards, all_states, all_actions, _ = reinforce(model, optimizer, task, num_actions, 1, args.max_num_traj_eval, args.max_traj_len,
                   args.gamma)
     elif args.algo == 'ppo':    
-        all_rewards, all_states, _ = ppo(model, optimizer, task, num_actions, 1, args.max_num_traj_eval, args.max_traj_len,
-            args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau, args.clip_param, eval=True)
+        all_rewards, all_states, all_actions, _ = ppo(model, optimizer, task, num_actions, 1, args.max_num_traj_eval, args.max_traj_len,
+            args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau, args.clip_param, evaluate=True)
     else:
         print('Invalid learning algorithm')
     print(all_rewards)
-    # print(all_states[0])
+    print(all_actions)
     idx = 0 
     for traj in all_states[0]:
         idx += 1
-        print('reward {}: {}\ntraj {} (length: {}): {}'.format(idx, all_rewards[0][idx - 1], idx, len(traj), traj.squeeze(1)))
+        if (args.algo == 'ppo'):
+            print('reward {}: {}\ntraj {} (length: {}): {}'.format(idx, all_rewards[0][idx - 1], idx, len(traj), traj.squeeze(1)))
+        elif (args.algo == 'reinforce'):
+            print('reward {}: {}\ntraj {} (length: {}): {}'.format(idx, all_rewards[0][idx - 1], idx, len(traj), traj))
     
 
 
@@ -124,4 +133,4 @@ if __name__ == '__main__':
         print("TRAINING MODEL ========================================================================")
         meta_train()
     print("TESTING MODEL ========================================================================")
-    eval()
+    evaluate_model(args.eval_model)
