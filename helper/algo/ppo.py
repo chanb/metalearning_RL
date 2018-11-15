@@ -79,7 +79,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
         # PPO (Using actor critic style)
         for traj in range(max_num_traj):
-            if (traj % 50 == 0):
+            if (traj % 5 == 0):
                 print("Trajectory {}".format(traj))
             state = env.reset()
             reward = 0.

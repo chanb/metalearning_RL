@@ -1,6 +1,7 @@
 import gym
 import numpy as np
 import argparse
+import pickle
 
 import torch
 import torch.optim as optim
@@ -43,6 +44,8 @@ args = parser.parse_args()
 eps = np.finfo(np.float32).eps.item()
 out_folder = './saves/rl2'
 out_model = '{}/{}_{}.pt'.format(out_folder, args.algo, args.task)
+result_folder = './logs/rl2'
+out_result = '{}/{}_{}.pkl'.format(result_folder, args.algo, args.task)
 
 def meta_train():
     task = ''
@@ -99,9 +102,11 @@ def evaluate_model(eval_model):
     if args.task == 'bandit':
         task = "Bandit-K{}-v0".format(args.num_actions)
         num_actions = args.num_actions
+        num_states = 1
     elif args.task == 'mdp':
         task = "TabularMDP-v0"
         num_actions = 5
+        num_states = 10
     else:
         print('Invalid Task')
         return
@@ -116,17 +121,22 @@ def evaluate_model(eval_model):
             args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau, args.clip_param, evaluate=True)
     else:
         print('Invalid learning algorithm')
-    print(all_rewards)
-    print(all_actions)
+    
+    if not os.path.exists(result_folder):
+        os.makedirs(result_folder)
+
+    with open(out_result, 'wb') as f:
+        pickle.dump([all_rewards, all_actions, all_states], f)
+
     idx = 0 
     for traj in all_states[0]:
         idx += 1
+        curr_traj = traj
+        print('traj {} (length: {}) reward {} actions_made {}: '.format(idx, len(traj), all_rewards[0][idx - 1], all_actions[0][0]))
         if (args.algo == 'ppo'):
-            print('reward {}: {}\ntraj {} (length: {}): {}'.format(idx, all_rewards[0][idx - 1], idx, len(traj), traj.squeeze(1)))
-        elif (args.algo == 'reinforce'):
-            print('reward {}: {}\ntraj {} (length: {}): {}'.format(idx, all_rewards[0][idx - 1], idx, len(traj), traj))
-    
-
+            curr_traj = traj.squeeze(1)
+            for experience in curr_traj:
+                print('curr_state: {} prev_action: {} prev_reward: {} is_done: {}'.format(experience[:num_states], experience[num_states:num_states + num_actions], experience[num_states + num_actions], experience[-1]))
 
 if __name__ == '__main__':
     if (not args.eval):
