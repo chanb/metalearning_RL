@@ -1,8 +1,10 @@
 import pickle
+import argparse
 
 parser = argparse.ArgumentParser(description='Reads output file from running MDP/MAB using RL2')
 
 parser.add_argument('--file', type=str, help='output file to read from')
+parser.add_argument('--algo', type=str, help='the algorithm used to generate the output')
 
 args = parser.parse_args()
 
