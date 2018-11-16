@@ -43,7 +43,6 @@ class TCBlock(nn.Module):
 
     def forward(self, input):
         # input is dimensions (N, T, in_channels)
-        print(input)
         input = torch.transpose(input, 1, 2)
         for block in self.dense_blocks:
             input = block(input)
