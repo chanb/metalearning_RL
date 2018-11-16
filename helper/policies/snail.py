@@ -46,7 +46,7 @@ class SNAILPolicy(Policy):
     def forward(self, x, keep=True):
         # not_zero = x.sum()
         # print(x.sum())
-        if len(self.past.size()) == 0 > 0:
+        if self.past.size()[0] == 0:
             x = x
         elif self.past.shape[0] >= self.N:
             x = torch.cat((self.past[1:(self.N), :, :], x))

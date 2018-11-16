@@ -47,16 +47,17 @@ class SNAILValue(Value):
 
     def forward(self, x, keep=True):
         # not_zero = x.sum()
-        if len(self.past.size()) == 0 > 0:
+        if self.past.size()[0] == 0:
             x = x
         elif self.past.shape[0] >= self.N:
-            x = torch.cat((self.past[1:(self.N), :, :], x))
+            x = torch.cat((self.past[1:self.N, :, :], x))
         else:
             x = torch.cat((self.past, x))
         # if keep and not_zero > 0:
         if keep:
             self.past = x
-        x = torch.cat((torch.FloatTensor(self.N - x.shape[0], x.shape[1], x.shape[2]).zero_(), x))
+        if x.shape[0] < self.N:
+            x = torch.cat((torch.FloatTensor(self.N - x.shape[0], x.shape[1], x.shape[2]).zero_(), x))
         x = self.encoder(x)
         x = self.value_encoder(x)
         x = self.tc_1(x)
