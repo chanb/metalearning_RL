@@ -78,15 +78,16 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
         task_total_states = []
         task_total_actions = []
         
-        print(
-          "Task {} ==========================================================================================================".format(
-            task))
-        env = gym.make(rl_category)
+        if(task % 100 == 0):
+            print(
+              "Task {} ==========================================================================================================".format(
+                task))
+            env = gym.make(rl_category)
 
         # PPO (Using actor critic style)
         for traj in range(max_num_traj):
-            if (traj % 5 == 0):
-                print("Trajectory {}".format(traj))
+            # if (traj % 5 == 0):
+            #print("Trajectory {}".format(traj))
             state = env.reset()
             reward = 0.
             action = -1
@@ -159,7 +160,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
             states = torch.cat(states)
             actions = torch.cat(actions)
             advantage = returns - values
-            print("advantage: {} returns: {} values: {}".format(advantage, returns, values))
+            #print("advantage: {} returns: {} values: {}".format(advantage, returns, values))
 
             task_total_rewards.append(sum(rewards))
             task_total_states.append(states)
