@@ -22,7 +22,6 @@ def ppo_iter(mini_batch_size, states, actions, log_probs, returns, advantages):
     batch_size = states.size(0)
     for _ in range(batch_size // mini_batch_size):
         rand_ids = np.random.randint(0, batch_size, mini_batch_size)
-        # print('OUTPUT:\n{}\n{}\n{}\n{}'.format(states, actions, log_probs, returns, advantages))
         yield states[rand_ids, :], actions[rand_ids, :], log_probs[rand_ids, :], returns[rand_ids, :], \
               advantages[rand_ids, :]
 
@@ -78,16 +77,16 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
         task_total_states = []
         task_total_actions = []
         
-        if(task % 100 == 0):
+        if(task % 10 == 0):
             print(
               "Task {} ==========================================================================================================".format(
                 task))
-            env = gym.make(rl_category)
+        env = gym.make(rl_category)
 
         # PPO (Using actor critic style)
         for traj in range(max_num_traj):
-            # if (traj % 5 == 0):
-            #print("Trajectory {}".format(traj))
+            if (traj % 10 == 0):
+                print("Trajectory {}".format(traj))
             state = env.reset()
             reward = 0.
             action = -1
@@ -121,11 +120,11 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 states.append(state)
 
                 dist, value = model(state)
-                
+                print('dist: {}'.format(dist))
                     
                 m = Categorical(dist)
                 action = m.sample()
-                #print('dist: {}\n value: {}\naction: {} state: {}'.format(dist, value, action, state))
+                
                 log_prob = m.log_prob(action)
                 state, reward, done, _ = env.step(action.item())
 
@@ -162,7 +161,6 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
             states = torch.cat(states)
             actions = torch.cat(actions)
             advantage = returns - values
-            #print("advantage: {} returns: {} values: {}".format(advantage, returns, values))
 
             task_total_rewards.append(sum(rewards))
             task_total_states.append(states)

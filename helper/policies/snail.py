@@ -44,16 +44,20 @@ class SNAILPolicy(Policy):
 
 
     def forward(self, x, keep=True):
+        # not_zero = x.sum()
+        # print(x.sum())
         if len(self.past.size()) == 0 > 0:
             x = x
         elif self.past.shape[0] >= self.N:
-            x = torch.cat((self.past[1:(self.N-1), :, :], x))
+            x = torch.cat((self.past[1:(self.N), :, :], x))
         else:
             x = torch.cat((self.past, x))
+        # if keep and not_zero > 0:
         if keep:
             self.past = x
-#            print(self.past)
+            # print(self.past)
         x = torch.cat((torch.FloatTensor(self.N - x.shape[0], x.shape[1], x.shape[2]).zero_(), x))
+        # print(x)
         x = self.encoder(x) # result: traj_len x 32
         x = self.tc_1(x)
         x = self.tc_2(x)
