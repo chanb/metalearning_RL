@@ -22,6 +22,7 @@ def ppo_iter(mini_batch_size, states, actions, log_probs, returns, advantages):
     batch_size = states.size(0)
     for _ in range(batch_size // mini_batch_size):
         rand_ids = np.random.randint(0, batch_size, mini_batch_size)
+        print('OUTPUT:\n{}\n{}\n{}\n{}'.format(states, actions, log_probs, returns, advantages))
         yield states[rand_ids, :], actions[rand_ids, :], log_probs[rand_ids, :], returns[rand_ids, :], advantages[
                                                                                                        rand_ids, :]
 
@@ -124,6 +125,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                     dist, value = model(state)
                 m = Categorical(dist)
                 action = m.sample()
+                print('action: {}'.format(action))
 
                 log_prob = m.log_prob(action)
                 state, reward, done, _ = env.step(action.item())
@@ -152,7 +154,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
             state = torch.from_numpy(state).float().unsqueeze(0)
             if model.is_recurrent:
-                done_entry = torch.tensor([[0]]).float()
+                done_entry = torch.tensor([[done]]).float()
                 reward_entry = torch.tensor([[reward]]).float()
                 action_vector = torch.FloatTensor(num_actions)
                 action_vector.zero_()
