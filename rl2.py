@@ -43,9 +43,9 @@ args = parser.parse_args()
 
 eps = np.finfo(np.float32).eps.item()
 out_folder = './saves/rl2'
-out_model = '{}/{}_{}.pt'.format(out_folder, args.algo, args.task)
+out_model = '{}/{}_{}_{}_{}.pt'.format(out_folder, args.algo, args.task, args.num_actions, args.max_num_traj)
 result_folder = './logs/rl2'
-out_result = '{}/{}_{}.pkl'.format(result_folder, args.algo, args.task)
+out_result = '{}/{}_{}_{}_{}.pkl'.format(result_folder, args.algo, args.task, args.num_actions, args.max_num_traj)
 
 def meta_train():
     task = ''
