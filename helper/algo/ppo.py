@@ -56,9 +56,9 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
             # Take negative because we're doing gradient descent
             loss = actor_loss - 0.5 * critic_loss + 0.001 * entropy
 
-            # if (evaluate):
-            #     print("ret: {} val: {}".format(ret, value))
-            #     print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), entropy, loss.squeeze().data.item()))
+            if (evaluate):
+                 print("ret: {} val: {}".format(ret, value))
+                 print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), entropy, loss.squeeze().data.item()))
 
             optimizer.zero_grad()
             loss.backward(retain_graph=model.is_recurrent)
@@ -121,9 +121,11 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 states.append(state)
 
                 dist, value = model(state)
+                
                     
                 m = Categorical(dist)
                 action = m.sample()
+                #print('dist: {}\n value: {}\naction: {} state: {}'.format(dist, value, action, state))
                 log_prob = m.log_prob(action)
                 state, reward, done, _ = env.step(action.item())
 

@@ -52,6 +52,7 @@ class SNAILPolicy(Policy):
             x = torch.cat((self.past, x))
         if keep:
             self.past = x
+#            print(self.past)
         x = torch.cat((torch.FloatTensor(self.N - x.shape[0], x.shape[1], x.shape[2]).zero_(), x))
         x = self.encoder(x) # result: traj_len x 32
         x = self.tc_1(x)

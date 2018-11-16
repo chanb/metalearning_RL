@@ -76,7 +76,7 @@ def meta_train():
                                    args.max_traj_len,
                                    args.gamma)
     elif args.algo == 'ppo':
-        model = SNAILActorCritic(output_size=num_actions, traj_len=args.max_num_traj*args.max_traj_len, encoder=fcn)
+        model = SNAILActorCritic(output_size=num_actions, traj_len=args.max_num_traj*args.max_traj_len, encoder=fcn, non_linearity='sigmoid')
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
         _, _, _, model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
                              args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau, args.clip_param, is_snail=True)
@@ -148,6 +148,8 @@ def evaluate_model(eval_model):
                                                                                           experience[
                                                                                               num_states + num_actions],
                                                                                           experience[-1]))
+    print(all_actions)
+    print(all_rewards)
 
 
 if __name__ == '__main__':
