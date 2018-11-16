@@ -39,7 +39,21 @@ class SNAILPolicy(Policy):
 
         self.affine_2 = nn.Linear(num_channels, self.K)
 
-    def forward(self, observations, actions, rewards):
+        self.observations = np.array([])
+        self.actions = np.array([])
+        self.rewards = np.array([])
+
+
+    def forward(self, state, action, reward, done, keep=True):
+        if self.observations.size == 0:
+            observations = np.array([[state[0], done]])
+        else:
+            observations = np.stack((self.observations, np.array([[state[0], done]])),
+                                         axis=0)
+        if action != -1:
+            actions = np.append(self.actions, action.item())
+            rewards = np.append(self.rewards, reward)
+
         # observations: 2-dim array with nobs x 2 (state, done)
         # actions: array with nobs elements
         # rewards: array with nobs element
@@ -61,4 +75,15 @@ class SNAILPolicy(Policy):
         x = self.affine_2(x)
         x = x[self.N-1, :, :] # pick_last_action
         res1 = F.softmax(x, dim=1)
+
+        if keep:
+            self.observations = observations
+            self.actions = actions
+            self.rewards = rewards
+
         return res1
+
+    def reset_hidden_state(self):
+        self.observations = np.array([])
+        self.actions = np.array([])
+        self.rewards = np.array([])
