@@ -31,7 +31,7 @@ class SNAILValue(Value):
         self.attention_1 = AttentionBlock(num_channels, hidden_size, hidden_size)
         num_channels += hidden_size
 
-        self.affine_2 = nn.Linear(num_channels, self.K)
+        self.affine_2 = nn.Linear(num_channels, 1)
 
         if non_linearity == 'sigmoid':
             self.non_linearity = nn.Sigmoid()
@@ -68,4 +68,4 @@ class SNAILValue(Value):
         x = x[self.N-1, :, :].squeeze()  # pick_last_action
         if (self.non_linearity):
             x = self.non_linearity(x)
-        return x
+        return x.unsqueeze(0).unsqueeze(0)

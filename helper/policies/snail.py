@@ -60,5 +60,5 @@ class SNAILPolicy(Policy):
         x = self.attention_1(x)
         x = self.affine_2(x)
         x = x[self.N-1, :, :] # pick_last_action
-        res1 = F.softmax(x.squeeze(), dim=0)
+        res1 = F.softmax(x, dim=1)
         return res1
