@@ -1,1 +1,2 @@
-from .gru_actor_critic import GRUActorCritic
+from .gru import GRUActorCritic
+from .snail import SNAILActorCritic

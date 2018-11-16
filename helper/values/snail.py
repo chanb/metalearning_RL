@@ -1,22 +1,14 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from helper.policies.policy import Policy
+from helper.values.value import Value
 from helper.snail_blocks import *
 
-class LinearEmbedding(Policy):
-    def __init__(self, input_size=1, output_size=32):
-        super(LinearEmbedding, self).__init__(input_size, output_size)
-        self.fcn = nn.Linear(input_size, output_size)
 
-    def forward(self, x):
-        return self.fcn(x)
-
-
-class SNAILPolicy(Policy):
+class SNAILValue(Value):
     # K arms, trajectory of length N
-    def __init__(self, output_size, traj_len, encoder, input_size=1, hidden_size=32):
-        super(SNAILPolicy, self).__init__(input_size, output_size)
+    def __init__(self, output_size, traj_len, encoder, input_size=1, encoder_hidden_size=32, hidden_size=16, non_linearity='none'):
+        super(SNAILValue, self).__init__(output_size)
         self.K = output_size
         self.N = traj_len
         self.hidden_size = hidden_size
@@ -24,6 +16,8 @@ class SNAILPolicy(Policy):
         num_channels = 0
 
         self.encoder = encoder
+        self.value_encoder = nn.Linear(encoder_hidden_size, hidden_size)
+
         num_channels += hidden_size
 
         num_filters = int(math.floor(math.log(output_size * traj_len + 1)))
@@ -39,6 +33,15 @@ class SNAILPolicy(Policy):
 
         self.affine_2 = nn.Linear(num_channels, self.K)
 
+        if non_linearity == 'sigmoid':
+            self.non_linearity = nn.Sigmoid()
+        elif non_linearity == 'tanh':
+            self.non_linearity = nn.Tanh()
+        elif non_linearity == 'relu':
+            self.non_linearity = nn.ReLU()
+        else:
+            self.non_linearity = None
+
     def forward(self, observations, actions, rewards):
         # observations: 2-dim array with nobs x 2 (state, done)
         # actions: array with nobs elements
@@ -47,6 +50,8 @@ class SNAILPolicy(Policy):
             actions_onehot = np.eye(self.K)[actions.astype(int)] # nobs x num_action
             rewards = np.expand_dims(rewards, 1) # nobs x 1
             x = np.hstack((observations, actions_onehot, rewards))
+            print(x.shape)
+            print(self.K + 3)
             x = np.vstack((np.zeros((self.N - observations.shape[0], x.shape[1])), x)) # pad x with 0s
         else: # no actions and rewards yet
             x = np.zeros((self.N, self.K + 3))
@@ -54,11 +59,13 @@ class SNAILPolicy(Policy):
                 x[self.N-1, 1:2] = observations[0, :]
         x = torch.from_numpy(x).float()
         x = self.encoder(x) # result: traj_len x 32
-        x = x.unsqueeze(1) # add a new dimension at the second dim
+        x = self.value_encoder(x) #result traj:len x 16
+        x = x.unsqueeze(1)  # add a new dimension at the second dim
         x = self.tc_1(x)
         x = self.tc_2(x)
         x = self.attention_1(x)
         x = self.affine_2(x)
-        x = x[self.N-1, :, :] # pick_last_action
-        res1 = F.softmax(x.squeeze(), dim=0)
-        return res1
+        x = x[self.N-1, :, :].squeeze()  # pick_last_action
+        if (self.non_linearity):
+            x = self.non_linearity(x)
+        return x

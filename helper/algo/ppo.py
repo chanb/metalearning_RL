@@ -61,7 +61,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
 
 # Attempt to modify policy so it doesn't go too far
-def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size, gamma, tau, clip_param, evaluate=False):
+def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size, gamma, tau, clip_param, evaluate=False, is_snail=False):
     all_rewards = []
     all_states = []
     all_actions = []
@@ -95,6 +95,11 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
             masks = []
             entropy = 0
 
+            if is_snail: # variables to keep snail inputs
+                snail_observations = np.array([])
+                snail_actions = np.array([])
+                snail_rewards = np.array([])
+
             for horizon in range(max_traj_len):
                 state = torch.from_numpy(state).float().unsqueeze(0)
 
@@ -113,12 +118,14 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
                 states.append(state)
 
-                dist, value = model(state)
+                if is_snail:
+                    dist, value = model(snail_observations, snail_actions, snail_rewards)
+                else:
+                    dist, value = model(state)
                 m = Categorical(dist)
                 action = m.sample()
 
                 log_prob = m.log_prob(action)
-
                 state, reward, done, _ = env.step(action.item())
 
                 done = int(done)
@@ -130,6 +137,15 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 values.append(value)
                 rewards.append(reward)
                 masks.append(1 - done)
+
+                if is_snail:
+                    if snail_observations.size == 0:
+                        snail_observations = np.array([[state[0], done]])
+                    else:
+                        snail_observations = np.stack((snail_observations, np.array([[state[0], done]])),
+                                                      axis=0)
+                    snail_actions = np.append(snail_actions, action.item())
+                    snail_rewards = np.append(snail_rewards, reward)
 
                 if (done):
                     break
@@ -145,7 +161,10 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
                 state = state.unsqueeze(0)
 
-            _, next_val = model(state)
+            if is_snail:
+                _, next_val = model(snail_observations, snail_actions, snail_rewards)
+            else:
+                _, next_val = model(state)
 
             returns = compute_gae(next_val, rewards, masks, values, gamma, tau)
             returns = torch.cat(returns)

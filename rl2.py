@@ -34,7 +34,7 @@ parser.add_argument('--task', type=str, default='bandit', help='the task to lear
 
 parser.add_argument('--max_num_traj_eval', type=int, default=1000, help='maximum number of trajectories during evaluation (default: 1000)')
 parser.add_argument('--clip_param', type=float, default=0.2, help='clipping parameter for PPO (default: 0.2)')
-parser.add_argument('--eval', type=int, default=1, help='do evaulation only (default: 1)')
+parser.add_argument('--eval', type=int, default=1, help='do evaluation only (default: 1)')
 parser.add_argument('--non_linearity', help='non linearity function following last output layer')
 
 parser.add_argument('--eval_model', help='the model to evaluate')
