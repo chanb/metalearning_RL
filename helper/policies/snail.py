@@ -39,51 +39,28 @@ class SNAILPolicy(Policy):
 
         self.affine_2 = nn.Linear(num_channels, self.K)
 
-        self.observations = np.array([])
-        self.actions = np.array([])
-        self.rewards = np.array([])
+        # Keep past information
+        self.past = torch.FloatTensor()
 
 
-    def forward(self, state, action, reward, done, keep=True):
-        if self.observations.size == 0:
-            observations = np.array([[state[0], done]])
+    def forward(self, x, keep=True):
+        if len(self.past.size()) == 0 > 0:
+            x = x
+        elif self.past.shape[0] >= self.N:
+            x = torch.cat((self.past[1:(self.N-1), :, :], x))
         else:
-            observations = np.stack((self.observations, np.array([[state[0], done]])),
-                                         axis=0)
-        if action != -1:
-            actions = np.append(self.actions, action.item())
-            rewards = np.append(self.rewards, reward)
-
-        # observations: 2-dim array with nobs x 2 (state, done)
-        # actions: array with nobs elements
-        # rewards: array with nobs element
-        if actions.size > 0:
-            actions_onehot = np.eye(self.K)[actions.astype(int)] # nobs x num_action
-            rewards = np.expand_dims(rewards, 1) # nobs x 1
-            x = np.hstack((observations, actions_onehot, rewards))
-            x = np.vstack((np.zeros((self.N - observations.shape[0], x.shape[1])), x)) # pad x with 0s
-        else: # no actions and rewards yet
-            x = np.zeros((self.N, self.K + 3))
-            if observations.size > 0: # if we already observe the first state
-                x[self.N-1, 1:2] = observations[0, :]
-        x = torch.from_numpy(x).float()
+            x = torch.cat((self.past, x))
+        if keep:
+            self.past = x
+        x = torch.cat((torch.FloatTensor(self.N - x.shape[0], x.shape[1], x.shape[2]).zero_(), x))
         x = self.encoder(x) # result: traj_len x 32
-        x = x.unsqueeze(1) # add a new dimension at the second dim
         x = self.tc_1(x)
         x = self.tc_2(x)
         x = self.attention_1(x)
         x = self.affine_2(x)
         x = x[self.N-1, :, :] # pick_last_action
         res1 = F.softmax(x, dim=1)
-
-        if keep:
-            self.observations = observations
-            self.actions = actions
-            self.rewards = rewards
-
         return res1
 
     def reset_hidden_state(self):
-        self.observations = np.array([])
-        self.actions = np.array([])
-        self.rewards = np.array([])
+        self.past = torch.FloatTensor()

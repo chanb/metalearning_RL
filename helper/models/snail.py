@@ -10,13 +10,13 @@ class SNAILActorCritic(nn.Module):
     def __init__(self, output_size, traj_len, encoder, input_size=1, policy_hidden_size=32, value_hidden_size=16):
         super(SNAILActorCritic, self).__init__()
         self.is_recurrent = True
-        self.critic = SNAILValue(output_size=1, traj_len=traj_len, encoder=encoder,
+        self.critic = SNAILValue(output_size=output_size, traj_len=traj_len, encoder=encoder,
                                  encoder_hidden_size=policy_hidden_size, hidden_size=value_hidden_size)
         self.actor = SNAILPolicy(output_size=output_size, traj_len=traj_len, encoder=encoder, hidden_size=policy_hidden_size)
 
-    def forward(self, state, action, reward, done):
-        val = self.critic(state, action, reward, done)
-        mu = self.actor(state, action, reward, done)
+    def forward(self, x, keep=True):
+        val = self.critic(x, keep)
+        mu = self.actor(x, keep)
         return mu, val
 
     def reset_hidden_state(self):
