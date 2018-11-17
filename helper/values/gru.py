@@ -24,9 +24,10 @@ class GRUValue(Value):
         self.prev_state = init_state
         self.apply(weight_init)
 
-    def forward(self, x):
+    def forward(self, x, keep=True):
         x, h = self.gru(x, self.prev_state)
-        self.prev_state = h
+        if not keep:
+            self.prev_state = h
         x = self.relu1(x)
         x = self.value(x)
         if (self.non_linearity):

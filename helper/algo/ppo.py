@@ -27,15 +27,13 @@ def ppo_iter(mini_batch_size, states, actions, log_probs, returns, advantages):
 
 
 def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantages,
-               clip_param=0.2, evaluate=False, is_snail=False):
+               clip_param=0.2, evaluate=False):
     # Use Clipping Surrogate Objective to update
     for i in range(ppo_epochs):
         for state, action, log_prob, ret, advantage in ppo_iter(mini_batch_size, states, actions, log_probs, returns,
                                                                 advantages):
-            if is_snail:
-                dist, value = model(state, keep=False)
-            else:
-                dist, value = model(state)
+            
+            dist, value = model(state, keep=False)
 
             m = Categorical(dist)
             entropy = m.entropy().mean()
@@ -55,9 +53,9 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
             # Take negative because we're doing gradient descent
             loss = -(actor_loss - 0.5 * critic_loss + 0.001 * entropy)
 
-            # if (evaluate):
-            #      print("ret: {} val: {}".format(ret, value))
-            #      print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), entropy, loss.squeeze().data.item()))
+            if (evaluate):
+                 print("ret: {} val: {}".format(ret, value))
+                 print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), entropy, loss.squeeze().data.item()))
 
             optimizer.zero_grad()
             loss.backward(retain_graph=model.is_recurrent)
@@ -66,7 +64,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
 # Attempt to modify policy so it doesn't go too far
 def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size,
-        gamma, tau, clip_param, evaluate=False, is_snail=False):
+        gamma, tau, clip_param, evaluate=False):
     all_rewards = []
     all_states = []
     all_actions = []
@@ -120,7 +118,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 states.append(state)
 
                 dist, value = model(state)
-                # print('dist: {}'.format(dist))
+                print('dist: {}'.format(dist))
                     
                 m = Categorical(dist)
                 action = m.sample()
@@ -168,7 +166,7 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
 
             # This is where we compute loss and update the model
             ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage
-                       , clip_param=clip_param, evaluate=evaluate, is_snail=is_snail)
+                       , clip_param=clip_param, evaluate=evaluate)
         
         all_rewards.append(task_total_rewards)
         all_states.append(task_total_states)

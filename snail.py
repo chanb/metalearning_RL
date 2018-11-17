@@ -79,7 +79,7 @@ def meta_train():
         model = SNAILActorCritic(output_size=num_actions, traj_len=args.max_num_traj*args.max_traj_len, encoder=fcn, non_linearity=non_linearity)
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
         _, _, _, model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
-                             args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau, args.clip_param, is_snail=True)
+                             args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau, args.clip_param)
     else:
         print('Invalid learning algorithm')
 
@@ -123,7 +123,7 @@ def evaluate_model(eval_model):
         all_rewards, all_states, all_actions, _ = ppo(model, optimizer, task, num_actions, 1, args.max_num_traj_eval,
                                                       args.max_traj_len,
                                                       args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau,
-                                                      args.clip_param, evaluate=True, is_snail=True)
+                                                      args.clip_param, evaluate=True)
     else:
         print('Invalid learning algorithm')
 

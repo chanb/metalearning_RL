@@ -75,8 +75,8 @@ def meta_train():
     elif args.algo == 'ppo':
         # model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 4)
         model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 2 + num_states + num_actions, non_linearity=non_linearity)
-        optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-        # optimizer = optim.SGD(model.parameters(), lr=args.learning_rate)
+        # optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+        optimizer = optim.SGD(model.parameters(), lr=args.learning_rate)
         _, _, _, model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
             args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau, args.clip_param)
     else:
@@ -132,7 +132,7 @@ def evaluate_model(eval_model):
     for traj in all_states[0]:
         idx += 1
         curr_traj = traj
-        print('traj {} (length: {}) reward {} actions_made {}: '.format(idx, len(traj), all_rewards[0][idx - 1], all_actions[0][0]))
+        print('traj {} (length: {}) reward {} actions_made {}: '.format(idx, len(traj), all_rewards[0][idx - 1], all_actions[0]))
         if (args.algo == 'ppo'):
             curr_traj = traj.squeeze(1)
             for experience in curr_traj:

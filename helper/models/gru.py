@@ -16,9 +16,9 @@ class GRUActorCritic(nn.Module):
         self.log_std = nn.Parameter(torch.ones(1, output_size) * std)
         self.is_recurrent = True
 
-    def forward(self, x):
-        val = self.critic(x)
-        mu = self.actor(x)
+    def forward(self, x, keep=True):
+        val = self.critic(x, keep)
+        mu = self.actor(x, keep)
         return mu, val
 
     def reset_hidden_state(self):
