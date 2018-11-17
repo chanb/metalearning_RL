@@ -68,7 +68,7 @@ def meta_train():
     if (args.non_linearity):
         non_linearity = args.non_linearity
 
-    fcn = LinearEmbedding(input_size=3+num_actions, output_size=32)
+    fcn = LinearEmbedding(input_size=2 + num_states + num_actions, output_size=32)
     if args.algo == 'reinforce':
         policy = SNAILPolicy(output_size=num_actions, traj_len=args.max_num_traj*args.max_traj_len, encoder=fcn)
         optimizer = optim.SGD(policy.parameters(), lr=args.learning_rate)
