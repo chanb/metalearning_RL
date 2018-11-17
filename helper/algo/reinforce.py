@@ -6,18 +6,6 @@ import torch
 import torch.optim as optim
 from torch.distributions import Categorical
 
-def select_action(policy, state, traj):
-    state = torch.from_numpy(state).float().unsqueeze(0)
-
-    if policy.is_recurrent:
-        state = state.unsqueeze(0)
-
-    probs = policy(state)
-    m = Categorical(probs)
-    action = m.sample()
-    policy.saved_log_probs.append(m.log_prob(action))
-    return action.item()
-
 
 def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, discount_factor):
     # TODO: Add randomize number of trajectories to run
@@ -40,12 +28,35 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
             if (traj % 50 == 0):
                 print("Trajectory {}".format(traj))
             state = env.reset()
+            reward = 0.
+            action = -1
+            done = 0
 
             rewards = []
             actions = []
             states = []
             for horizon in range(max_traj_len):
-                action = select_action(policy, state, traj)
+                state = torch.from_numpy(state).float().unsqueeze(0)
+
+                if policy.is_recurrent:
+                    done_entry = torch.tensor([[done]]).float()
+                    reward_entry = torch.tensor([[reward]]).float()
+                    action_vector = torch.FloatTensor(num_actions)
+                    action_vector.zero_()
+                    if (action > -1):
+                        action_vector[action] = 1
+                    
+                    action_vector = action_vector.unsqueeze(0)
+                    
+                    state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
+                    state = state.unsqueeze(0)
+
+                probs = policy(state)
+                m = Categorical(probs)
+                action = m.sample()
+                policy.saved_log_probs.append(m.log_prob(action))
+                
+                action = action.item()
                 state, reward, done, info = env.step(action)
 
                 actions.append(action)

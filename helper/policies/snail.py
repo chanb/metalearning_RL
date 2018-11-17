@@ -20,6 +20,7 @@ class SNAILPolicy(Policy):
         self.K = output_size
         self.N = traj_len
         self.hidden_size = hidden_size
+        self.is_recurrent = True
 
         num_channels = 0
 
