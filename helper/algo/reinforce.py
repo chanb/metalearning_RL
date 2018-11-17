@@ -50,7 +50,7 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
                     
                     state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
                     state = state.unsqueeze(0)
-
+                
                 probs = policy(state)
                 m = Categorical(probs)
                 action = m.sample()

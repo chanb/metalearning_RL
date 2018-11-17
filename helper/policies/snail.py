@@ -15,24 +15,23 @@ class LinearEmbedding(Policy):
 
 class SNAILPolicy(Policy):
     # K arms, trajectory of length N
-    def __init__(self, output_size, traj_len, encoder, input_size=1, hidden_size=32):
+    def __init__(self, output_size, total_traj_len, encoder, input_size=1, hidden_size=32):
         super(SNAILPolicy, self).__init__(input_size, output_size)
         self.K = output_size
-        self.N = traj_len
+        self.T = total_traj_len
         self.hidden_size = hidden_size
         self.is_recurrent = True
-
         num_channels = 0
 
         self.encoder = encoder
         num_channels += hidden_size
 
-        num_filters = int(math.floor(math.log(output_size * traj_len + 1)))
+        num_filters = int(math.floor(math.log(output_size * total_traj_len + 1)))
 
-        self.tc_1 = TCBlock(num_channels, self.N, hidden_size)
+        self.tc_1 = TCBlock(num_channels, self.T, hidden_size)
         num_channels += num_filters * hidden_size
 
-        self.tc_2 = TCBlock(num_channels, self.N, hidden_size)
+        self.tc_2 = TCBlock(num_channels, self.T, hidden_size)
         num_channels += num_filters * hidden_size
 
         self.attention_1 = AttentionBlock(num_channels, hidden_size, hidden_size)
@@ -49,22 +48,22 @@ class SNAILPolicy(Policy):
         # print(x.sum())
         if self.past.size()[0] == 0:
             x = x
-        elif self.past.shape[0] >= self.N:
-            x = torch.cat((self.past[1:(self.N), :, :], x))
+        elif self.past.shape[0] >= self.T:
+            x = torch.cat((self.past[1:(self.T), :, :], x))
         else:
             x = torch.cat((self.past, x))
         # if keep and not_zero > 0:
         if keep:
             self.past = x
             # print(self.past)
-        x = torch.cat((torch.FloatTensor(self.N - x.shape[0], x.shape[1], x.shape[2]).zero_(), x))
+        x = torch.cat((torch.FloatTensor(self.T - x.shape[0], x.shape[1], x.shape[2]).zero_(), x))
         # print(x)
         x = self.encoder(x) # result: traj_len x 32
         x = self.tc_1(x)
         x = self.tc_2(x)
         x = self.attention_1(x)
         x = self.affine_2(x)
-        x = x[self.N-1, :, :] # pick_last_action
+        x = x[self.T-1, :, :] # pick_last_action
         res1 = F.softmax(x, dim=1)
         return res1
 
