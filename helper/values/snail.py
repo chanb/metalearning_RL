@@ -7,10 +7,10 @@ from helper.snail_blocks import *
 
 class SNAILValue(Value):
     # K arms, trajectory of length N
-    def __init__(self, output_size, total_traj_len, encoder, input_size=1, encoder_hidden_size=32, hidden_size=16, non_linearity='none'):
+    def __init__(self, output_size, max_num_traj, max_traj_len, encoder, input_size=1, encoder_hidden_size=32, hidden_size=16, non_linearity='none'):
         super(SNAILValue, self).__init__(output_size)
         self.K = output_size
-        self.T = total_traj_len
+        self.T = max_num_traj * max_traj_len
         self.hidden_size = hidden_size
 
         num_channels = 0
@@ -20,7 +20,7 @@ class SNAILValue(Value):
 
         num_channels += hidden_size
 
-        num_filters = int(math.floor(math.log(output_size * total_traj_len + 1)))
+        num_filters = int(math.floor(math.log(max_num_traj * max_traj_len)))
 
         self.tc_1 = TCBlock(num_channels, self.T, hidden_size)
         num_channels += num_filters * hidden_size

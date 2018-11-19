@@ -70,13 +70,13 @@ def meta_train():
 
     fcn = LinearEmbedding(input_size=2 + num_states + num_actions, output_size=32)
     if args.algo == 'reinforce':
-        policy = SNAILPolicy(output_size=num_actions, total_traj_len=args.max_num_traj*args.max_traj_len, encoder=fcn)
+        policy = SNAILPolicy(num_actions, args.max_num_traj, args.max_traj_len, fcn)
         optimizer = optim.SGD(policy.parameters(), lr=args.learning_rate)
         _, _, _, model = reinforce(policy, optimizer, task, num_actions, args.num_tasks, args.max_num_traj,
                                    args.max_traj_len,
                                    args.gamma)
     elif args.algo == 'ppo':
-        model = SNAILActorCritic(output_size=num_actions, total_traj_len=args.max_num_traj*args.max_traj_len, encoder=fcn, non_linearity=non_linearity)
+        model = SNAILActorCritic(num_actions, args.max_num_traj, args.max_traj_len, fcn, non_linearity=non_linearity)
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
         _, _, _, model = ppo(model, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
                              args.ppo_epochs, args.mini_batch_size, args.gamma, args.tau, args.clip_param)

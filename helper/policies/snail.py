@@ -15,10 +15,10 @@ class LinearEmbedding(Policy):
 
 class SNAILPolicy(Policy):
     # K arms, trajectory of length N
-    def __init__(self, output_size, total_traj_len, encoder, input_size=1, hidden_size=32):
+    def __init__(self, output_size, max_num_traj, max_traj_len, encoder, input_size=1, hidden_size=32, num_traj=1):
         super(SNAILPolicy, self).__init__(input_size, output_size)
         self.K = output_size
-        self.T = total_traj_len
+        self.T = max_num_traj * max_traj_len
         self.hidden_size = hidden_size
         self.is_recurrent = True
         num_channels = 0
@@ -26,7 +26,7 @@ class SNAILPolicy(Policy):
         self.encoder = encoder
         num_channels += hidden_size
 
-        num_filters = int(math.floor(math.log(output_size * total_traj_len + 1)))
+        num_filters = int(math.ceil(math.log(max_num_traj * max_traj_len)))
 
         self.tc_1 = TCBlock(num_channels, self.T, hidden_size)
         num_channels += num_filters * hidden_size
