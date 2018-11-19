@@ -50,7 +50,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            loss = -actor_loss + 0.5 * critic_loss - 0.01 * entropy
+            loss = -actor_loss + 0.5 * critic_loss - 0.001 * entropy
 
             if (i == 0 and evaluate):
                 print("ret: {} val: {}".format(ret, value))
@@ -74,16 +74,16 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
         task_total_states = []
         task_total_actions = []
         
-        if(task % 10 == 0):
+        if((task + 1) % 10 == 0):
             print(
               "Task {} ==========================================================================================================".format(
-                task))
+                task + 1))
         env = gym.make(rl_category)
 
         # PPO (Using actor critic style)
         for traj in range(max_num_traj):
-            if (traj % 10 == 0):
-                print("Trajectory {}".format(traj))
+            if ((traj + 1) % 10 == 0):
+                print("Trajectory {}".format(traj + 1))
             state = env.reset()
             reward = 0.
             action = -1
@@ -116,7 +116,8 @@ def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max
                 states.append(state)
 
                 dist, value = model(state)
-                print('dist: {}'.format(dist))
+                if (evaluate):
+                    print('dist: {}'.format(dist))
                     
                 m = Categorical(dist)
                 action = m.sample()
