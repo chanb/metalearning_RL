@@ -86,6 +86,7 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
 
             optimizer.zero_grad()
             policy_loss = torch.cat(policy_loss).sum()
+            print("actions: {} rewards: {} loss: {}\n".format(actions, rewards, policy_loss))
             
             policy_loss.backward(retain_graph=policy.is_recurrent)
             optimizer.step()

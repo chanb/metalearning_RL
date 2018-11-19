@@ -26,7 +26,7 @@ class GRUValue(Value):
 
     def forward(self, x, keep=True):
         x, h = self.gru(x, self.prev_state)
-        if not keep:
+        if keep:
             self.prev_state = h
         x = self.relu1(x)
         x = self.value(x)

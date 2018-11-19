@@ -9,3 +9,6 @@ Testing 5-armed-bandit with PPO (using specific saved model): python rl2.py --ma
 Testing 5-armed-bandit with REINFORCE (using specific saved model): python rl2.py --max_num_traj_eval 500 --learning_rate 0.001 --algo reinforce --max_traj_len 1 --task bandit --num_actions 5 --eval 1 --eval_model ./saves/rl2/reinforce_bandit_5.pt
 
 Testing MDP with PPO (using specific saved model): python rl2.py --max_num_traj_eval 300 --learning_rate 0.001 --algo ppo --ppo_epochs 2 --clip_param 0.2 --tau 0.3 --max_traj_len 10 --task mdp --eval 1 --eval_model ./saves/rl2/ppo_mdp_default.pt
+
+
+0.01 LEARNING RATE BETTER FOR PPO?

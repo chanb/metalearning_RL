@@ -29,7 +29,6 @@ def ppo_iter(mini_batch_size, states, actions, log_probs, returns, advantages):
 def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantages,
                clip_param=0.2, evaluate=False):
     # Use Clipping Surrogate Objective to update
-    not_print = True
     for i in range(ppo_epochs):
         for state, action, log_prob, ret, advantage in ppo_iter(mini_batch_size, states, actions, log_probs, returns,
                                                                 advantages):
@@ -51,10 +50,9 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            loss = - actor_loss + 0.5 * critic_loss - 0.001 * entropy
+            loss = -actor_loss + 0.5 * critic_loss - 0.01 * entropy
 
-            if (not_print and evaluate):
-                not_print = False
+            if (i == 0 and evaluate):
                 print("ret: {} val: {}".format(ret, value))
                 print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), entropy, loss.squeeze().data.item()))
 
