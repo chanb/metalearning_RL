@@ -4,6 +4,7 @@ import argparse
 import helper.envs
 import torch
 import torch.optim as optim
+import torch.nn.functional as F
 from torch.distributions import Categorical
 
 # Computes the advantage where lambda = tau
@@ -30,35 +31,39 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
                clip_param=0.2, evaluate=False):
     # Use Clipping Surrogate Objective to update
     for i in range(ppo_epochs):
-        for state, action, log_prob, ret, advantage in ppo_iter(mini_batch_size, states, actions, log_probs, returns,
+        model.zero_grad()
+        for state, action, old_log_probs, ret, advantage in ppo_iter(mini_batch_size, states, actions, log_probs, returns,
                                                                 advantages):
+            
             dist, value = model(state, keep=False)
-
             m = Categorical(dist)
             entropy = m.entropy().mean()
             new_log_probs = m.log_prob(action)
 
-            ratio = (new_log_probs - log_probs).exp()
+            ratio = (new_log_probs - old_log_probs).exp()
             
             surr_1 = ratio * advantage
             surr_2 = torch.clamp(ratio, 1.0 - clip_param, 1.0 + clip_param) * advantage
 
             # Clipped Surrogate Objective Loss
-            actor_loss = torch.min(surr_1, surr_2).mean()
-            # Squared Loss Function
-            critic_loss = (ret - value).pow(2).mean()
+            actor_loss = -torch.min(surr_1, surr_2).mean()
+
+            # Mean Squared Error Loss Function
+            critic_loss = F.mse_loss(ret, value)
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            loss = -actor_loss + 0.5 * critic_loss - 0.001 * entropy
-
-            if (i == 0 and evaluate):
-                print("ret: {} val: {}".format(ret, value))
-                print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), entropy, loss.squeeze().data.item()))
+            loss = -(0.5 * critic_loss + actor_loss) #- 0.0001 * entropy)
 
             optimizer.zero_grad()
             loss.backward(retain_graph=model.is_recurrent)
             optimizer.step()
+
+            if (evaluate):
+                print("new_log_prob: {} old_log_prob: {}".format(new_log_probs, old_log_probs))
+                print("ret: {} val: {}".format(ret, value))
+                print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), entropy, loss.squeeze().data.item()))
+
 
 
 # Attempt to modify policy so it doesn't go too far
