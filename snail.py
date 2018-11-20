@@ -39,6 +39,7 @@ parser.add_argument('--eval', type=int, default=1, help='do evaluation only (def
 parser.add_argument('--non_linearity', help='non linearity function following last output layer')
 
 parser.add_argument('--eval_model', help='the model to evaluate')
+parser.add_argument('--eval_tasks', help='the tasks to evaluate on')
 
 args = parser.parse_args()
 
@@ -92,7 +93,7 @@ def meta_train():
         torch.save(model, out_model)
 
 
-def evaluate_model(eval_model):
+def evaluate_model(eval_model, eval_tasks=None):
     to_use = out_model
     if (eval_model):
         to_use = eval_model
@@ -117,12 +118,15 @@ def evaluate_model(eval_model):
         model.reset_hidden_state()
 
     env = gym.make(task)
-    eval_tasks = env.unwrapped.sample_tasks(1)
+    tasks = env.unwrapped.sample_tasks(1)
+    if (eval_tasks):
+        with open(eval_tasks, 'rb') as f:
+            tasks = pickle.load(f)[0]
     
     if args.algo == 'reinforce':
         all_rewards, all_states, all_actions, _ = reinforce(model, optimizer, task, num_actions, 1,
                                                             args.max_num_traj_eval, args.max_traj_len,
-                                                            args.gamma, evaluate_tasks=eval_tasks)
+                                                            args.gamma, evaluate_tasks=tasks)
     elif args.algo == 'ppo':
         all_rewards, all_states, all_actions, _ = ppo(model, optimizer, task, num_actions, 1, args.max_num_traj_eval,
                                                       args.max_traj_len,
@@ -161,4 +165,4 @@ if __name__ == '__main__':
         print("TRAINING MODEL ========================================================================")
         meta_train()
     print("TESTING MODEL ========================================================================")
-    evaluate_model(args.eval_model)
+    evaluate_model(args.eval_model, args.eval_tasks)
