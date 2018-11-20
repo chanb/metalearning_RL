@@ -32,8 +32,6 @@ parser.add_argument('--mini_batch_size', type=int, default=1,
 parser.add_argument('--ppo_epochs', type=int, default=1, help='ppo epoch (default: 1)')
 parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
 
-parser.add_argument('--max_num_traj_eval', type=int, default=1000,
-                    help='maximum number of trajectories during evaluation (default: 1000)')
 parser.add_argument('--clip_param', type=float, default=0.2, help='clipping parameter for PPO (default: 0.2)')
 parser.add_argument('--non_linearity', help='non linearity function following last output layer')
 
