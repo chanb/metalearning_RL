@@ -44,7 +44,7 @@ def evaluate_model(eval_model=None, eval_tasks=None):
     to_use = eval_model
 
     model = torch.load(to_use)
-    optimizer = optim.SGD(model.parameters(), lr=args.learning_rate)
+    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
     task = ''
     if args.task == 'bandit':

@@ -22,13 +22,13 @@ with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
     all_rewards_matrix = np.cumsum(all_rewards_matrix, axis=0)
     #one_task = all_rewards_matrix[1][:]
     # computes std dev of each row
-   # reward_err = np.std(all_rewards_matrix, axis=1)
+    reward_err = np.std(all_rewards_matrix, axis=1)
     avg_reward = np.average(all_rewards_matrix, axis=1)
 
     # normalizing
     for i in range(len(avg_reward)):
         avg_reward[i] = avg_reward[i]/(i+1)
-        #reward_err[i] = reward_err[i]/(i+1)
+        reward_err[i] = reward_err[i]/(i+1)# + avg_reward[i]
 
     # plotting
     plt.plot(range(len(avg_reward)), avg_reward)
@@ -36,7 +36,8 @@ with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
     plt.xlabel('Number of Iterations')
     plt.ylabel('Total Reward')
     plt.title('Model Performance')
-    #plt.fill_between(x=range(len(avg_reward)), y1=reward_err, color = 'gray')
+    plt.fill_between(range(len(avg_reward)), avg_reward-reward_err, avg_reward+reward_err, color = 'gray')
+    # plt.errorbar(range(len(avg_reward)), avg_reward, reward_err, linestyle='None', marker='^')
     plt.show()
 
     # print(all_rewards)
