@@ -51,10 +51,10 @@ def main(args):
         writer.add_scalar('total_rewards/after_update',
                           total_rewards([ep.rewards for _, ep in episodes]), batch)
 
-        # Save policy network
-        with open(os.path.join(save_folder,
-                               '{}-{}.pt'.format(args.env_name, batch)), 'wb') as f:
-            torch.save(policy, f)
+    # Save policy network
+    with open(os.path.join(save_folder,
+                            '{}-{}.pt'.format(args.env_name, args.fast_batch_size)), 'wb') as f:
+        torch.save(policy, f)
 
 
 if __name__ == '__main__':
