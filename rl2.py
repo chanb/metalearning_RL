@@ -66,7 +66,7 @@ def meta_train():
     if args.algo == 'reinforce':
         # policy = FCNPolicy(num_actions, 1)
         policy = GRUPolicy(num_actions, torch.randn(1, 1, 256), input_size=2 + num_states + num_actions)
-        optimizer = optim.SGD(policy.parameters(), lr=args.learning_rate)
+        optimizer = optim.Adam(policy.parameters(), lr=args.learning_rate)
         _, _, _, model = reinforce(policy, optimizer, task, num_actions, args.num_tasks, args.max_num_traj, args.max_traj_len,
                   args.gamma)
     elif args.algo == 'ppo':
