@@ -19,7 +19,7 @@ with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
     all_rewards_matrix = np.array([np.array(xi) for xi in all_rewards])
     # each row now contains values for each iteration
     all_rewards_matrix = all_rewards_matrix.T
-    all_rewards_matrix = np.cumsum(all_rewards_matrix, axis=0)
+    # all_rewards_matrix = np.cumsum(all_rewards_matrix, axis=0)
     #one_task = all_rewards_matrix[1][:]
     # computes std dev of each row
     reward_err = np.std(all_rewards_matrix, axis=1)
@@ -27,7 +27,7 @@ with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
 
     # normalizing
     for i in range(len(avg_reward)):
-        avg_reward[i] = avg_reward[i]/(i+1)
+        avg_reward[i] = avg_reward[i]#/(i+1)
         reward_err[i] = reward_err[i]/(i+1)# + avg_reward[i]
 
     # plotting
