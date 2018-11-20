@@ -65,8 +65,8 @@ class SNAILPolicy(Policy):
         x = self.attention_1(x)
         x = self.affine_2(x)
         x = x[self.T-1, :, :] # pick_last_action
-        res1 = F.softmax(x, dim=1)
-        return res1
+        #res1 = F.softmax(x, dim=1)
+        return x
 
     def reset_hidden_state(self):
         self.past = torch.FloatTensor()

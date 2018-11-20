@@ -24,7 +24,8 @@ class GRUPolicy(Policy):
             self.prev_state = h
         x = self.relu1(x)
         x = self.affine(x).squeeze(0)
-        return F.softmax(x, dim=1)
+        #F.softmax(x, dim=1)
+        return x
 
     def reset_hidden_state(self):
         self.prev_state = torch.randn(1, 1, 256)
