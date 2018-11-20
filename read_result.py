@@ -36,7 +36,7 @@ with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
     plt.xlabel('Number of Iterations')
     plt.ylabel('Total Reward')
     plt.title('Model Performance')
-    plt.fill_between(range(len(avg_reward)), avg_reward-reward_err, avg_reward+reward_err, color = 'gray')
+    plt.fill_between(range(len(avg_reward)), avg_reward-reward_err, avg_reward+reward_err, color = 'blue', alpha=0.2, lw=0.001)
     # plt.errorbar(range(len(avg_reward)), avg_reward, reward_err, linestyle='None', marker='^')
     plt.show()
 
