@@ -57,7 +57,11 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
                     state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
                     state = state.unsqueeze(0)
                 
-                probs = policy(state, horizon > 0)
+                if (policy.is_recurrent):
+                    probs = policy(state, horizon > 0)
+                else:
+                    probs = policy(state)
+                    
                 m = Categorical(logits=probs)
                 action = m.sample()
                 policy.saved_log_probs.append(m.log_prob(action))

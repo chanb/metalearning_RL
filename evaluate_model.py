@@ -50,9 +50,11 @@ def evaluate_model(eval_model=None, eval_tasks=None):
     if args.task == 'bandit':
         task = "Bandit-K{}-v0".format(args.num_actions)
         num_actions = args.num_actions
+        num_states = 1
     elif args.task == 'mdp':
         task = "TabularMDP-v0"
         num_actions = 5
+        num_states = 10
     else:
         print('Invalid Task')
         return
