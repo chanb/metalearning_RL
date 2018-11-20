@@ -98,7 +98,7 @@ def evaluate_model(eval_model):
         to_use = eval_model
 
     model = torch.load(to_use)
-    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
+    optimizer = optim.SGD(model.parameters(), lr=args.learning_rate)
 
     task = ''
     if args.task == 'bandit':
@@ -115,10 +115,14 @@ def evaluate_model(eval_model):
 
     if model.is_recurrent:
         model.reset_hidden_state()
+
+    env = gym.make(task)
+    eval_tasks = env.sample_tasks(1)
+    
     if args.algo == 'reinforce':
         all_rewards, all_states, all_actions, _ = reinforce(model, optimizer, task, num_actions, 1,
                                                             args.max_num_traj_eval, args.max_traj_len,
-                                                            args.gamma)
+                                                            args.gamma, evaluate_tasks=eval_tasks)
     elif args.algo == 'ppo':
         all_rewards, all_states, all_actions, _ = ppo(model, optimizer, task, num_actions, 1, args.max_num_traj_eval,
                                                       args.max_traj_len,
