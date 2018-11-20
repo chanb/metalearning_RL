@@ -51,7 +51,7 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
                     state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
                     state = state.unsqueeze(0)
                 
-                probs = policy(state)
+                probs = policy(state, horizon > 0)
                 m = Categorical(logits=probs)
                 action = m.sample()
                 policy.saved_log_probs.append(m.log_prob(action))
@@ -64,7 +64,18 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
                 states.append(state)
                 if (done):
                     break
-
+            
+            state = torch.from_numpy(state).float().unsqueeze(0)
+            if policy.is_recurrent:
+                done_entry = torch.tensor([[done]]).float()
+                reward_entry = torch.tensor([[reward]]).float()
+                action_vector = torch.FloatTensor(num_actions)
+                action_vector.zero_()
+                action_vector[action] = 1
+                action_vector = action_vector.unsqueeze(0)
+                state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
+                state = state.unsqueeze(0)
+            _ = policy(state)
             # Batch gradient descent
             R = 0
             policy_loss = []

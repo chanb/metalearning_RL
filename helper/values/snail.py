@@ -53,7 +53,7 @@ class SNAILValue(Value):
             x = torch.cat((self.past[1:self.T, :, :], x))
         else:
             x = torch.cat((self.past, x))
-        if keep and not_zero > 0:
+        if keep:# and not_zero > 0:
         #if keep:
             self.past = x
         if x.shape[0] < self.T:
