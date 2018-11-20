@@ -17,14 +17,14 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
     env = gym.make(rl_category)
     tasks = evaluate_tasks
     if (not evaluate_tasks):
-        tasks = env.sample_tasks(num_tasks)
-        
+        tasks = env.unwrapped.sample_tasks(num_tasks)
+
     for task in range(num_tasks):
         print(
             "Task {} ==========================================================================================================".format(
                 task))
 
-        env.reset_task(tasks[task])
+        env.unwrapped.reset_task(tasks[task])
         task_total_rewards = []
         task_total_actions = []
         task_total_states = []

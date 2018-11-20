@@ -37,14 +37,6 @@ class TabularMDPEnv(gym.Env):
         self._rewards_mean = task.get('rewards_mean', np.zeros((num_states,
                                                                 num_actions), dtype=np.float32))
         
-        self._transitions = np.random.dirichlet(np.ones(self.num_states),
-                                               size=(self.num_states, self.num_actions))
-
-        self._rewards_mean = np.random.normal(1.0, 1.0,
-                                             size=(self.num_states, self.num_actions))
-        print('Env Setup')
-        print(self._transitions)
-        print(self._rewards_mean)
         self._state = 0
         self.seed()
 
@@ -66,6 +58,9 @@ class TabularMDPEnv(gym.Env):
         self._task = task
         self._transitions = task['transitions']
         self._rewards_mean = task['rewards_mean']
+        print('Env Setup')
+        print(self._transitions)
+        print(self._rewards_mean)
 
     def reset(self):
         # From [1]: "an episode always starts on the first state"

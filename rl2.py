@@ -112,7 +112,8 @@ def evaluate_model(eval_model):
         return
 
     env = gym.make(task)
-    eval_tasks = env.sample_tasks(1)
+    print(env.unwrapped)
+    eval_tasks = env.unwrapped.sample_tasks(1)
 
     if model.is_recurrent:
         model.reset_hidden_state()

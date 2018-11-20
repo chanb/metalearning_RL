@@ -117,7 +117,7 @@ def evaluate_model(eval_model):
         model.reset_hidden_state()
 
     env = gym.make(task)
-    eval_tasks = env.sample_tasks(1)
+    eval_tasks = env.unwrapped.sample_tasks(1)
     
     if args.algo == 'reinforce':
         all_rewards, all_states, all_actions, _ = reinforce(model, optimizer, task, num_actions, 1,
