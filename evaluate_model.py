@@ -33,7 +33,7 @@ parser.add_argument('--eval_tasks', help='the tasks to evaluate on')
 
 args = parser.parse_args()
 
-result_folder = './logs/snail'
+result_folder = './logs'
 out_result = '{}/{}_{}_{}_{}.pkl'.format(result_folder, args.algo, args.task, args.num_actions, args.max_num_traj_eval)
 
 def evaluate_model(eval_model=None, eval_tasks=None):

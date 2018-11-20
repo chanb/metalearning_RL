@@ -20,3 +20,7 @@ with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
             curr_traj = traj.squeeze(1)
             for experience in curr_traj:
                 print('curr_state: {} prev_action: {} prev_reward: {} is_done: {}'.format(experience[:num_states], experience[num_states:num_states + num_actions], experience[num_states + num_actions], experience[-1]))
+
+
+    print(all_rewards)
+    print(all_actions)
