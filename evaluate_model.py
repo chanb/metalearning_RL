@@ -67,9 +67,10 @@ def evaluate_model(eval_model=None, eval_tasks=None):
     if (eval_tasks):
         with open(eval_tasks, 'rb') as f:
             tasks = pickle.load(f)[0]
+    print(len(tasks))
     
     if args.algo == 'reinforce':
-        all_rewards, all_states, all_actions, _ = reinforce(model, optimizer, task, num_actions, 1,
+        all_rewards, all_states, all_actions, _ = reinforce(model, optimizer, task, num_actions, args.num_tasks,
                                                             args.max_num_traj_eval, args.max_traj_len,
                                                             args.gamma, evaluate_tasks=tasks)
     else:

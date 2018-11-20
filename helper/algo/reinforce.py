@@ -19,7 +19,7 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
     if (not evaluate_tasks):
         tasks = env.unwrapped.sample_tasks(num_tasks)
 
-    for task in range(num_tasks):
+    for task in range(len(tasks)):
         print(
             "Task {} ==========================================================================================================".format(
                 task))
@@ -61,7 +61,7 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
                     probs = policy(state, horizon > 0)
                 else:
                     probs = policy(state)
-                    
+
                 m = Categorical(logits=probs)
                 action = m.sample()
                 policy.saved_log_probs.append(m.log_prob(action))
