@@ -7,21 +7,27 @@ import torch.optim as optim
 from torch.distributions import Categorical
 
 
-def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, discount_factor):
+def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, discount_factor, evaluate_tasks=None):
     # TODO: Add randomize number of trajectories to run
     all_rewards = []
     all_states = []
     all_actions = []
 
     # Meta-Learning
+    env = gym.make(rl_category)
+    tasks = evaluate_tasks
+    if (not evaluate_tasks):
+        tasks = env.sample_tasks(num_tasks)
+        
     for task in range(num_tasks):
-        task_total_rewards = []
-        task_total_actions = []
-        task_total_states = []
         print(
             "Task {} ==========================================================================================================".format(
                 task))
-        env = gym.make(rl_category)
+
+        env.reset_task(tasks[task])
+        task_total_rewards = []
+        task_total_actions = []
+        task_total_states = []
 
         # REINFORCE
         for traj in range(max_num_traj):
