@@ -54,7 +54,7 @@ def main(args):
         # Save policy network
         with open(os.path.join(save_folder,
                                '{}-{}.pt'.format(args.env_name, batch)), 'wb') as f:
-            torch.save(policy.state_dict(), f)
+            torch.save(policy, f)
 
 
 if __name__ == '__main__':

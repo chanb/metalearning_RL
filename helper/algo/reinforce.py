@@ -52,7 +52,7 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
                     state = state.unsqueeze(0)
                 
                 probs = policy(state)
-                m = Categorical(probs)
+                m = Categorical(logits=probs)
                 action = m.sample()
                 policy.saved_log_probs.append(m.log_prob(action))
                 

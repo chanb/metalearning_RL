@@ -36,7 +36,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
                                                                 advantages):
             
             dist, value = model(state, keep=False)
-            m = Categorical(dist)
+            m = Categorical(logits=dist)
             entropy = m.entropy().mean()
             new_log_probs = m.log_prob(action)
 
