@@ -52,4 +52,4 @@ class CategoricalMLPPolicy(Policy):
                           weight=params['layer{0}.weight'.format(self.num_layers)],
                           bias=params['layer{0}.bias'.format(self.num_layers)])
 
-        return Categorical(logits=logits)
+        return logits
