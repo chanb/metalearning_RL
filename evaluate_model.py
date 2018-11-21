@@ -81,23 +81,23 @@ def evaluate_model(eval_model=None, eval_tasks=None):
     with open(out_result, 'wb') as f:
         pickle.dump([all_rewards, all_actions, all_states, num_actions, num_states], f)
 
-    idx = 0
-    for traj in all_states[0]:
-        idx += 1
-        curr_traj = traj
-        print('traj {} (length: {}) reward {} actions_made {}: '.format(idx, len(traj), all_rewards[0][idx - 1],
-                                                                        all_actions[0][0]))
-        if (args.algo == 'ppo'):
-            curr_traj = traj.squeeze(1)
-            for experience in curr_traj:
-                print('curr_state: {} prev_action: {} prev_reward: {} is_done: {}'.format(experience[:num_states],
-                                                                                          experience[
-                                                                                          num_states:num_states + num_actions],
-                                                                                          experience[
-                                                                                              num_states + num_actions],
-                                                                                          experience[-1]))
-    print(all_actions)
-    print(all_rewards)
+    # idx = 0
+    # for traj in all_states[0]:
+    #     idx += 1
+    #     curr_traj = traj
+    #     print('traj {} (length: {}) reward {} actions_made {}: '.format(idx, len(traj), all_rewards[0][idx - 1],
+    #                                                                     all_actions[0][0]))
+    #     if (args.algo == 'ppo'):
+    #         curr_traj = traj.squeeze(1)
+    #         for experience in curr_traj:
+    #             print('curr_state: {} prev_action: {} prev_reward: {} is_done: {}'.format(experience[:num_states],
+    #                                                                                       experience[
+    #                                                                                       num_states:num_states + num_actions],
+    #                                                                                       experience[
+    #                                                                                           num_states + num_actions],
+    #                                                                                       experience[-1]))
+    # print(all_actions)
+    # print(all_rewards)
 
 if __name__ == "__main__":
   print("TESTING MODEL ========================================================================")
