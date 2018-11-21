@@ -31,7 +31,7 @@ for task in ${tasks[@]}; do
                     --eval_model ./saves/$algo/$task_"$action"_"$traj".pt
                     --eval_tasks ./experiments/"$task"_"$action"_"$num_tasks".pkl
                 mkdir $algo/logs_eval/$algo
-                mv ./logs_eval/"$task"_"$action"_"$num_tasks".pkl ./logs_eval/$algo/"$task"_"$action"_"$traj".pkl
+                mv ./logs_eval/reinforce_"$task"_"$action"_"$num_tasks".pkl ./logs_eval/$algo/reinforce_"$task"_"$action"_"$traj".pkl
             done
         done
     done
