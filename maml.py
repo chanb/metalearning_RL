@@ -26,7 +26,12 @@ def main(args):
         config.update(device=args.device.type)
         json.dump(config, f, indent=2)
 
-    sampler = BatchSampler(args.env_name, batch_size=args.fast_batch_size, num_workers=args.num_workers)
+    if args.task == 'bandit':
+        env_name = "Bandit-K{}-v0".format(args.num_actions)
+    elif args.task == 'mdp':
+        env_name = "TabularMDP-v0"
+
+    sampler = BatchSampler(env_name, batch_size=args.fast_batch_size, num_workers=args.num_workers)
 
     policy = CategoricalMLPPolicy(
         int(np.prod(sampler.envs.observation_space.shape)),
@@ -53,7 +58,8 @@ def main(args):
 
     # Save policy network
     with open(os.path.join(save_folder,
-                            '{}-{}.pt'.format(args.env_name, args.fast_batch_size)), 'wb') as f:
+                           '{}_{}_{}_{}.pt'.format("reinforce", args.task, args.num_actions, args.fast_batch_size)),
+              'wb') as f:
         torch.save(policy, f)
 
 
@@ -65,6 +71,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Reinforcement learning with Model-Agnostic Meta-Learning (MAML)')
 
     # General
+    parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
+    parser.add_argument('--num_actions', type=int, default=5,
+                        help='number of arms for MAB or number of actions for MDP (default: 5)')
     parser.add_argument('--env-name', type=str, default='Bandit-K5-v0', help='name of the environment')
     parser.add_argument('--gamma', type=float, default=0.95, help='value of the discount factor gamma')
     parser.add_argument('--tau', type=float, default=1.0, help='value of the discount factor for GAE')
