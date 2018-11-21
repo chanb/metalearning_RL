@@ -39,7 +39,8 @@ args = parser.parse_args()
 
 eps = np.finfo(np.float32).eps.item()
 out_folder = './saves/snail'
-out_model = '{}/{}_{}_{}_{}.pt'.format(out_folder, args.algo, args.task, args.num_actions, args.max_num_traj)
+out_model = '{}/{}_{}_{}_{}_adam_lr{}_numtasks{}.pt'.format(out_folder, args.algo, args.task, args.num_actions,
+                                                            args.max_num_traj, args.learning_rate, args.num_tasks)
 
 
 def meta_train():

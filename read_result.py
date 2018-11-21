@@ -10,7 +10,8 @@ parser = argparse.ArgumentParser(description='Reads output file from running MDP
 
 parser.add_argument('--file', type=str, help='output file to read from')
 parser.add_argument('--algo', type=str, help='the algorithm used to generate the output')
-
+parser.add_argument('--task', type=str, help='either bandit or MDP')
+parser.add_argument('--outfile', type=str, help='writes rews and err to a new file' )
 args = parser.parse_args()
 
 with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
@@ -19,28 +20,33 @@ with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
     all_rewards_matrix = np.array([np.array(xi) for xi in all_rewards])
     # each row now contains values for each iteration
     all_rewards_matrix = all_rewards_matrix.T
-    all_rewards_matrix = np.cumsum(all_rewards_matrix, axis=0)
-    #one_task = all_rewards_matrix[1][:]
-    # computes std dev of each row
-    reward_err = np.std(all_rewards_matrix, axis=1)
-    avg_reward = np.average(all_rewards_matrix, axis=1)
+    one_task = all_rewards_matrix[1][:]
 
-    # normalizing
-    for i in range(len(avg_reward)):
-        avg_reward[i] = avg_reward[i]/(i+1)
-        reward_err[i] = reward_err[i]/(i+1)# + avg_reward[i]
+    if(args.task == 'bandit'):
+        all_rewards_matrix = np.cumsum(all_rewards_matrix, axis=0)
+        # computes std dev of each row
+        reward_err = np.std(all_rewards_matrix, axis=1)
+        avg_reward = np.average(all_rewards_matrix, axis=1)
+        # normalizing
+        for i in range(len(avg_reward)):
+            avg_reward[i] = avg_reward[i]/(i+1)
+            reward_err[i] = reward_err[i]/(i+1) #+ avg_reward[i]
+    elif(args.task == 'MDP'):
+        reward_err = np.std(all_rewards_matrix, axis=1)
+        avg_reward = np.average(all_rewards_matrix, axis=1)
 
     # plotting
     plt.plot(range(len(avg_reward)), avg_reward)
-    #plt.scatter(range(len(one_task)), one_task)
+    #plt.plot(range(len(one_task)), one_task)
     plt.xlabel('Number of Iterations')
     plt.ylabel('Total Reward')
     plt.title('Model Performance')
-    plt.fill_between(range(len(avg_reward)), avg_reward-reward_err, avg_reward+reward_err, color = 'gray')
-    # plt.errorbar(range(len(avg_reward)), avg_reward, reward_err, linestyle='None', marker='^')
-    plt.show()
+    plt.fill_between(range(len(avg_reward)), avg_reward-reward_err, avg_reward+reward_err, color = 'blue', alpha=0.3, lw=0.001)
+    plt.savefig('{}.png'.format(args.outfile))
 
-    # print(all_rewards)
-    # print(all_actions)
+# saves rews and err to a new file for later plotting all on one graph
+pickle_out = ('{}.pkl'.format(args.outfile), "wb")
+pickle.dump([avg_reward, reward_err], pickle_out)
+pickle_out.close()
 
 
