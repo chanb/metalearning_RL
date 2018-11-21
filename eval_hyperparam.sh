@@ -15,7 +15,7 @@ for task in ${tasks[@]}; do
            python evaluate_model.py --num_tasks 100 --num_actions $arm --task $task \
                     --eval_model ./saves/rl2/$model.pt \
                     --eval_tasks ./experiments/"$task"_"$action"_100.pkl \
-                    --out_file ./logs_eval/rl2/$model.pkl
+                    --outfile ./logs_eval/rl2/$model.pkl
 
            python read_result.py --task $task \
                     --file ./logs_eval/rl2/$model.pkl \
@@ -24,7 +24,7 @@ for task in ${tasks[@]}; do
            python evaluate_model.py --num_tasks 100 --num_actions $arm --task $task \
                     --eval_model ./saves/snail/$model.pt \
                     --eval_tasks ./experiments/"$task"_"$action"_100.pkl \
-                    --out_file ./logs_eval/snail/$model.pkl
+                    --outfile ./logs_eval/snail/$model.pkl
 
             python read_result.py --task $task \
                     --file ./logs_eval/snail/$model.pkl \
@@ -34,7 +34,7 @@ for task in ${tasks[@]}; do
         python evaluate_model.py --num_tasks 100 --num_actions $arm --task $task \
                     --eval_model ./saves/maml/$model.pt \
                     --eval_tasks ./experiments/"$task"_"$action"_100.pkl \
-                    --out_file ./logs_eval/maml/$model.pkl
+                    --outfile ./logs_eval/maml/$model.pkl
 
         python read_result.py --task $task \
                     --file ./logs_eval/maml/$model.pkl \
