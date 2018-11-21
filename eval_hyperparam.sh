@@ -6,6 +6,9 @@ traj=10
 lrs=( 0.0001 0.0005 0.001 0.005 0.01 )
 num_tasks=( 50 100 200 )
 tasks=( bandit mdp )
+mkdir -p ./logs_eval/rl2
+mkdir -p ./logs_eval/maml
+mkdir -p ./logs_eval/snail
 
 for task in ${tasks[@]}; do
     python generate_experiments.py --num_tasks 100 --num_actions $arm --task $task

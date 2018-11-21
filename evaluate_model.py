@@ -23,7 +23,7 @@ parser.add_argument('--num_actions', type=int, default=5,
                     help='number of arms for MAB or number of actions for MDP (default: 5)')
 
 parser.add_argument('--num_tasks', type=int, default=5, help='number of similar tasks to run (default: 5)')
-parser.add_argument('--max_num_traj_eval', type=int, default=1000,
+parser.add_argument('--max_num_traj_eval', type=int, default=500,
                     help='maximum number of trajectories during evaluation (default: 1000)')
 parser.add_argument('--max_traj_len', type=int, default=1, help='maximum trajectory length (default: 1)')
 
@@ -70,7 +70,6 @@ def evaluate_model(eval_model=None, eval_tasks=None):
     if (eval_tasks):
         with open(eval_tasks, 'rb') as f:
             tasks = pickle.load(f)[0]
-    print(len(tasks))
     
     if args.algo == 'reinforce':
         all_rewards, all_states, all_actions, _ = reinforce(model, optimizer, task, num_actions, args.num_tasks,
@@ -78,9 +77,6 @@ def evaluate_model(eval_model=None, eval_tasks=None):
                                                             args.gamma, evaluate_tasks=tasks, evaluate_model=to_use)
     else:
         print('Invalid learning algorithm')
-
-    #if not os.path.exists(result_folder):
-     #   os.makedirs(result_folder)
 
     with open(out_result, 'wb') as f:
         pickle.dump([all_rewards, all_actions, all_states, num_actions, num_states], f)
