@@ -11,20 +11,20 @@ for task in ${tasks[@]}; do
     for num_task in ${num_tasks[@]}; do
         for lr in ${lrs[@]}; do
            model=reinforce_$task"_"$arm"_"$traj"_"adam"_"lr$lr"_"numtasks$num_task
-           python evaluate_model.py --num_tasks 100 --num_actions $arm --task $task \
-                    --eval_model ./saves/rl2/$model.pt
-                    --eval_tasks ./experiments/"$task"_"$action"_"$num_tasks".pkl
-                    --out_file ./logs_eval/rl2/$model.pkl
+           #python evaluate_model.py --num_tasks 100 --num_actions $arm --task $task \
+                    #--eval_model ./saves/rl2/$model.pt
+                    #--eval_tasks ./experiments/"$task"_"$action"_"$num_tasks".pkl
+                    #--out_file ./logs_eval/rl2/$model.pkl
 
            python evaluate_model.py --num_tasks 100 --num_actions $arm --task $task \
                     --eval_model ./saves/snail/$model.pt
                     --eval_tasks ./experiments/"$task"_"$action"_"$num_tasks".pkl
                     --out_file ./logs_eval/snail/$model.pkl
         done
-        model=reinforce_$task"_"$arm"_"$traj"_"numtasks$num_task
-        python evaluate_model.py --num_tasks 100 --num_actions $arm --task $task \
-                    --eval_model ./saves/maml/$model.pt
-                    --eval_tasks ./experiments/"$task"_"$action"_"$num_tasks".pkl
-                    --out_file ./logs_eval/maml/$model.pkl
+        #model=reinforce_$task"_"$arm"_"$traj"_"numtasks$num_task
+        #python evaluate_model.py --num_tasks 100 --num_actions $arm --task $task \
+                    #--eval_model ./saves/maml/$model.pt
+                    #--eval_tasks ./experiments/"$task"_"$action"_"$num_tasks".pkl
+                    #--out_file ./logs_eval/maml/$model.pkl
     done
 done
