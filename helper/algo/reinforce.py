@@ -23,9 +23,8 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
         print(
             "Task {} ==========================================================================================================".format(
                 task))
-        print(policy == evaluate_model)
         if (evaluate_model):
-            policy = evaluate_model
+            policy = torch.load(evaluate_model)
         env.unwrapped.reset_task(tasks[task])
         task_total_rewards = []
         task_total_actions = []
