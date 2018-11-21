@@ -16,6 +16,7 @@ args = parser.parse_args()
 
 with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
     all_rewards, all_actions, all_states, num_actions, num_states = pickle.load(f)
+    
     # convert to a numpy matrix
     all_rewards_matrix = np.array([np.array(xi) for xi in all_rewards])
     # each row now contains values for each iteration
