@@ -79,8 +79,8 @@ def evaluate_model(eval_model=None, eval_tasks=None):
     else:
         print('Invalid learning algorithm')
 
-    if not os.path.exists(result_folder):
-        os.makedirs(result_folder)
+    #if not os.path.exists(result_folder):
+     #   os.makedirs(result_folder)
 
     with open(out_result, 'wb') as f:
         pickle.dump([all_rewards, all_actions, all_states, num_actions, num_states], f)
