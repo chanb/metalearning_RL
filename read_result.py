@@ -45,8 +45,7 @@ with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
     plt.savefig('{}.png'.format(args.outfile))
 
 # saves rews and err to a new file for later plotting all on one graph
-pickle_out = ('{}.pkl'.format(args.outfile), "wb")
-pickle.dump([avg_reward, reward_err], pickle_out)
-pickle_out.close()
+with open('{}.pkl'.format(args.outfile), 'wb') as pickle_out:
+    pickle.dump([avg_reward, reward_err], pickle_out)
 
 
