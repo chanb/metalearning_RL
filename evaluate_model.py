@@ -14,8 +14,8 @@ parser = argparse.ArgumentParser(description='Evaluate model on specified task')
 
 parser.add_argument('--algo', type=str, default='reinforce',
                     help='algorithm to use [reinforce] (default: reinforce)')
-parser.add_argument('--learning_rate', type=float, default=1e-2,
-                    help='learning rate for gradient descent (default: 1e-2)')
+parser.add_argument('--learning_rate', type=float, default=0.05,
+                    help='learning rate for gradient descent (default: 0.05)')
 parser.add_argument('--gamma', type=float, default=0.99, help='discount factor (default: 0.99)')
 
 parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
@@ -31,13 +31,13 @@ parser.add_argument('--max_traj_len', type=int, default=1, help='maximum traject
 parser.add_argument('--eval_model', help='the model to evaluate')
 parser.add_argument('--eval_tasks', help='the tasks to evaluate on')
 
-parser.add_argument('--out_file', help='filename to save output')
+parser.add_argument('--outfile', help='filename to save output')
 
 args = parser.parse_args()
 
 #result_folder = './logs_eval'
 #out_result = '{}/{}_{}_{}_{}.pkl'.format(result_folder, args.algo, args.task, args.num_actions, args.max_num_traj_eval)
-out_result =args.out_file
+out_result =args.outfile
 
 def evaluate_model(eval_model=None, eval_tasks=None):
     if (not eval_model):

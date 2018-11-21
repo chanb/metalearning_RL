@@ -10,8 +10,8 @@ parser = argparse.ArgumentParser(description='Reads output file from running MDP
 
 parser.add_argument('--file', type=str, help='output file to read from')
 parser.add_argument('--algo', type=str, help='the algorithm used to generate the output')
-parser.add_argument('--task', type=str, help='either bandit or MDP')
-parser.add_argument('--outfile', type=str, help='writes rews and err to a new file' )
+parser.add_argument('--task', type=str, help='either bandit or mdp')
+parser.add_argument('--outfile', type=str, help='writes rews and err to a new file')
 args = parser.parse_args()
 
 with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
