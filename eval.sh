@@ -26,10 +26,11 @@ for task in ${tasks[@]}; do
     fi
     for traj in ${trajs[@]}; do
         for action in ${actions[@]}; do
-            for algo in ${algos[@]}; do
+            for model in ${models[@]}; do
                 python evaluate_model.py --num_tasks $num_tasks --num_actions $action --task $task \
-                    --eval_model ./saves/$algo/reinforce_$task_"$action"_"$traj".pt
+                    --eval_model ./saves/$model
                     --eval_tasks ./experiments/"$task"_"$action"_"$num_tasks".pkl
+                    --out_file ./logs_eval/$model
                 mkdir $algo/logs_eval/$algo
                 mv ./logs_eval/reinforce_"$task"_"$action"_"$num_tasks".pkl ./logs_eval/$algo/reinforce_"$task"_"$action"_"$traj".pkl
             done
