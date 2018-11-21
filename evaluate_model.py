@@ -72,7 +72,7 @@ def evaluate_model(eval_model=None, eval_tasks=None):
     if args.algo == 'reinforce':
         all_rewards, all_states, all_actions, _ = reinforce(model, optimizer, task, num_actions, args.num_tasks,
                                                             args.max_num_traj_eval, args.max_traj_len,
-                                                            args.gamma, evaluate_tasks=tasks)
+                                                            args.gamma, evaluate_tasks=tasks, evaluate_model=model)
     else:
         print('Invalid learning algorithm')
 

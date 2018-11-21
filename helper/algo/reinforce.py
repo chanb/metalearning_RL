@@ -7,7 +7,7 @@ import torch.optim as optim
 from torch.distributions import Categorical
 
 
-def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, discount_factor, evaluate_tasks=None):
+def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, discount_factor, evaluate_tasks=None, evaluate_model=None):
     # TODO: Add randomize number of trajectories to run
     all_rewards = []
     all_states = []
@@ -23,7 +23,8 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
         print(
             "Task {} ==========================================================================================================".format(
                 task))
-
+        if (evaluate_model):
+            model = evaluate_model
         env.unwrapped.reset_task(tasks[task])
         task_total_rewards = []
         task_total_actions = []
