@@ -58,7 +58,8 @@ def main(args):
 
     # Save policy network
     with open(os.path.join(save_folder,
-                           '{}_{}_{}_{}.pt'.format("reinforce", args.task, args.num_actions, args.fast_batch_size)),
+                           '{}_{}_{}_{}_numtasks{}.pt'.format("reinforce", args.task, args.num_actions, args.fast_batch_size,
+                                                      args.num_batches)),
               'wb') as f:
         torch.save(policy, f)
 

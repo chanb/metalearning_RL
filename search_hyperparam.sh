@@ -1,23 +1,18 @@
 #!/usr/bin/env bash
 # Find the best learning rate
-num_tasks=100
-arms=( 5 )
-trajs=( 10 )
 
-for traj in ${trajs[@]}; do
-    for arm in ${arms[@]}; do
-        echo $arm
-        echo $traj
-        python rl2.py --learning_rate 0.001 --algo reinforce --task bandit --num_actions $arm --max_traj_len 1 --max_num_traj $traj --num_tasks $num_tasks
-        python snail.py --learning_rate 0.001 --algo reinforce --task bandit --num_actions $arm --max_traj_len 1 --max_num_traj $traj --num_tasks $num_tasks
-        python maml.py -task bandit --num_actions $arm --fast-batch-size $traj --num-batches $num_tasks
+arm=5
+traj=10
+lrs=( 0.0001 0.0005 0.001 0.005 0.01 )
+num_tasks=( 50 100 200 )
+tasks=( bandit mdp )
+
+for task in ${tasks[@]}; do
+    for num_task in ${num_tasks[@]}; do
+        for lr in ${lrs[@]}; do
+            python rl2.py --learning_rate $lr --algo reinforce --task $task --num_actions $arm --max_num_traj $traj --num_tasks $num_task
+            python snail.py --learning_rate $lr --algo reinforce --task $task --num_actions $arm --max_num_traj $traj --num_tasks $num_task
+        done
+        python maml.py -task $task --num_actions $arm --fast-batch-size $traj --num-batches $num_tasks
     done
-done
-
-trajs=( 10 25 50 75 100 )
-for traj in ${trajs[@]}; do
-    echo $traj
-    python rl2.py --num_tasks $num_tasks --max_num_traj 10 --learning_rate 0.001 --algo reinforce --max_traj_len 10 --task mdp
-    python snail.py --num_tasks $num_tasks --max_num_traj 10 --learning_rate 0.001 --algo reinforce --max_traj_len 10 --task mdp
-    python maml.py -task mdp --fast-batch-size $traj --num-batches $num_tasks
 done
