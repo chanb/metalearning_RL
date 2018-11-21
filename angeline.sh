@@ -9,6 +9,9 @@ tasks=( bandit mdp )
 mkdir -p ./logs_eval/rl2
 mkdir -p ./logs_eval/maml
 mkdir -p ./logs_eval/snail
+mkdir -p ./plots/rl2
+mkdir -p ./plots/maml
+mkdir -p ./plots/snail
 
 for task in ${tasks[@]}; do
     python generate_experiments.py --num_tasks 100 --num_actions $arm --task $task
