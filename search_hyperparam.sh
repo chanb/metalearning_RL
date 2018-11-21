@@ -13,6 +13,6 @@ for task in ${tasks[@]}; do
             python rl2.py --learning_rate $lr --algo reinforce --task $task --num_actions $arm --max_num_traj $traj --num_tasks $num_task
             python snail.py --learning_rate $lr --algo reinforce --task $task --num_actions $arm --max_num_traj $traj --num_tasks $num_task
         done
-        python maml.py -task $task --num_actions $arm --fast-batch-size $traj --num-batches $num_tasks
+        python maml.py --task $task --num_actions $arm --fast-batch-size $traj --num-batches $num_task
     done
 done
