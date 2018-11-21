@@ -31,7 +31,7 @@ with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
         for i in range(len(avg_reward)):
             avg_reward[i] = avg_reward[i]/(i+1)
             reward_err[i] = reward_err[i]/(i+1) #+ avg_reward[i]
-    elif(args.task == 'MDP'):
+    elif(args.task == 'mdp'):
         reward_err = np.std(all_rewards_matrix, axis=1)
         avg_reward = np.average(all_rewards_matrix, axis=1)
 
