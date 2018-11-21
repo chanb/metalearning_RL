@@ -11,6 +11,7 @@ parser = argparse.ArgumentParser(description='Reads output file from running MDP
 parser.add_argument('--file', type=str, help='output file to read from')
 parser.add_argument('--algo', type=str, help='the algorithm used to generate the output')
 parser.add_argument('--task', type=str, help='either bandit or MDP')
+parser.add_argument('--outfile', type=str, help='writes rews and err to a new file' )
 args = parser.parse_args()
 
 with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
@@ -35,12 +36,17 @@ with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
         avg_reward = np.average(all_rewards_matrix, axis=1)
 
     # plotting
-    #plt.plot(range(len(avg_reward)), avg_reward)
-    plt.plot(range(len(one_task)), one_task)
+    plt.plot(range(len(avg_reward)), avg_reward)
+    #plt.plot(range(len(one_task)), one_task)
     plt.xlabel('Number of Iterations')
     plt.ylabel('Total Reward')
     plt.title('Model Performance')
-    #plt.fill_between(range(len(avg_reward)), avg_reward-reward_err, avg_reward+reward_err, color = 'blue', alpha=0.3, lw=0.001)
+    plt.fill_between(range(len(avg_reward)), avg_reward-reward_err, avg_reward+reward_err, color = 'blue', alpha=0.3, lw=0.001)
     plt.show()
+
+# saves rews and err to a new file for later plotting all on one graph
+pickle_out = (args.outfile, "wb")
+pickle.dump([avg_reward, reward_err], pickle_out)
+pickle_out.close()
 
 
