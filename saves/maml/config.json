@@ -9,7 +9,7 @@
   "num_layers": 2,
   "fast_batch_size": 10,
   "fast_lr": 0.5,
-  "num_batches": 50,
+  "num_batches": 200,
   "meta_batch_size": 40,
   "max_kl": 0.01,
   "cg_iters": 10,
