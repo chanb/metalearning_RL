@@ -54,7 +54,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            loss = -(critic_loss + actor_loss - 0.01 * entropy)
+            loss = (critic_loss + actor_loss - 0.01 * entropy)
 
             optimizer.zero_grad()
             loss.backward(retain_graph=model.is_recurrent)
