@@ -100,9 +100,13 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
         values = []
         states = []
         actions = []
-        clean_actions = []
         rewards = []
         masks = []
+
+        # These are for logging
+        clean_actions = []
+        clean_rewards = []
+        clean_states = []
 
         # The initial values for input
         state = env.reset()
@@ -145,6 +149,8 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
             log_prob = m.log_prob(action)
             log_probs.append(log_prob.unsqueeze(0).unsqueeze(0))
             clean_actions.append(action.data.item())
+            clean_states.append(state)
+            clean_rewards.append(reward)
             states.append(state)
             actions.append(action.unsqueeze(0).unsqueeze(0))
             rewards.append(reward)
@@ -159,6 +165,12 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
                 reward = 0.
                 action = -1
                 done = 0
+                task_total_actions.append(clean_actions)
+                task_total_rewards.append(sum(clean_rewards))
+                task_total_states.append(clean_states)
+                clean_actions = []
+                clean_rewards = []
+                clean_states = []
 
         state = torch.from_numpy(state).float().unsqueeze(0)
         if model.is_recurrent:
@@ -181,13 +193,10 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
         actions = torch.cat(actions)
         advantage = returns - values
 
-        task_total_rewards.append(sum(rewards))
-        task_total_states.append(states)
-        task_total_actions.append(clean_actions)
-
         # This is where we compute loss and update the model
         ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage
                     , clip_param=clip_param)
+
     return task_total_rewards, task_total_states, task_total_actions
     
 
@@ -227,7 +236,7 @@ def ppo(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo_epoc
 
         # Perform sampling and update model
         task_total_rewards, task_total_states, task_total_actions = ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate)
-
+        
         all_rewards.append(task_total_rewards)
         all_states.append(task_total_states)
         all_actions.append(task_total_actions)

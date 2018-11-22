@@ -42,7 +42,7 @@ with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
     plt.xlabel('Number of Iterations')
     plt.ylabel('Total Reward')
     plt.title('Model Performance')
-    plt.fill_between(range(len(avg_reward)), avg_reward-reward_err, avg_reward+reward_err, color = 'blue', alpha=0.3, lw=0.001)
+    # plt.fill_between(range(len(avg_reward)), avg_reward-reward_err, avg_reward+reward_err, color = 'blue', alpha=0.3, lw=0.001)
     plt.savefig('{}.png'.format(args.outfile))
 
 # saves rews and err to a new file for later plotting all on one graph

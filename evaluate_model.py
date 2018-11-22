@@ -47,7 +47,6 @@ def evaluate_model(eval_model=None, eval_tasks=None):
     to_use = eval_model
 
     model = torch.load(to_use)
-    optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
 
     task = ''
     if args.task == 'bandit':
@@ -73,7 +72,7 @@ def evaluate_model(eval_model=None, eval_tasks=None):
     
     if args.algo == 'ppo':
         all_rewards, all_states, all_actions, _ = ppo(model, task, num_actions, args.num_tasks, args.num_traj, args.traj_len,
-            args.ppo_epochs, args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate)
+            args.ppo_epochs, args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, evaluate_tasks=tasks, evaluate_model=to_use)
     else:
         print('Invalid learning algorithm')
 
