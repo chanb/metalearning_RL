@@ -54,7 +54,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            loss = -(0.5 * critic_loss + actor_loss) #- 0.0001 * entropy)
+            loss = critic_loss + actor_loss - 0.01 * entropy
 
             optimizer.zero_grad()
             loss.backward(retain_graph=model.is_recurrent)
@@ -63,7 +63,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # print("new_log_prob: {} old_log_prob: {}".format(new_log_probs, old_log_probs))
             # print("ret: {} val: {}".format(ret, value))
-            # print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze(), ret.squeeze(), advantage.squeeze(), ratio.squeeze(), critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
+            print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze(), ret.squeeze(), advantage.squeeze(), ratio.squeeze(), critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
 
 
 def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate):
@@ -137,12 +137,10 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
             dist, value = model(state)
             m = Categorical(logits=dist)
             action = m.sample()
-
-            if (horizon == 0):
-                print('dist: {}'.format(F.softmax(dist, dim=1)))
             
             # Take the action
             next_state, reward, done, _ = env.step(action.item())
+            print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=1), action, reward))
 
             # Accumulate all the information
             done = int(done)
@@ -183,7 +181,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
             state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
             state = state.unsqueeze(0)
 
-        _, next_val = model(state, keep=False)
+        next_dist, next_val = model(state, keep=False)
 
         returns = compute_gae(next_val, rewards, masks, values, gamma, tau)
         returns = torch.cat(returns)
