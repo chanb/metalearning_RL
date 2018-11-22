@@ -12,3 +12,11 @@ Testing MDP with PPO (using specific saved model): python rl2.py --max_num_traj_
 
 
 0.01 LEARNING RATE BETTER FOR PPO?
+
+
+
+
+
+python evaluate_model.py --num_tasks 100 --num_actions 5 --task bandit --eval_model ./saves/rl2/ppo_bandit_5_10_SGD_lr0.0002_numtasks100.pt --eval_tasks ./experiments/bandit_5_100.pkl --outfile sgd_result.pkl --ppo_epochs 2 --task bandit --traj_len 1 --num_traj 100 --mini_batch_size 5 --learning_rate 0.0002 --batch_size 5
+
+python rl2.py --algo ppo --ppo_epochs 2 --task bandit --traj_len 1 --num_traj 100 --mini_batch_size 5 --learning_rate 0.0005 --batch_size 5 --num_tasks 100
