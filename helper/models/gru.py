@@ -45,7 +45,7 @@ class GRUActorCritic(nn.Module):
         if (self.non_linearity):
             val = self.non_linearity(val)
         dist = self.policy(x).squeeze(0)
-        return F.softmax(dist, dim=1), val
+        return dist, val
 
     def reset_hidden_state(self):
         # self.critic.reset_hidden_state()

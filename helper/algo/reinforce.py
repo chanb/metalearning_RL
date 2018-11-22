@@ -5,9 +5,10 @@ import helper.envs
 import torch
 import torch.optim as optim
 from torch.distributions import Categorical
+import torch.nn.functional as F
 
 
-def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, discount_factor, evaluate_tasks=None, evaluate_model=None):
+def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, discount_factor, evaluate_tasks=None, evaluate_model=None, lr=None):
     # TODO: Add randomize number of trajectories to run
     all_rewards = []
     all_states = []
@@ -25,6 +26,7 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
                 task))
         if (evaluate_model):
             policy = torch.load(evaluate_model)
+            optimizer = optim.Adam(policy.parameters(), lr=lr)
         env.unwrapped.reset_task(tasks[task])
         task_total_rewards = []
         task_total_actions = []
@@ -64,6 +66,8 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
                     probs = policy(state)
 
                 m = Categorical(logits=probs)
+                if (evaluate_model):
+                    print('dist: {}'.format(F.softmax(probs, dim=1)))
                 action = m.sample()
                 policy.saved_log_probs.append(m.log_prob(action))
                 
@@ -108,7 +112,7 @@ def reinforce(policy, optimizer, rl_category, num_actions, num_tasks, max_num_tr
 
             optimizer.zero_grad()
             policy_loss = torch.cat(policy_loss).sum()
-            # print("actions: {} rewards: {} loss: {}\n".format(actions, rewards, policy_loss))
+            print("actions: {} rewards: {} loss: {}\n".format(actions, rewards, policy_loss))
             
             policy_loss.backward(retain_graph=policy.is_recurrent)
             optimizer.step()

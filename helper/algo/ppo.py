@@ -27,18 +27,17 @@ def ppo_iter(mini_batch_size, states, actions, log_probs, returns, advantages):
               advantages[rand_ids, :]
 
 
-def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantages,
-               clip_param=0.2, evaluate=False):
+def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantages, clip_param=0.2):
     # Use Clipping Surrogate Objective to update
     for i in range(ppo_epochs):
-        model.zero_grad()
         for state, action, old_log_probs, ret, advantage in ppo_iter(mini_batch_size, states, actions, log_probs, returns,
                                                                 advantages):
-            
             dist, value = model(state, keep=False)
+            print(dist)
             m = Categorical(logits=dist)
             entropy = m.entropy().mean()
-            new_log_probs = m.log_prob(action)
+            new_log_probs = m.log_prob(action.squeeze())
+            print('old log prob {} action {}'.format(new_log_probs, action.squeeze()))
 
             ratio = (new_log_probs - old_log_probs).exp()
             
@@ -59,121 +58,176 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
             loss.backward(retain_graph=model.is_recurrent)
             optimizer.step()
 
-            if (evaluate):
-                print("new_log_prob: {} old_log_prob: {}".format(new_log_probs, old_log_probs))
-                print("ret: {} val: {}".format(ret, value))
-                print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), entropy, loss.squeeze().data.item()))
+
+            # print("new_log_prob: {} old_log_prob: {}".format(new_log_probs, old_log_probs))
+            # print("ret: {} val: {}".format(ret, value))
+            print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze(), ret.squeeze(), advantage.squeeze(), ratio.squeeze(), critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
 
 
+def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate):
+    '''
+    env - the gym environment for the current task
+    model - the model to update
+    num_actions - (k) the number of possible actions
+    num_traj - (n) the number of trajectories/episodes to interact with
+    traj_len - (l) the fixed length of each trajectory/episode
+    ppo_epochs - (K) the number of PPO updates to perform
+    batch_size - (T) the number of steps to take before PPO update
+    mini_batch_size - (M) the number of horizon to take for the PPO update
+    gamma - the discount factor
+    tau - the GAE parameter
+    clip_param - The clipping parameter for L_clip
+    learning_rate - The learning rate of the Adam optimizer
 
-# Attempt to modify policy so it doesn't go too far
-def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size,
-        gamma, tau, clip_param, evaluate=False):
-    all_rewards = []
-    all_states = []
-    all_actions = []
+    The total number of horizon for current task is n x l
+    The batch_size should divide n x l, in order to get number of batches
+    '''
 
-    # Meta-Learning
-    for task in range(num_tasks):
-        task_total_rewards = []
-        task_total_states = []
-        task_total_actions = []
-        
-        if((task + 1) % 10 == 0):
-            print(
-              "Task {} ==========================================================================================================".format(
-                task + 1))
-        env = gym.make(rl_category)
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    task_total_rewards = []
+    task_total_states = []
+    task_total_actions = []
 
-        # PPO (Using actor critic style)
-        for traj in range(max_num_traj):
-            if ((traj + 1) % 10 == 0):
-                print("Trajectory {}".format(traj + 1))
-            state = env.reset()
-            reward = 0.
-            action = -1
-            done = 0
+    num_batches = num_traj * traj_len // batch_size
 
-            log_probs = []
-            values = []
-            states = [] # states doesn't only store states, but store concatenation of state, action(onehot), reward, and done
-            actions = []
-            clean_actions = []
-            rewards = []
-            masks = []
+    # PPO (Using actor critic style)
+    for batch in range(num_batches):
+        print("Batch {} of {}".format(batch + 1, num_batches))
 
-            for horizon in range(max_traj_len):
-                state = torch.from_numpy(state).float().unsqueeze(0)
+        log_probs = []
+        values = []
+        states = []
+        actions = []
+        clean_actions = []
+        rewards = []
+        masks = []
 
-                if model.is_recurrent:
-                    done_entry = torch.tensor([[done]]).float()
-                    reward_entry = torch.tensor([[reward]]).float()
-                    action_vector = torch.FloatTensor(num_actions)
-                    action_vector.zero_()
-                    if (action > -1):
-                        action_vector[action] = 1
-                    
-                    action_vector = action_vector.unsqueeze(0)
-                    
-                    state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
-                    state = state.unsqueeze(0)
+        # The initial values for input
+        state = env.reset()
+        reward = 0.
+        action = -1
+        done = 0
 
-                states.append(state)
-
-                dist, value = model(state)
-                if (evaluate):
-                    print('dist: {}'.format(dist))
-                    
-                m = Categorical(dist)
-                action = m.sample()
-                
-                log_prob = m.log_prob(action)
-                state, reward, done, _ = env.step(action.item())
-
-                done = int(done)
-                log_probs.append(log_prob.unsqueeze(0).unsqueeze(0))
-                actions.append(action.unsqueeze(0).unsqueeze(0))
-                clean_actions.append(action.data.item())
-                
-                values.append(value)
-                rewards.append(reward)
-                masks.append(1 - done)
-
-                if (done):
-                    break
-
+        for horizon in range(batch_size):
+            if (horizon + 1 % 10 == 0):
+                print('Horizon {} of {}'.format(horizon + 1, batch_size))
             state = torch.from_numpy(state).float().unsqueeze(0)
+
+            # Construct the (s,a,r,d) as input
             if model.is_recurrent:
                 done_entry = torch.tensor([[done]]).float()
                 reward_entry = torch.tensor([[reward]]).float()
                 action_vector = torch.FloatTensor(num_actions)
                 action_vector.zero_()
-                action_vector[action] = 1
+                if (action > -1):
+                    action_vector[action] = 1
+                
                 action_vector = action_vector.unsqueeze(0)
+                
                 state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
                 state = state.unsqueeze(0)
 
-            _, next_val = model(state)
+            # Sample the next action from the model
+            dist, value = model(state)
+            m = Categorical(logits=dist)
+            action = m.sample()
 
-            returns = compute_gae(next_val, rewards, masks, values, gamma, tau)
-            returns = torch.cat(returns)
-            values = torch.cat(values)
-            log_probs = torch.cat(log_probs)
-            states = torch.cat(states)
-            actions = torch.cat(actions)
-            advantage = returns - values
+            if (horizon == 0):
+                print('dist: {}'.format(F.softmax(dist, dim=1)))
+            
+            # Take the action
+            next_state, reward, done, _ = env.step(action.item())
 
-            task_total_rewards.append(sum(rewards))
-            task_total_states.append(states)
-            task_total_actions.append(clean_actions)
+            # Accumulate all the information
+            done = int(done)
+            log_prob = m.log_prob(action)
+            log_probs.append(log_prob.unsqueeze(0).unsqueeze(0))
+            clean_actions.append(action.data.item())
+            states.append(state)
+            actions.append(action.unsqueeze(0).unsqueeze(0))
+            rewards.append(reward)
+            masks.append(1 - done)
+            values.append(value)
 
-            # This is where we compute loss and update the model
-            ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage
-                       , clip_param=clip_param, evaluate=evaluate)
-        
+            state = next_state
+
+            # Reset input values if we're done the trajectory/episode
+            if (done):
+                state = env.reset()
+                reward = 0.
+                action = -1
+                done = 0
+
+        state = torch.from_numpy(state).float().unsqueeze(0)
+        if model.is_recurrent:
+            done_entry = torch.tensor([[done]]).float()
+            reward_entry = torch.tensor([[reward]]).float()
+            action_vector = torch.FloatTensor(num_actions)
+            action_vector.zero_()
+            action_vector[action] = 1
+            action_vector = action_vector.unsqueeze(0)
+            state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
+            state = state.unsqueeze(0)
+
+        _, next_val = model(state, keep=False)
+
+        returns = compute_gae(next_val, rewards, masks, values, gamma, tau)
+        returns = torch.cat(returns)
+        values = torch.cat(values)
+        log_probs = torch.cat(log_probs)
+        states = torch.cat(states)
+        actions = torch.cat(actions)
+        advantage = returns - values
+
+        task_total_rewards.append(sum(rewards))
+        task_total_states.append(states)
+        task_total_actions.append(clean_actions)
+
+        # This is where we compute loss and update the model
+        ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage
+                    , clip_param=clip_param)
+    return task_total_rewards, task_total_states, task_total_actions
+    
+
+
+# Attempt to modify policy so it doesn't go too far
+def ppo(model, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size, batch_size,
+        gamma, tau, clip_param, learning_rate, evaluate_tasks=None, evaluate_model=None):
+    all_rewards = []
+    all_states = []
+    all_actions = []
+
+    # Meta-Learning on a class of MDP problem
+    env = gym.make(rl_category)
+    tasks = evaluate_tasks
+
+    # Sample a specified amount of tasks from the class of MDP if we aren't provided any tasks
+    if (not evaluate_tasks):
+        tasks = env.unwrapped.sample_tasks(num_tasks)
+
+    # Learn on every sampled task
+    for task in range(len(tasks)):
+        if((task + 1) % 10 == 0):
+            print(
+              "Task {} ==========================================================================================================".format(
+                task + 1))
+
+        # Reload the model if we're evaluating model
+        if (evaluate_model):
+            policy = torch.load(evaluate_model)
+
+        # Need to reset hidden state for every new task
+        if model.is_recurrent:
+            model.reset_hidden_state()
+
+        # Update the environment to use the new task
+        env.unwrapped.reset_task(tasks[task])
+
+        # Perform sampling and update model
+        task_total_rewards, task_total_states, task_total_actions = ppo_sample(env, model, num_actions, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate)
+
         all_rewards.append(task_total_rewards)
         all_states.append(task_total_states)
         all_actions.append(task_total_actions)
-        if model.is_recurrent:
-            model.reset_hidden_state()
+
     return all_rewards, all_states, all_actions, model
