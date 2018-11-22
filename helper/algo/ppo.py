@@ -193,7 +193,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
 
 
 # Attempt to modify policy so it doesn't go too far
-def ppo(model, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size, batch_size,
+def ppo(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size,
         gamma, tau, clip_param, learning_rate, evaluate_tasks=None, evaluate_model=None):
     all_rewards = []
     all_states = []
@@ -226,7 +226,7 @@ def ppo(model, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, 
         env.unwrapped.reset_task(tasks[task])
 
         # Perform sampling and update model
-        task_total_rewards, task_total_states, task_total_actions = ppo_sample(env, model, num_actions, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate)
+        task_total_rewards, task_total_states, task_total_actions = ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate)
 
         all_rewards.append(task_total_rewards)
         all_states.append(task_total_states)

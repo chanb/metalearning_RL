@@ -12,21 +12,21 @@ import os
 
 parser = argparse.ArgumentParser(description='Evaluate model on specified task')
 
-parser.add_argument('--algo', type=str, default='reinforce',
-                    help='algorithm to use [reinforce] (default: reinforce)')
-parser.add_argument('--learning_rate', type=float, default=0.05,
-                    help='learning rate for gradient descent (default: 0.05)')
+parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
+parser.add_argument('--algo', type=str, default='ppo', help='algorithm to use [reinforce/ppo] (default: ppo)')
+parser.add_argument('--learning_rate', type=float, default=1e-3, help='learning rate for optimizer (default: 1e-2)')
 parser.add_argument('--gamma', type=float, default=0.99, help='discount factor (default: 0.99)')
 
-parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
-parser.add_argument('--num_actions', type=int, default=5,
-                    help='number of arms for MAB or number of actions for MDP (default: 5)')
-
+parser.add_argument('--num_actions', type=int, default=5, help='number of arms for MAB or number of actions for MDP (default: 5)')
 parser.add_argument('--num_tasks', type=int, default=5, help='number of similar tasks to run (default: 5)')
-parser.add_argument('--max_num_traj_eval', type=int, default=500,
-                    help='maximum number of trajectories during evaluation (default: 1000)')
-parser.add_argument('--max_traj_len', type=int, default=1, help='maximum trajectory length (default: 1)')
+parser.add_argument('--num_traj', type=int, default=10, help='number of trajectories to interact with (default: 10)')
+parser.add_argument('--traj_len', type=int, default=1, help='fixed trajectory length (default: 1)')
 
+parser.add_argument('--tau', type=float, default=0.95, help='GAE parameter (default: 0.95)')
+parser.add_argument('--mini_batch_size', type=int, default=5, help='minibatch size for ppo update (default: 5)')
+parser.add_argument('--batch_size', type=int, default=5, help='batch size (default: 5)')
+parser.add_argument('--ppo_epochs', type=int, default=1, help='ppo epoch (default: 1)')
+parser.add_argument('--clip_param', type=float, default=0.2, help='clipping parameter for PPO (default: 0.2)')
 
 parser.add_argument('--eval_model', help='the model to evaluate')
 parser.add_argument('--eval_tasks', help='the tasks to evaluate on')
@@ -71,10 +71,9 @@ def evaluate_model(eval_model=None, eval_tasks=None):
         with open(eval_tasks, 'rb') as f:
             tasks = pickle.load(f)[0]
     
-    if args.algo == 'reinforce':
-        all_rewards, all_states, all_actions, _ = reinforce(model, optimizer, task, num_actions, args.num_tasks,
-                                                            args.max_num_traj_eval, args.max_traj_len,
-                                                            args.gamma, evaluate_tasks=tasks, evaluate_model=to_use, lr=args.learning_rate)
+    if args.algo == 'ppo':
+        all_rewards, all_states, all_actions, _ = ppo(model, task, num_actions, args.num_tasks, args.num_traj, args.traj_len,
+            args.ppo_epochs, args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate)
     else:
         print('Invalid learning algorithm')
 
