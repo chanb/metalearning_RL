@@ -22,7 +22,7 @@ def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
 def ppo_iter(mini_batch_size, states, actions, log_probs, returns, advantages):
     batch_size = states.size(0)
     for _ in range(batch_size // mini_batch_size):
-        rand_ids = np.random.randint(0, batch_size, mini_batch_size)
+        rand_ids = np.random.choice(batch_size, mini_batch_size, False)
         yield states[rand_ids, :], actions[rand_ids, :], log_probs[rand_ids, :], returns[rand_ids, :], \
               advantages[rand_ids, :]
 
@@ -32,12 +32,14 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
     for i in range(ppo_epochs):
         for state, action, old_log_probs, ret, advantage in ppo_iter(mini_batch_size, states, actions, log_probs, returns,
                                                                 advantages):
-            dist, value = model(state, keep=False)
-            print(dist)
-            m = Categorical(logits=dist)
-            entropy = m.entropy().mean()
-            new_log_probs = m.log_prob(action.squeeze())
-            print('old log prob {} action {}'.format(new_log_probs, action.squeeze()))
+            new_log_probs = []
+            for sample in range(mini_batch_size):
+                dist, value = model(state[sample].unsqueeze(0), keep=False)
+                m = Categorical(logits=dist)
+                entropy = m.entropy().mean()
+                new_log_probs.append([[m.log_prob(action[sample])]])
+
+            new_log_probs = torch.tensor(new_log_probs)
 
             ratio = (new_log_probs - old_log_probs).exp()
             
@@ -61,7 +63,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # print("new_log_prob: {} old_log_prob: {}".format(new_log_probs, old_log_probs))
             # print("ret: {} val: {}".format(ret, value))
-            print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze(), ret.squeeze(), advantage.squeeze(), ratio.squeeze(), critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
+            # print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze(), ret.squeeze(), advantage.squeeze(), ratio.squeeze(), critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
 
 
 def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate):
