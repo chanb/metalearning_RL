@@ -47,14 +47,14 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
             surr_2 = torch.clamp(ratio, 1.0 - clip_param, 1.0 + clip_param) * advantage
 
             # Clipped Surrogate Objective Loss
-            actor_loss = -torch.min(surr_1, surr_2).mean()
+            actor_loss = torch.min(surr_1, surr_2).mean()
 
             # Mean Squared Error Loss Function
-            critic_loss = F.mse_loss(ret, value)
+            critic_loss = (ret - value).pow(2).mean()#F.mse_loss(ret, value)
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            loss = critic_loss + actor_loss - 0.01 * entropy
+            loss = -(critic_loss + actor_loss - 0.01 * entropy)
 
             optimizer.zero_grad()
             loss.backward(retain_graph=model.is_recurrent)
@@ -190,6 +190,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
         states = torch.cat(states)
         actions = torch.cat(actions)
         advantage = returns - values
+        advantage = (advantage - advantage.mean())/(advantage.std() + 1e-5)
 
         # This is where we compute loss and update the model
         ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage
