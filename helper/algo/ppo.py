@@ -32,17 +32,21 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
     for i in range(ppo_epochs):
         for state, action, old_log_probs, ret, advantage in ppo_iter(mini_batch_size, states, actions, log_probs, returns,
                                                                 advantages):
+            # Computes the new log probability from the updated model
             new_log_probs = []
             for sample in range(mini_batch_size):
                 dist, value = model(state[sample].unsqueeze(0), keep=False)
                 m = Categorical(logits=dist)
                 entropy = m.entropy().mean()
                 new_log_probs.append([m.log_prob(action[sample])])
-
+            
             new_log_probs = torch.tensor(new_log_probs)
 
-            ratio = (new_log_probs - old_log_probs).exp()
-            
+            # Compute the values for objective function 
+            # (ratio for some reason favours bad action. Probably the reason why it's not converging with negated obj func)
+            # ratio = (new_log_probs - old_log_probs).exp()
+            ratio = (-new_log_probs + old_log_probs).exp()
+
             surr_1 = ratio * advantage
             surr_2 = torch.clamp(ratio, 1.0 - clip_param, 1.0 + clip_param) * advantage
 
@@ -54,17 +58,15 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            # loss = (critic_loss - actor_loss - 0.01 * entropy)
-            loss = -actor_loss
+            loss = (critic_loss - actor_loss - 0.01 * entropy)
 
             optimizer.zero_grad()
             loss.backward(retain_graph=True)
             optimizer.step()
 
-
-            print("new_log_prob: {} \nold_log_prob: {} \nactions: {} \nreturn: {}".format(new_log_probs.squeeze(1), old_log_probs.squeeze(1), action.squeeze(), ret.squeeze()))
-            # print("ret: {} val: {}".format(ret.squeeze(1).squeeze(1), value.squeeze(1).squeeze(1)))
-            print("action: {} return: {} \nratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze(), ret.squeeze(), ratio.squeeze(), critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
+            print("new_log_prob: {} \nold_log_prob: {} \nratio: {} \nactions: {} \nreturn: {}".format(new_log_probs.squeeze(1), old_log_probs.squeeze(1), ratio.squeeze(), action.squeeze(), ret.squeeze()))
+            print("ret: {} val: {}".format(ret.squeeze(1), value.squeeze(1)))
+            print("critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
 
 
 def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate):
@@ -171,6 +173,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
                 clean_rewards = []
                 clean_states = []
 
+        # Compute the next value for GAE
         state = torch.from_numpy(state).float().unsqueeze(0)
         if model.is_recurrent:
             done_entry = torch.tensor([[done]]).float()
