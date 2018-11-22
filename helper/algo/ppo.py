@@ -37,7 +37,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
                 dist, value = model(state[sample].unsqueeze(0), keep=False)
                 m = Categorical(logits=dist)
                 entropy = m.entropy().mean()
-                new_log_probs.append([[m.log_prob(action[sample])]])
+                new_log_probs.append([m.log_prob(action[sample])])
 
             new_log_probs = torch.tensor(new_log_probs)
 
@@ -54,16 +54,17 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            loss = (critic_loss + actor_loss - 0.01 * entropy)
+            # loss = (critic_loss - actor_loss - 0.01 * entropy)
+            loss = -actor_loss
 
             optimizer.zero_grad()
-            loss.backward(retain_graph=model.is_recurrent)
+            loss.backward(retain_graph=True)
             optimizer.step()
 
 
-            # print("new_log_prob: {} old_log_prob: {}".format(new_log_probs, old_log_probs))
-            # print("ret: {} val: {}".format(ret, value))
-            print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze(), ret.squeeze(), advantage.squeeze(), ratio.squeeze(), critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
+            print("new_log_prob: {} \nold_log_prob: {} \nactions: {} \nreturn: {}".format(new_log_probs.squeeze(1), old_log_probs.squeeze(1), action.squeeze(), ret.squeeze()))
+            # print("ret: {} val: {}".format(ret.squeeze(1).squeeze(1), value.squeeze(1).squeeze(1)))
+            print("action: {} return: {} \nratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze(), ret.squeeze(), ratio.squeeze(), critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
 
 
 def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate):
@@ -140,7 +141,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
             
             # Take the action
             next_state, reward, done, _ = env.step(action.item())
-            print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=1), action, reward))
+            print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=0), action, reward))
 
             # Accumulate all the information
             done = int(done)
@@ -190,7 +191,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
         states = torch.cat(states)
         actions = torch.cat(actions)
         advantage = returns - values
-        advantage = (advantage - advantage.mean())/(advantage.std() + 1e-5)
+        # advantage = (advantage - advantage.mean())/(advantage.std() + 1e-5)
 
         # This is where we compute loss and update the model
         ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage
