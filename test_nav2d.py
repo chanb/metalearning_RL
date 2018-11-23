@@ -7,7 +7,7 @@ from helper.baseline import LinearFeatureBaseline
 from helper.sampler import BatchSampler
 from helper.metalearner import MetaLearner
 
-ITR = 120
+ITR = 199
 # from zhanpenghe: https://github.com/tristandeleu/pytorch-maml-rl/issues/15
 # torch.manual_seed(7)
 
@@ -69,7 +69,9 @@ def main():
         policy, baseline = load_meta_learner_params(META_POLICY_PATH, BASELINE_PATH, env)
         learner = MetaLearner(sampler, policy, baseline)
         # Sample a batch of transitions
-        for grad in range(4):
+        for grad in range(2):
+            print("========GRAD STEP {}========".format(grad))
+            evaluate(env, task, policy)
             sampler.reset_task(task)
             episodes = sampler.sample(policy)
             new_params = learner.adapt(episodes)
