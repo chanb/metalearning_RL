@@ -7,7 +7,7 @@ from helper.baseline import LinearFeatureBaseline
 from helper.sampler import BatchSampler
 from helper.metalearner import MetaLearner
 
-ITR = 40
+ITR = 120
 # from zhanpenghe: https://github.com/tristandeleu/pytorch-maml-rl/issues/15
 # torch.manual_seed(7)
 
@@ -60,19 +60,22 @@ def evaluate(env, task, policy, max_path_length=100):
 
 def main():
     env = Navigation2DEnv()
-    policy, baseline = load_meta_learner_params(META_POLICY_PATH, BASELINE_PATH, env)
+    #policy, baseline = load_meta_learner_params(META_POLICY_PATH, BASELINE_PATH, env)
     sampler = BatchSampler(env_name="2DNavigation-v0", batch_size=20, num_workers=2)
-    learner = MetaLearner(sampler, policy, baseline)
+    #learner = MetaLearner(sampler, policy, baseline)
     tasks = sampler.sample_tasks(num_tasks=400)
     for task in tasks:
         env.reset_task(task)
-
+        policy, baseline = load_meta_learner_params(META_POLICY_PATH, BASELINE_PATH, env)
+        learner = MetaLearner(sampler, policy, baseline)
         # Sample a batch of transitions
-        sampler.reset_task(task)
-        episodes = sampler.sample(policy)
-        new_params = learner.adapt(episodes)
-        policy.load_state_dict(new_params)
-        evaluate(env, task, policy)
+        for grad in range(4):
+            sampler.reset_task(task)
+            episodes = sampler.sample(policy)
+            new_params = learner.adapt(episodes)
+            policy.load_state_dict(new_params)
+            print("========GRAD STEP {}========".format(grad+1))
+            evaluate(env, task, policy)
 
 
 if __name__ == '__main__':
