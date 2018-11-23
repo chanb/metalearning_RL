@@ -44,8 +44,8 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # Compute the values for objective function 
             # (ratio for some reason favours bad action. Probably the reason why it's not converging with negated obj func)
-            # ratio = (new_log_probs - old_log_probs).exp()
-            ratio = (-new_log_probs + old_log_probs).exp()
+            ratio = torch.exp(new_log_probs - old_log_probs)
+            # ratio = (-new_log_probs + old_log_probs).exp()
 
             surr_1 = ratio * advantage
             surr_2 = torch.clamp(ratio, 1.0 - clip_param, 1.0 + clip_param) * advantage
@@ -64,9 +64,9 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
             loss.backward(retain_graph=True)
             optimizer.step()
 
-            print("new_log_prob: {} \nold_log_prob: {} \nratio: {} \nactions: {} \nreturn: {}".format(new_log_probs.squeeze(1), old_log_probs.squeeze(1), ratio.squeeze(), action.squeeze(), ret.squeeze()))
-            print("ret: {} val: {}".format(ret.squeeze(1), value.squeeze(1)))
-            print("critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
+            # print("new_log_prob: {} \nold_log_prob: {} \nratio: {} \nactions: {} \nreturn: {}".format(new_log_probs.squeeze(1), old_log_probs.squeeze(1), ratio.squeeze(), action.squeeze(), ret.squeeze()))
+            # print("ret: {} val: {} advantage: {}".format(ret.squeeze(1), value.squeeze(1), advantage))
+            # print("critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
 
 
 def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate):
@@ -143,7 +143,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
             
             # Take the action
             next_state, reward, done, _ = env.step(action.item())
-            print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=0), action, reward))
+            # print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=0), action, reward))
 
             # Accumulate all the information
             done = int(done)
@@ -240,8 +240,62 @@ def ppo(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo_epoc
         # Perform sampling and update model
         task_total_rewards, task_total_states, task_total_actions = ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate)
         
+        if (evaluate_model):
+            task_total_rewards, task_total_states, task_total_actions = eval_model_on_task(model, env, num_traj)
+
         all_rewards.append(task_total_rewards)
         all_states.append(task_total_states)
         all_actions.append(task_total_actions)
 
     return all_rewards, all_states, all_actions, model
+
+
+def eval_model_on_task(model, env, num_traj):
+    task_total_rewards = []
+    task_total_states = []
+    task_total_actions = []
+
+    for _ in range(num_traj):
+        clean_actions = []
+        clean_rewards = []
+        clean_states = []
+        state = env.reset()
+        reward = 0.
+        action = -1
+        done = False
+
+        while not done:
+            state = torch.from_numpy(state).float().unsqueeze(0)
+            # Construct the (s,a,r,d) as input
+            if model.is_recurrent:
+                done_entry = torch.tensor([[done]]).float()
+                reward_entry = torch.tensor([[reward]]).float()
+                action_vector = torch.FloatTensor(num_actions)
+                action_vector.zero_()
+                if (action > -1):
+                    action_vector[action] = 1
+                
+                action_vector = action_vector.unsqueeze(0)
+                
+                state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
+                state = state.unsqueeze(0)
+
+            dist, _ = model(state)
+            m = Categorical(logits=dist)
+            action = m.sample()
+            
+            # Take the action
+            next_state, reward, done, _ = env.step(action.item())
+
+            # Accumulate all the information
+            clean_actions.append(action.data.item())
+            clean_states.append(state)
+            clean_rewards.append(reward)
+
+            state = next_state
+
+        task_total_actions.append(clean_actions)
+        task_total_rewards.append(sum(clean_rewards))
+        task_total_states.append(clean_states)
+
+    return task_total_rewards, task_total_states, task_total_actions

@@ -48,7 +48,7 @@ def meta_train():
         task = "Bandit-K{}-v0".format(args.num_actions)
         num_actions = args.num_actions
         num_states = 1
-        non_linearity = 'relu'
+        non_linearity = 'sigmoid'
     elif args.task == 'mdp':
         task = "TabularMDP-v0"
         num_actions = 5
@@ -68,7 +68,7 @@ def meta_train():
                   args.gamma)
     elif args.algo == 'ppo':
         model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 2 + num_states + num_actions, non_linearity=non_linearity)
-        model = FCNActorCritic(num_actions, num_states)
+        model = FCNActorCritic(num_actions, num_states, non_linearity=non_linearity)
         # fcn = LinearEmbedding(input_size=2 + num_states + num_actions, output_size=32)
         # model = SNAILActorCritic(num_actions, args.num_traj, args.traj_len, fcn, non_linearity=non_linearity)
 
