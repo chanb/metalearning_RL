@@ -34,13 +34,16 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
                                                                 advantages):
             # Computes the new log probability from the updated model
             new_log_probs = []
+            values = []
             for sample in range(mini_batch_size):
                 dist, value = model(state[sample].unsqueeze(0), keep=False)
                 m = Categorical(logits=dist)
                 entropy = m.entropy().mean()
                 new_log_probs.append([m.log_prob(action[sample])])
+                values.append(value)
             
             new_log_probs = torch.tensor(new_log_probs)
+            values = torch.tensor(values)
 
             # Compute the values for objective function 
             # (ratio for some reason favours bad action. Probably the reason why it's not converging with negated obj func)
@@ -54,7 +57,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
             actor_loss = torch.min(surr_1, surr_2).mean()
 
             # Mean Squared Error Loss Function
-            critic_loss = (ret - value).pow(2).mean()#F.mse_loss(ret, value)
+            critic_loss = (ret - values).pow(2).mean()#F.mse_loss(ret, value)
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
@@ -64,7 +67,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
             loss.backward(retain_graph=True)
             optimizer.step()
 
-            # print("new_log_prob: {} \nold_log_prob: {} \nratio: {} \nactions: {} \nreturn: {}".format(new_log_probs.squeeze(1), old_log_probs.squeeze(1), ratio.squeeze(), action.squeeze(), ret.squeeze()))
+            # print("new_log_prob: {} \nold_log_prob: {} \nratio: {} \nactions: {} \nreturn: {} \nadvantage: {} \nvalue: {}".format(new_log_probs.squeeze(1), old_log_probs.squeeze(1), ratio.squeeze(), action.squeeze(), ret.squeeze(), advantage, values))
             # print("ret: {} val: {} advantage: {}".format(ret.squeeze(1), value.squeeze(1), advantage))
             # print("critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
 
@@ -143,7 +146,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
             
             # Take the action
             next_state, reward, done, _ = env.step(action.item())
-            # print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=0), action, reward))
+            # print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=1), action, reward))
 
             # Accumulate all the information
             done = int(done)
@@ -228,7 +231,7 @@ def ppo(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo_epoc
 
         # Reload the model if we're evaluating model
         if (evaluate_model):
-            policy = torch.load(evaluate_model)
+            model = torch.load(evaluate_model)
 
         # Need to reset hidden state for every new task
         if model.is_recurrent:
@@ -241,7 +244,7 @@ def ppo(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo_epoc
         task_total_rewards, task_total_states, task_total_actions = ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate)
         
         if (evaluate_model):
-            task_total_rewards, task_total_states, task_total_actions = eval_model_on_task(model, env, num_traj)
+            task_total_rewards, task_total_states, task_total_actions = eval_model_on_task(model, env, num_traj, num_actions)
 
         all_rewards.append(task_total_rewards)
         all_states.append(task_total_states)
@@ -250,7 +253,7 @@ def ppo(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo_epoc
     return all_rewards, all_states, all_actions, model
 
 
-def eval_model_on_task(model, env, num_traj):
+def eval_model_on_task(model, env, num_traj, num_actions):
     task_total_rewards = []
     task_total_states = []
     task_total_actions = []
@@ -297,5 +300,6 @@ def eval_model_on_task(model, env, num_traj):
         task_total_actions.append(clean_actions)
         task_total_rewards.append(sum(clean_rewards))
         task_total_states.append(clean_states)
+    print(F.softmax(dist, dim=0))
 
     return task_total_rewards, task_total_states, task_total_actions
