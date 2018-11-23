@@ -36,7 +36,8 @@ class BatchSampler(object):
         while (not all(dones)) or (not self.queue.empty()):
             with torch.no_grad():
                 observations_tensor = torch.from_numpy(observations).to(device=device)
-                actions_tensor = Categorical(logits=policy(observations_tensor, params=params)).sample()
+                #actions_tensor = Categorical(logits=policy(observations_tensor, params=params)).sample()
+                actions_tensor = policy(observations_tensor, params=params).sample()
                 actions = actions_tensor.cpu().numpy()
             new_observations, rewards, dones, new_batch_ids, _ = self.envs.step(actions)
             episodes.append(observations, actions, rewards, batch_ids)
