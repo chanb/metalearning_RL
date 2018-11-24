@@ -1,11 +1,9 @@
 import gym
 import numpy as np
 import argparse
-import pickle
 
 import torch
 import torch.optim as optim
-from torch.distributions import Categorical
 
 import helper.envs
 from helper.policies import SNAILPolicy, LinearEmbedding
@@ -13,27 +11,29 @@ from helper.models import SNAILActorCritic
 from helper.algo import ppo, reinforce
 import os
 
-parser = argparse.ArgumentParser(description='SNAIL for MAB and MDP')
+parser = argparse.ArgumentParser(description='SNAIL for MAB, MDP and 2DNav')
 
-parser.add_argument('--num_actions', type=int, default=5,
-                    help='number of arms for MAB or number of actions for MDP (default: 5)')
-parser.add_argument('--max_num_traj', type=int, default=10, help='maximum number of trajectories to run (default: 10)')
+parser.add_argument('--num_actions', type=int, default=1,
+                    help='number of arms for MAB or number of actions for MDP (default: 1)')
+parser.add_argument('--max-num-traj', type=int, default=20, help='maximum number of trajectories to run (default: 20)')
+
 parser.add_argument('--seed', type=int, default=0, help='random seed (default: 0)')
-parser.add_argument('--max_traj_len', type=int, default=1, help='maximum trajectory length (default: 1)')
+parser.add_argument('--max-traj-len', type=int, default=100, help='maximum trajectory length (default: 100)')
 parser.add_argument('--gamma', type=float, default=0.99, help='discount factor (default: 0.99)')
 parser.add_argument('--tau', type=float, default=0.95, help='lambda in GAE (default: 0.95)')
-parser.add_argument('--learning_rate', type=float, default=1e-2,
+parser.add_argument('--learning-rate', type=float, default=1e-2,
                     help='learning rate for gradient descent (default: 1e-2)')
-parser.add_argument('--num_tasks', type=int, default=5, help='number of similar tasks to run (default: 5)')
-parser.add_argument('--algo', type=str, default='reinforce',
-                    help='algorithm to use [reinforce/ppo] (default: reinforce)')
-parser.add_argument('--mini_batch_size', type=int, default=1,
-                    help='minimum batch size (default: 5) - needs to be <= max_traj_len')
-parser.add_argument('--ppo_epochs', type=int, default=1, help='ppo epoch (default: 1)')
-parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
 
-parser.add_argument('--clip_param', type=float, default=0.2, help='clipping parameter for PPO (default: 0.2)')
-parser.add_argument('--non_linearity', help='non linearity function following last output layer')
+parser.add_argument('--num-tasks', type=int, default=200, help='number of similar tasks to run (default: 200)')
+parser.add_argument('--algo', type=str, default='ppo',
+                    help='algorithm to use [reinforce/ppo] (default: ppo)')
+parser.add_argument('--mini-batch-size', type=int, default=1,
+                    help='minimum batch size (default: 5) - needs to be <= max_traj_len')
+parser.add_argument('--ppo-epochs', type=int, default=1, help='ppo epoch (default: 1)')
+parser.add_argument('--task', type=str, default='2dnav', help='the task to learn [bandit, mdp, 2dnav] (default: 2dnav)')
+
+parser.add_argument('--clip-param', type=float, default=0.2, help='clipping parameter for PPO (default: 0.2)')
+parser.add_argument('--non-linearity', help='non linearity function following last output layer')
 
 args = parser.parse_args()
 
@@ -55,11 +55,14 @@ def meta_train():
         num_actions = 5
         num_states = 10
         non_linearity = 'none'
+    elif args.task == '2dnav':
+        task = "2DNavigation-v0"
+        num_actions = 1
     else:
         print('Invalid Task')
         return
 
-    if (args.non_linearity):
+    if args.non_linearity:
         non_linearity = args.non_linearity
 
     fcn = LinearEmbedding(input_size=2 + num_states + num_actions, output_size=32)

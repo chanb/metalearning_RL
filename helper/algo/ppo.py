@@ -128,8 +128,8 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
                 reward_entry = torch.tensor([[reward]]).float()
                 action_vector = torch.FloatTensor(num_actions)
                 action_vector.zero_()
-                if (action > -1):
-                    action_vector[action] = 1
+                #if (action > -1):
+                #    action_vector[action] = 1
                 
                 action_vector = action_vector.unsqueeze(0)
                 
@@ -138,22 +138,21 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
 
             # Sample the next action from the model
             dist, value = model(state)
-            m = Categorical(logits=dist)
-            action = m.sample()
+            action = dist.sample().detach().numpy().squeeze()
             
             # Take the action
-            next_state, reward, done, _ = env.step(action.item())
-            print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=0), action, reward))
+            next_state, reward, done, _ = env.step(action)
+            print('dist: {} action: {} reward: {}'.format(dist, action, reward))
 
             # Accumulate all the information
             done = int(done)
-            log_prob = m.log_prob(action)
+            log_prob = dist.log_prob(action)
             log_probs.append(log_prob.unsqueeze(0).unsqueeze(0))
-            clean_actions.append(action.data.item())
+            clean_actions.append(action)
             clean_states.append(state)
             clean_rewards.append(reward)
             states.append(state)
-            actions.append(action.unsqueeze(0).unsqueeze(0))
+            actions.append(action)
             rewards.append(reward)
             masks.append(1 - done)
             values.append(value)
@@ -192,13 +191,13 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
         values = torch.cat(values)
         log_probs = torch.cat(log_probs)
         states = torch.cat(states)
-        actions = torch.cat(actions)
+        actions = actions
         advantage = returns - values
         # advantage = (advantage - advantage.mean())/(advantage.std() + 1e-5)
 
         # This is where we compute loss and update the model
-        ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage
-                    , clip_param=clip_param)
+        ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage,
+                   clip_param=clip_param)
 
     return task_total_rewards, task_total_states, task_total_actions
     

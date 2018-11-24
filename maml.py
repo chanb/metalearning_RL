@@ -1,9 +1,11 @@
+import helper.envs
+import gym
 import numpy as np
 import torch
 import json
 
 from helper.metalearner import MetaLearner
-from helper.policies import CategoricalMLPPolicy
+from helper.policies import CategoricalMLPPolicy, NormalMLPPolicy
 from helper.baseline import LinearFeatureBaseline
 from helper.sampler import BatchSampler
 
@@ -11,12 +13,14 @@ from tensorboardX import SummaryWriter
 
 
 def total_rewards(episodes_rewards, aggregation=torch.mean):
-    rewards = torch.mean(torch.stack([aggregation(torch.sum(rewards, dim=0))
-                                      for rewards in episodes_rewards], dim=0))
+    rewards = torch.mean(torch.stack([aggregation(torch.sum(rewards, dim=0)) for rewards in episodes_rewards], dim=0))
     return rewards.item()
 
 
 def main(args):
+    continuous_actions = (args.env_name in ['AntVel-v1', 'AntDir-v1', 'AntPos-v0', 'HalfCheetahVel-v1',
+                                            'HalfCheetahDir-v1', '2DNavigation-v0'])
+
     writer = SummaryWriter('./logs/{0}'.format(args.output_folder))
     save_folder = './saves/{0}'.format(args.output_folder)
     if not os.path.exists(save_folder):
@@ -26,22 +30,23 @@ def main(args):
         config.update(device=args.device.type)
         json.dump(config, f, indent=2)
 
-    if args.task == 'bandit':
-        env_name = "Bandit-K{}-v0".format(args.num_actions)
-    elif args.task == 'mdp':
-        env_name = "TabularMDP-v0"
-
-    sampler = BatchSampler(env_name, batch_size=args.fast_batch_size, num_workers=args.num_workers)
-
-    policy = CategoricalMLPPolicy(
-        int(np.prod(sampler.envs.observation_space.shape)),
-        sampler.envs.action_space.n,
-        hidden_sizes=(args.hidden_size,) * args.num_layers)
+    sampler = BatchSampler(args.env_name, batch_size=args.fast_batch_size,
+                           num_workers=args.num_workers)
+    if continuous_actions:
+        policy = NormalMLPPolicy(
+            int(np.prod(sampler.envs.observation_space.shape)),
+            int(np.prod(sampler.envs.action_space.shape)),
+            hidden_sizes=(args.hidden_size,) * args.num_layers)
+    else:
+        policy = CategoricalMLPPolicy(
+            int(np.prod(sampler.envs.observation_space.shape)),
+            sampler.envs.action_space.n,
+            hidden_sizes=(args.hidden_size,) * args.num_layers)
     baseline = LinearFeatureBaseline(
         int(np.prod(sampler.envs.observation_space.shape)))
 
-    metalearner = MetaLearner(sampler, policy, baseline, gamma=args.gamma, fast_lr=args.fast_lr, tau=args.tau,
-                              device=args.device)
+    metalearner = MetaLearner(sampler, policy, baseline, gamma=args.gamma,
+                              fast_lr=args.fast_lr, tau=args.tau, device=args.device)
 
     for batch in range(args.num_batches):
         tasks = sampler.sample_tasks(num_tasks=args.meta_batch_size)
@@ -51,16 +56,11 @@ def main(args):
                          ls_backtrack_ratio=args.ls_backtrack_ratio)
 
         # Tensorboard
-        writer.add_scalar('total_rewards/before_update',
-                          total_rewards([ep.rewards for ep, _ in episodes]), batch)
-        writer.add_scalar('total_rewards/after_update',
-                          total_rewards([ep.rewards for _, ep in episodes]), batch)
+        writer.add_scalar('total_rewards/before_update', total_rewards([ep.rewards for ep, _ in episodes]), batch)
+        writer.add_scalar('total_rewards/after_update', total_rewards([ep.rewards for _, ep in episodes]), batch)
 
-    # Save policy network
-    with open(os.path.join(save_folder,
-                           '{}_{}_{}_{}_numtasks{}.pt'.format("reinforce", args.task, args.num_actions, args.fast_batch_size,
-                                                      args.num_batches)),
-              'wb') as f:
+        # Save policy network
+    with open(os.path.join(save_folder, 'policy.pt'), 'wb') as f:
         torch.save(policy, f)
 
 
@@ -72,38 +72,50 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Reinforcement learning with Model-Agnostic Meta-Learning (MAML)')
 
     # General
-    parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
-    parser.add_argument('--num_actions', type=int, default=5,
-                        help='number of arms for MAB or number of actions for MDP (default: 5)')
-    parser.add_argument('--env-name', type=str, default='Bandit-K5-v0', help='name of the environment')
-    parser.add_argument('--gamma', type=float, default=0.95, help='value of the discount factor gamma')
-    parser.add_argument('--tau', type=float, default=1.0, help='value of the discount factor for GAE')
-    parser.add_argument('--first-order', action='store_true', help='use the first-order approximation of MAML')
+    parser.add_argument('--env-name', type=str,
+                        help='name of the environment')
+    parser.add_argument('--gamma', type=float, default=0.95,
+                        help='value of the discount factor gamma')
+    parser.add_argument('--tau', type=float, default=1.0,
+                        help='value of the discount factor for GAE')
+    parser.add_argument('--first-order', action='store_true',
+                        help='use the first-order approximation of MAML')
 
     # Policy network (relu activation function)
-    parser.add_argument('--hidden-size', type=int, default=100, help='number of hidden units per layer')
-    parser.add_argument('--num-layers', type=int, default=2, help='number of hidden layers')
+    parser.add_argument('--hidden-size', type=int, default=100,
+                        help='number of hidden units per layer')
+    parser.add_argument('--num-layers', type=int, default=2,
+                        help='number of hidden layers')
 
     # Task-specific
-    parser.add_argument('--fast-batch-size', type=int, default=20, help='batch size for each individual task')
+    parser.add_argument('--fast-batch-size', type=int, default=20,
+                        help='batch size for each individual task')
     parser.add_argument('--fast-lr', type=float, default=0.5,
                         help='learning rate for the 1-step gradient update of MAML')
 
     # Optimization
-    parser.add_argument('--num-batches', type=int, default=200, help='number of batches')
-    parser.add_argument('--meta-batch-size', type=int, default=40, help='number of tasks per batch')
-    parser.add_argument('--max-kl', type=float, default=1e-2, help='maximum value for the KL constraint in TRPO')
-    parser.add_argument('--cg-iters', type=int, default=10, help='number of iterations of conjugate gradient')
-    parser.add_argument('--cg-damping', type=float, default=1e-5, help='damping in conjugate gradient')
-    parser.add_argument('--ls-max-steps', type=int, default=15, help='maximum number of iterations for line search')
+    parser.add_argument('--num-batches', type=int, default=200,
+                        help='number of batches')
+    parser.add_argument('--meta-batch-size', type=int, default=40,
+                        help='number of tasks per batch')
+    parser.add_argument('--max-kl', type=float, default=1e-2,
+                        help='maximum value for the KL constraint in TRPO')
+    parser.add_argument('--cg-iters', type=int, default=10,
+                        help='number of iterations of conjugate gradient')
+    parser.add_argument('--cg-damping', type=float, default=1e-5,
+                        help='damping in conjugate gradient')
+    parser.add_argument('--ls-max-steps', type=int, default=15,
+                        help='maximum number of iterations for line search')
     parser.add_argument('--ls-backtrack-ratio', type=float, default=0.8,
                         help='maximum number of iterations for line search')
 
     # Miscellaneous
-    parser.add_argument('--output-folder', type=str, default='maml', help='name of the output folder')
+    parser.add_argument('--output-folder', type=str, default='maml',
+                        help='name of the output folder')
     parser.add_argument('--num-workers', type=int, default=mp.cpu_count() - 1,
                         help='number of workers for trajectories sampling')
-    parser.add_argument('--device', type=str, default='cpu', help='set the device (cpu or cuda)')
+    parser.add_argument('--device', type=str, default='cpu',
+                        help='set the device (cpu or cuda)')
 
     args = parser.parse_args()
 
