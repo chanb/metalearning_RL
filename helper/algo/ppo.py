@@ -61,7 +61,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            loss = (actor_loss - 0.5 * critic_loss + 0.001 * entropy)
+            loss = -(actor_loss - 0.5 * critic_loss + 0.001 * entropy)
 
             optimizer.zero_grad()
             loss.backward(retain_graph=True)
@@ -206,9 +206,154 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
     return task_total_rewards, task_total_states, task_total_actions
     
 
+def ppo_train(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, 
+        gamma, tau, clip_param, learning_rate):
+    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    
+    # Divisible by batch_size
+    total_batch_size = num_traj * num_tasks
+
+    env = gym.make(rl_category)
+    tasks = env.unwrapped.sample_tasks(num_tasks)
+
+    curr_task = 0
+    curr_traj = 1
+    curr_ppo_batch = 1
+
+    log_probs = []
+    values = []
+    states = []
+    actions = []
+    rewards = []
+    masks = []
+
+    # These are for logging
+    clean_actions = []
+    clean_rewards = []
+    clean_states = []
+    task_total_rewards = []
+    task_total_states = []
+    task_total_actions = []
+    all_rewards = []
+    all_states = []
+    all_actions = []
+
+    for i in range(total_batch_size):
+        # Go to new environment
+        if curr_traj == 1:
+            env.unwrapped.reset_task(tasks[curr_task])
+            # The initial values for input
+            state = env.reset()
+            reward = 0.
+            action = -1
+            done = 0
+
+        if curr_ppo_batch > 1 or curr_traj == 1:
+            state = torch.from_numpy(state).float().unsqueeze(0)
+
+        # Construct the (s,a,r,d) as input
+        if model.is_recurrent:
+            done_entry = torch.tensor([[done]]).float()
+            reward_entry = torch.tensor([[reward]]).float()
+            action_vector = torch.FloatTensor(num_actions)
+            action_vector.zero_()
+            if (action > -1):
+                action_vector[action] = 1
+            
+            action_vector = action_vector.unsqueeze(0)
+            
+            state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
+            state = state.unsqueeze(0)
+
+        # Sample the next action from the model
+        dist, value = model(state)
+        m = Categorical(logits=dist)
+        action = m.sample()
+        
+        # Take the action
+        next_state, reward, done, _ = env.step(action.item())
+        print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=0), action, reward))
+
+        # Accumulate all the information
+        done = int(done)
+        log_prob = m.log_prob(action)
+        log_probs.append(log_prob.unsqueeze(0).unsqueeze(0))
+        clean_actions.append(action.data.item())
+        clean_states.append(state)
+        clean_rewards.append(reward)
+        states.append(state)
+        actions.append(action.unsqueeze(0).unsqueeze(0))
+        rewards.append(reward)
+        masks.append(1 - done)
+        values.append(value)
+
+        state = next_state
+
+        # Reset input values if we're done the trajectory/episode
+        if (done):
+            state = env.reset()
+            reward = 0.
+            action = -1
+            done = 0
+            task_total_actions.append(clean_actions)
+            task_total_rewards.append(sum(clean_rewards))
+            task_total_states.append(clean_states)
+            clean_actions = []
+            clean_rewards = []
+            clean_states = []
+
+        # Perform PPO update
+        if (curr_ppo_batch == batch_size):
+            state = torch.from_numpy(state).float().unsqueeze(0)
+            if model.is_recurrent:
+                done_entry = torch.tensor([[done]]).float()
+                reward_entry = torch.tensor([[reward]]).float()
+                action_vector = torch.FloatTensor(num_actions)
+                action_vector.zero_()
+                action_vector[action] = 1
+                action_vector = action_vector.unsqueeze(0)
+                state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
+                state = state.unsqueeze(0)
+
+            next_dist, next_val = model(state, keep=False)
+
+            returns = compute_gae(next_val, rewards, masks, values, gamma, tau)
+            returns = torch.cat(returns)
+            values = torch.cat(values)
+            log_probs = torch.cat(log_probs)
+            states = torch.cat(states)
+            actions = torch.cat(actions)
+            advantage = returns - values
+            ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage
+                    , clip_param=clip_param)
+            log_probs = []
+            values = []
+            states = []
+            actions = []
+            rewards = []
+            masks = []
+            curr_ppo_batch = 0
+
+        # Sampled enough from this task
+        if curr_traj == num_traj:
+            curr_traj = 0
+            curr_task += 1
+            all_actions.append(task_total_actions)
+            all_states.append(task_total_states)
+            all_rewards.append(task_total_rewards)
+            task_total_rewards = []
+            task_total_states = []
+            task_total_actions = []
+        curr_traj += 1
+        curr_ppo_batch += 1
+
+    return all_rewards, all_states, all_actions, model
+
+
+
 
 # Attempt to modify policy so it doesn't go too far
-def ppo(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size,
+def ppo_eval(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size,
         gamma, tau, clip_param, learning_rate, evaluate_tasks=None, evaluate_model=None):
     all_rewards = []
     all_states = []

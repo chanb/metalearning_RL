@@ -7,7 +7,7 @@ import torch
 import torch.optim as optim
 
 import helper.envs
-from helper.algo import ppo, reinforce
+from helper.algo import eval_model_on_task, reinforce
 import os
 
 parser = argparse.ArgumentParser(description='Evaluate model on specified task')
@@ -71,7 +71,7 @@ def evaluate_model(eval_model=None, eval_tasks=None):
             tasks = pickle.load(f)[0]
     
     if args.algo == 'ppo':
-        all_rewards, all_states, all_actions, _ = ppo(model, task, num_actions, args.num_tasks, args.num_traj, args.traj_len,
+        all_rewards, all_states, all_actions, _ = ppo_eval(model, task, num_actions, args.num_tasks, args.num_traj, args.traj_len,
             args.ppo_epochs, args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, evaluate_tasks=tasks, evaluate_model=to_use)
     else:
         print('Invalid learning algorithm')

@@ -10,7 +10,7 @@ from torch.distributions import Categorical
 import helper.envs
 from helper.policies import GRUPolicy, FCNPolicy, SNAILPolicy, LinearEmbedding
 from helper.models import GRUActorCritic, SNAILActorCritic, FCNActorCritic
-from helper.algo import ppo, reinforce
+from helper.algo import ppo_train, reinforce
 import os
 
 parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
@@ -73,7 +73,7 @@ def meta_train():
         # model = SNAILActorCritic(num_actions, args.num_traj, args.traj_len, fcn, non_linearity=non_linearity)
 
         optimizer = optim.Adam(model.parameters(), lr=args.learning_rate)
-        _, _, _, model = ppo(model, task, num_actions, args.num_tasks, args.num_traj, args.traj_len,
+        _, _, _, model = ppo_train(model, task, num_actions, args.num_tasks, args.num_traj, args.traj_len,
             args.ppo_epochs, args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate)
     else:
         print('Invalid learning algorithm')
