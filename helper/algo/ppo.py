@@ -61,13 +61,13 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            loss = (critic_loss - actor_loss - 0.01 * entropy)
+            loss = (actor_loss - 0.5 * critic_loss + 0.001 * entropy)
 
             optimizer.zero_grad()
             loss.backward(retain_graph=True)
             optimizer.step()
 
-            # print("new_log_prob: {} \nold_log_prob: {} \nratio: {} \nactions: {} \nreturn: {} \nadvantage: {} \nvalue: {}".format(new_log_probs.squeeze(1), old_log_probs.squeeze(1), ratio.squeeze(), action.squeeze(), ret.squeeze(), advantage, values))
+            # print("new_log_prob: {} \nold_log_prob: {} \nratio: {} \nactions: {} \nreturn: {} \nadvantage: {} \nvalue: {}".format(new_log_probs.squeeze(1), old_log_probs.squeeze(1), ratio.squeeze(), action.squeeze(), ret.squeeze(), advantage.squeeze(), values))
             # print("ret: {} val: {} advantage: {}".format(ret.squeeze(1), value.squeeze(1), advantage))
             # print("critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
 
@@ -146,7 +146,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
             
             # Take the action
             next_state, reward, done, _ = env.step(action.item())
-            # print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=1), action, reward))
+            print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=0), action, reward))
 
             # Accumulate all the information
             done = int(done)
