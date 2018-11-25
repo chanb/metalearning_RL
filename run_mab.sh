@@ -1,8 +1,8 @@
 tasks=100
-lr=0.03
-epochs=4
-batch=40
-minibatch=20
+lr=0.002
+epochs=3
+batch=30
+minibatch=10
 traj=10
 
 eval_minibatch=2

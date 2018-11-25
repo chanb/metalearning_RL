@@ -7,7 +7,7 @@ import torch
 import torch.optim as optim
 
 import helper.envs
-from helper.algo import eval_model_on_task, reinforce
+from helper.algo import ppo_eval, reinforce
 import os
 
 parser = argparse.ArgumentParser(description='Evaluate model on specified task')

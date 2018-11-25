@@ -67,8 +67,8 @@ def meta_train():
         _, _, _, model = reinforce(policy, optimizer, task, num_actions, args.num_tasks, args.num_traj, args.traj_len,
                   args.gamma)
     elif args.algo == 'ppo':
-        # model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 2 + num_states + num_actions, non_linearity=non_linearity)
-        model = FCNActorCritic(num_actions, num_states, non_linearity=non_linearity)
+        model = GRUActorCritic(num_actions, torch.randn(1, 1, 256), 2 + num_states + num_actions, non_linearity=non_linearity)
+        # model = FCNActorCritic(num_actions, num_states, non_linearity=non_linearity)
         # fcn = LinearEmbedding(input_size=2 + num_states + num_actions, output_size=32)
         # model = SNAILActorCritic(num_actions, args.num_traj, args.traj_len, fcn, non_linearity=non_linearity)
 
