@@ -3,7 +3,7 @@ lr=0.0002
 epochs=5
 batch=50
 minibatch=10
-traj=10
+traj=100
 
 eval_minibatch=2
 eval_batchsize=5
