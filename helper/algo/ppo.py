@@ -188,7 +188,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
             state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
             state = state.unsqueeze(0)
 
-        next_dist, next_val = model(state)#, keep=not done)
+        next_dist, next_val = model(state, keep=False)#, keep=not done)
 
         returns = compute_gae(next_val, rewards, masks, values, gamma, tau)
         returns = torch.cat(returns)
@@ -261,7 +261,7 @@ def ppo_train(model, rl_category, num_actions, num_tasks, num_traj, traj_len, pp
                 action_vector[action] = 1
             
             action_vector = action_vector.unsqueeze(0)
-            print('{} {} state {}'.format(curr_ppo_batch, curr_traj, state))
+            # print('{} {} state {}'.format(curr_ppo_batch, curr_traj, state))
             state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
             state = state.unsqueeze(0)
 
@@ -315,7 +315,7 @@ def ppo_train(model, rl_category, num_actions, num_tasks, num_traj, traj_len, pp
                 ppo_state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
                 ppo_state = ppo_state.unsqueeze(0)
 
-            next_dist, next_val = model(ppo_state)#, keep=not done)
+            next_dist, next_val = model(ppo_state, keep=False)#, keep=not done)
 
             returns = compute_gae(next_val, rewards, masks, values, gamma, tau)
             returns = torch.cat(returns)
