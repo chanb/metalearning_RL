@@ -59,6 +59,8 @@ class SNAILPolicy(Policy):
         if x.shape[0] < self.T:
             x = torch.cat((torch.FloatTensor(self.T - x.shape[0], x.shape[1], x.shape[2]).zero_(), x))
 
+        print('shape: {} \n{}'.format(x.shape, x))
+
         x = self.encoder(x) # result: traj_len x 32
         x = self.tc_1(x)
         x = self.tc_2(x)

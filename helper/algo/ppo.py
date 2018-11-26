@@ -47,7 +47,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # Compute the values for objective function 
             # (ratio for some reason favours bad action. Probably the reason why it's not converging with negated obj func)
-            ratio = torch.exp(new_log_probs - old_log_probs)
+            ratio = torch.exp(new_log_probs - old_log_probs.squeeze(1))
             # ratio = (-new_log_probs + old_log_probs).exp()
 
             surr_1 = ratio * advantage
@@ -61,13 +61,13 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            loss = -(actor_loss - 0.5 * critic_loss + 0.001 * entropy)
+            loss = -(actor_loss - critic_loss + 0.01 * entropy)
 
             optimizer.zero_grad()
             loss.backward(retain_graph=True)
             optimizer.step()
 
-            # print("new_log_prob: {} \nold_log_prob: {} \nratio: {} \nactions: {} \nreturn: {} \nadvantage: {} \nvalue: {}".format(new_log_probs.squeeze(1), old_log_probs.squeeze(1), ratio.squeeze(), action.squeeze(), ret.squeeze(), advantage.squeeze(), values))
+            # print("new_log_prob: {} \nold_log_prob: {} \nratio: {} \nactions: {} \nreturn: {} \nadvantage: {} \nvalue: {}".format(new_log_probs.squeeze(1), old_log_probs.squeeze(1).squeeze(1), ratio.squeeze(), action.squeeze(), ret.squeeze(), advantage.squeeze(), values))
             # print("ret: {} val: {} advantage: {}".format(ret.squeeze(1), value.squeeze(1), advantage))
             # print("critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
 
@@ -447,6 +447,6 @@ def eval_model_on_task(model, env, num_traj, num_actions):
         task_total_actions.append(clean_actions)
         task_total_rewards.append(sum(clean_rewards))
         task_total_states.append(clean_states)
-    print(F.softmax(dist, dim=0))
+    print(F.softmax(dist, dim=1))
 
     return task_total_rewards, task_total_states, task_total_actions
