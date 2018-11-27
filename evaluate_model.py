@@ -70,7 +70,7 @@ def evaluate_model(eval_model=None, eval_tasks=None):
     
     if args.algo == 'ppo':
         all_rewards, all_states, all_actions, _ = ppo_eval(model, task, num_actions, args.num_tasks, args.num_traj, args.traj_len,
-            args.ppo_epochs, args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, evaluate_tasks=tasks, evaluate_model=to_use)
+            args.ppo_epochs, args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, evaluate_model=to_use, evaluate_tasks=tasks)
     else:
         print('Invalid learning algorithm')
 
@@ -78,7 +78,7 @@ def evaluate_model(eval_model=None, eval_tasks=None):
         pickle.dump([all_rewards, all_actions, all_states, num_actions, num_states], f)
 
 
-def random_arm_pull(rl_category, num_actions, num_tasks, num_traj, eval_tasks):
+def random_arm_pull(rl_category, num_actions, num_tasks, num_traj, eval_tasks, num_update=20):
     all_rewards = []
 
     task = ''
@@ -106,14 +106,18 @@ def random_arm_pull(rl_category, num_actions, num_tasks, num_traj, eval_tasks):
 
         # Update the environment to use the new task
         env.unwrapped.reset_task(tasks[task])
-        rewards = []
 
-        for i in range(num_traj):
-          action = np.random.randint(0, num_actions)
-          _, reward, _, _ = env.step(action)
-          rewards.append(reward)
+        update_rewards = []
+        for _ in range(num_update):
+            rewards = 0
+            for _ in range(num_traj):
+                env.reset()
+                action = np.random.randint(0, num_actions)
+                _, reward, _, _ = env.step(action)
+                rewards += reward
+            update_rewards.append(rewards)
 
-        all_rewards.append(rewards)
+        all_rewards.append(update_rewards)
 
     with open(out_result, 'wb') as f:
         pickle.dump([all_rewards, 0, 0, 0, 0], f)

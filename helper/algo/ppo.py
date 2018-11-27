@@ -6,6 +6,7 @@ import torch
 import torch.optim as optim
 import torch.nn.functional as F
 from torch.distributions import Categorical
+import copy
 
 # Computes the advantage where lambda = tau
 def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
@@ -72,7 +73,7 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
             # print("critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(critic_loss.squeeze(), actor_loss.squeeze(), entropy, loss.squeeze()))
 
 
-def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate):
+def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate, eval=False):
     '''
     env - the gym environment for the current task
     model - the model to update
@@ -170,7 +171,8 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
                 action = -1
                 done = 0
                 task_total_actions.append(clean_actions)
-                task_total_rewards.append(sum(clean_rewards))
+                if (not eval):
+                    task_total_rewards.append(sum(clean_rewards))
                 task_total_states.append(clean_states)
                 clean_actions = []
                 clean_rewards = []
@@ -189,7 +191,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
             state = state.unsqueeze(0)
 
         # With keep = True all the time, it's best
-        next_dist, next_val = model(state, keep=False)#, keep=not done)
+        next_dist, next_val = model(state, keep=not done)
 
         returns = compute_gae(next_val, rewards, masks, values, gamma, tau)
         returns = torch.cat(returns)
@@ -200,9 +202,21 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
         advantage = returns - values
         # advantage = (advantage - advantage.mean())/(advantage.std() + 1e-5)
 
+        if (eval):
+            if (model.is_recurrent):
+                model_hidden_state = model.prev_state
+            rewards, _, _ = eval_model_on_task(model, env, num_traj, num_actions)
+            model.prev_state = model_hidden_state
+            task_total_rewards.append(sum(rewards))
+
         # This is where we compute loss and update the model
         ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage
                     , clip_param=clip_param)
+    # if (eval):
+    #     if (model.is_recurrent):
+    #         model_hidden_state = model.prev_state
+    #     rewards, _, _ = eval_model_on_task(model, env, num_traj, num_actions)
+    #     task_total_rewards.append(sum(rewards))
 
     return task_total_rewards, task_total_states, task_total_actions
     
@@ -319,7 +333,7 @@ def ppo_train(model, rl_category, num_actions, num_tasks, num_traj, traj_len, pp
                 ppo_state = state
 
             # With keep = True all time, best
-            next_dist, next_val = model(ppo_state, keep=False)#, keep=not done)
+            next_dist, next_val = model(ppo_state, keep=not done)
 
             returns = compute_gae(next_val, rewards, masks, values, gamma, tau)
             returns = torch.cat(returns)
@@ -356,11 +370,9 @@ def ppo_train(model, rl_category, num_actions, num_tasks, num_traj, traj_len, pp
     return all_rewards, all_states, all_actions, model
 
 
-
-
 # Attempt to modify policy so it doesn't go too far
 def ppo_eval(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size,
-        gamma, tau, clip_param, learning_rate, evaluate_tasks=None, evaluate_model=None):
+        gamma, tau, clip_param, learning_rate, evaluate_model, evaluate_tasks=None):
     all_rewards = []
     all_states = []
     all_actions = []
@@ -381,8 +393,7 @@ def ppo_eval(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo
                 task + 1))
 
         # Reload the model if we're evaluating model
-        if (evaluate_model):
-            model = torch.load(evaluate_model)
+        model = torch.load(evaluate_model)
 
         # Need to reset hidden state for every new task
         if model.is_recurrent:
@@ -392,11 +403,8 @@ def ppo_eval(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo
         env.unwrapped.reset_task(tasks[task])
 
         # Perform sampling and update model
-        task_total_rewards, task_total_states, task_total_actions = ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate)
+        task_total_rewards, task_total_states, task_total_actions = ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate, eval=True)
         
-        if (evaluate_model):
-            task_total_rewards, task_total_states, task_total_actions = eval_model_on_task(model, env, num_traj, num_actions)
-
         all_rewards.append(task_total_rewards)
         all_states.append(task_total_states)
         all_actions.append(task_total_actions)
