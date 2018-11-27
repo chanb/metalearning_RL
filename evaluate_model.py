@@ -35,9 +35,7 @@ parser.add_argument('--outfile', help='filename to save output')
 
 args = parser.parse_args()
 
-#result_folder = './logs_eval'
-#out_result = '{}/{}_{}_{}_{}.pkl'.format(result_folder, args.algo, args.task, args.num_actions, args.max_num_traj_eval)
-out_result =args.outfile
+out_result = args.outfile
 
 def evaluate_model(eval_model=None, eval_tasks=None):
     if (not eval_model):
@@ -79,24 +77,52 @@ def evaluate_model(eval_model=None, eval_tasks=None):
     with open(out_result, 'wb') as f:
         pickle.dump([all_rewards, all_actions, all_states, num_actions, num_states], f)
 
-    # idx = 0
-    # for traj in all_states[0]:
-    #     idx += 1
-    #     curr_traj = traj
-    #     print('traj {} (length: {}) reward {} actions_made {}: '.format(idx, len(traj), all_rewards[0][idx - 1],
-    #                                                                     all_actions[0][0]))
-    #     if (args.algo == 'ppo'):
-    #         curr_traj = traj.squeeze(1)
-    #         for experience in curr_traj:
-    #             print('curr_state: {} prev_action: {} prev_reward: {} is_done: {}'.format(experience[:num_states],
-    #                                                                                       experience[
-    #                                                                                       num_states:num_states + num_actions],
-    #                                                                                       experience[
-    #                                                                                           num_states + num_actions],
-    #                                                                                       experience[-1]))
-    # print(all_actions)
-    # print(all_rewards)
+
+def random_arm_pull(rl_category, num_actions, num_tasks, num_traj, eval_tasks):
+    all_rewards = []
+
+    task = ''
+    if rl_category == 'bandit':
+        task = "Bandit-K{}-v0".format(num_actions)
+        num_states = 1
+    else:
+        print('Invalid Task')
+        return
+
+    # Meta-Learning on a class of MDP problem
+    env = gym.make(task)
+    tasks = eval_tasks
+
+    # Sample a specified amount of tasks from the class of MDP if we aren't provided any tasks
+    if (not eval_tasks):
+        tasks = env.unwrapped.sample_tasks(num_tasks)
+    print(tasks)
+    # Learn on every sampled task
+    for task in range(len(tasks)):
+        if((task + 1) % 10 == 0):
+            print(
+              "Task {} ==========================================================================================================".format(
+                task + 1))
+
+        # Update the environment to use the new task
+        env.unwrapped.reset_task(tasks[task])
+        rewards = []
+
+        for i in range(num_traj):
+          action = np.random.randint(0, num_actions)
+          _, reward, _, _ = env.step(action)
+          rewards.append(reward)
+
+        all_rewards.append(rewards)
+
+    with open(out_result, 'wb') as f:
+        pickle.dump([all_rewards, 0, 0, 0, 0], f)
 
 if __name__ == "__main__":
   print("TESTING MODEL ========================================================================")
-  evaluate_model(args.eval_model, args.eval_tasks)
+  if args.algo == 'ppo':
+    evaluate_model(args.eval_model, args.eval_tasks)
+  else:
+    with open(args.eval_tasks, 'rb') as f:
+        tasks = pickle.load(f)[0]
+    random_arm_pull(args.task, args.num_actions, args.num_tasks, args.num_traj, tasks)

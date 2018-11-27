@@ -146,7 +146,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
             
             # Take the action
             next_state, reward, done, _ = env.step(action.item())
-            print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=1), action, reward))
+            # print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=1), action, reward))
 
             # Accumulate all the information
             done = int(done)
@@ -272,7 +272,7 @@ def ppo_train(model, rl_category, num_actions, num_tasks, num_traj, traj_len, pp
         
         # Take the action
         next_state, reward, done, _ = env.step(action.item())
-        print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=1), action, reward))
+        # print('dist: {} action: {} reward: {}'.format(F.softmax(dist, dim=1), action, reward))
 
         # Accumulate all the information
         done = int(done)
