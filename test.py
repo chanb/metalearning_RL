@@ -7,6 +7,10 @@ from helper.baseline import LinearFeatureBaseline
 from helper.sampler import BatchSampler
 from helper.metalearner import MetaLearner
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+#mpl.use('TkAgg')
+
 # from zhanpenghe: https://github.com/tristandeleu/pytorch-maml-rl/issues/15
 # torch.manual_seed(7)
 
@@ -49,7 +53,8 @@ def main(args):
     env = Navigation2DEnv()
     sampler = BatchSampler(env_name=args.env_name, batch_size=args.fast_batch_size, num_workers=args.num_workers)
     tasks = sampler.sample_tasks(num_tasks=args.meta_batch_size)
-
+    means = [[] for _ in range(args.num_grad_step)]
+    timesteps = [[] for _ in range(args.num_grad_step)]
     for task in tasks:
         env.reset_task(task)
         policy, baseline = load_meta_learner_params(env, args)
@@ -68,11 +73,34 @@ def main(args):
             print("Return: {} +- {}, Timesteps:{} +- {}".format(np.mean(cum_rewards), np.std(cum_rewards),
                                                                 np.mean(ts), np.std(ts)))
             print("===========================")
+            means[grad].append(np.mean(cum_rewards))
+            timesteps[grad].append(np.mean(ts))
 
             sampler.reset_task(task)
             episodes = sampler.sample(policy)
             new_params = metalearner.adapt(episodes, first_order=args.first_order)
             policy.load_state_dict(new_params)
+
+    # plotting
+    means = np.array(means)
+    timesteps=np.array(timesteps)
+    plt.figure(0)
+    plt.plot(range(args.num_grad_step), np.mean(means, axis=1))
+    plt.xlabel('Number of Gradient Updates')
+    plt.ylabel('Average Return')
+    plt.title('Model Performance')
+    plt.fill_between(range(args.num_grad_step), np.mean(means, axis=1) - np.std(means, axis=1),
+                     np.mean(means, axis=1) + np.std(means, axis=1), color = 'blue', alpha=0.3, lw=0.001)
+    plt.savefig('plots/{}-means.png'.format(args.outfile))
+
+    plt.figure(1)
+    plt.plot(range(args.num_grad_step), np.mean(timesteps, axis=1))
+    plt.xlabel('Number of Gradient Updates')
+    plt.ylabel('Average Timestep Taken')
+    plt.title('Model Performance')
+    plt.fill_between(range(args.num_grad_step), np.mean(timesteps, axis=1) - np.std(timesteps, axis=1),
+                     np.mean(timesteps, axis=1) + np.std(timesteps, axis=1), color='blue', alpha=0.3, lw=0.001)
+    plt.savefig('plots/{}-timesteps.png'.format(args.outfile))
 
 
 if __name__ == '__main__':
