@@ -7,6 +7,7 @@ from helper.utils.torch_utils import (weighted_mean, detach_distribution,
                                       weighted_normalize)
 from helper.utils.optimization import conjugate_gradient
 
+from torch.distributions import Categorical
 
 class MetaLearner(object):
     """Meta-learner
@@ -47,7 +48,7 @@ class MetaLearner(object):
         advantages = episodes.gae(values, tau=self.tau)
         advantages = weighted_normalize(advantages, weights=episodes.mask)
 
-        pi = self.policy(episodes.observations, params=params)
+        pi = Categorical(logits=self.policy(episodes.observations, params=params))
         log_probs = pi.log_prob(episodes.actions)
         if log_probs.dim() > 2:
             log_probs = torch.sum(log_probs, dim=2)
@@ -92,7 +93,7 @@ class MetaLearner(object):
 
         for (train_episodes, valid_episodes), old_pi in zip(episodes, old_pis):
             params = self.adapt(train_episodes)
-            pi = self.policy(valid_episodes.observations, params=params)
+            pi = Categorical(logits=self.policy(valid_episodes.observations, params=params))
 
             if old_pi is None:
                 old_pi = detach_distribution(pi)
@@ -130,7 +131,7 @@ class MetaLearner(object):
         for (train_episodes, valid_episodes), old_pi in zip(episodes, old_pis):
             params = self.adapt(train_episodes)
             with torch.set_grad_enabled(old_pi is None):
-                pi = self.policy(valid_episodes.observations, params=params)
+                pi = Categorical(logits=self.policy(valid_episodes.observations, params=params))
                 pis.append(detach_distribution(pi))
 
                 if old_pi is None:
