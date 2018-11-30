@@ -31,6 +31,7 @@ class GRUActorCritic(nn.Module):
         else:
             self.non_linearity = None
         self.prev_state = init_state
+        self.init_state = init_state
         self.apply(weight_init)
 
     def forward(self, x, keep=True):
@@ -50,4 +51,5 @@ class GRUActorCritic(nn.Module):
     def reset_hidden_state(self):
         # self.critic.reset_hidden_state()
         # self.actor.reset_hidden_state()
-        self.prev_state = torch.randn(1, 1, 256)
+        self.prev_state = self.init_state
+        # self.prev_state = torch.randn(1, 1, 256)

@@ -16,9 +16,10 @@ args = parser.parse_args()
 
 with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
     all_rewards, all_actions, all_states, num_actions, num_states = pickle.load(f)
-    
     # convert to a numpy matrix
     all_rewards_matrix = np.array([np.array(xi) for xi in all_rewards])
+    print(all_rewards_matrix)
+    print(np.average(np.average(all_rewards_matrix, axis=1)))
     # each row now contains values for each iteration
     all_rewards_matrix = all_rewards_matrix.T
     one_task = all_rewards_matrix[1][:]

@@ -62,10 +62,12 @@ def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, l
 
             # This is L(Clip) - c_1L(VF) + c_2L(S)
             # Take negative because we're doing gradient descent
-            loss = (actor_loss - critic_loss + 0.01 * entropy)
+            loss = -(actor_loss - critic_loss + 0.01 * entropy)
 
             optimizer.zero_grad()
             loss.backward(retain_graph=True)
+            # Try clipping
+            # torch.nn.utils.clip_grad_norm_(model.parameters(), 0.5)
             optimizer.step()
 
             # print("new_log_prob: {} \nold_log_prob: {} \nratio: {} \nactions: {} \nreturn: {} \nadvantage: {} \nvalue: {}".format(new_log_probs.squeeze(1), old_log_probs.squeeze(1).squeeze(1), ratio.squeeze(), action.squeeze(), ret.squeeze(), advantage.squeeze(), values))
@@ -191,7 +193,7 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
             state = state.unsqueeze(0)
 
         # With keep = True all the time, it's best
-        next_dist, next_val = model(state, keep=not done)
+        next_dist, next_val = model(state)#, keep=False)#, keep=not done)
 
         returns = compute_gae(next_val, rewards, masks, values, gamma, tau)
         returns = torch.cat(returns)
@@ -202,12 +204,12 @@ def ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_bat
         advantage = returns - values
         # advantage = (advantage - advantage.mean())/(advantage.std() + 1e-5)
 
-        if (eval):
-            if (model.is_recurrent):
-                model_hidden_state = model.prev_state
-            rewards, _, _ = eval_model_on_task(model, env, num_traj, num_actions)
-            model.prev_state = model_hidden_state
-            task_total_rewards.append(sum(rewards))
+        # if (eval):
+        #     if (model.is_recurrent):
+        #         model_hidden_state = model.prev_state
+        #     rewards, _, _ = eval_model_on_task(model, env, num_traj, num_actions)
+        #     model.prev_state = model_hidden_state
+        #     task_total_rewards.append(sum(rewards))
 
         # This is where we compute loss and update the model
         ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage
@@ -304,19 +306,6 @@ def ppo_train(model, rl_category, num_actions, num_tasks, num_traj, traj_len, pp
 
         state = next_state
 
-        # Reset input values if we're done the trajectory/episode
-        if (done):
-            state = env.reset()
-            reward = 0.
-            action = -1
-            done = 0
-            task_total_actions.append(clean_actions)
-            task_total_rewards.append(sum(clean_rewards))
-            task_total_states.append(clean_states)
-            clean_actions = []
-            clean_rewards = []
-            clean_states = []
-
         # Perform PPO update
         if (curr_ppo_batch == batch_size):
             state = torch.from_numpy(state).float().unsqueeze(0)
@@ -352,6 +341,19 @@ def ppo_train(model, rl_category, num_actions, num_tasks, num_traj, traj_len, pp
             masks = []
             curr_ppo_batch = 0
 
+        # Reset input values if we're done the trajectory/episode
+        if (done):
+            state = env.reset()
+            reward = 0.
+            action = -1
+            done = 0
+            task_total_actions.append(clean_actions)
+            task_total_rewards.append(sum(clean_rewards))
+            task_total_states.append(clean_states)
+            clean_actions = []
+            clean_rewards = []
+            clean_states = []
+
         # Sampled enough from this task
         if curr_traj == num_traj:
             curr_traj = 0
@@ -385,6 +387,9 @@ def ppo_eval(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo
     if (not evaluate_tasks):
         tasks = env.unwrapped.sample_tasks(num_tasks)
 
+    # Reload the model if we're evaluating model
+    model = torch.load(evaluate_model)
+    beginning = torch.randn(1, 1, 256)
     # Learn on every sampled task
     for task in range(len(tasks)):
         if((task + 1) % 10 == 0):
@@ -392,19 +397,29 @@ def ppo_eval(model, rl_category, num_actions, num_tasks, num_traj, traj_len, ppo
               "Task {} ==========================================================================================================".format(
                 task + 1))
 
-        # Reload the model if we're evaluating model
+        # # Reload the model if we're evaluating model
         model = torch.load(evaluate_model)
 
-        # Need to reset hidden state for every new task
+        # # Need to reset hidden state for every new task
+        # if model.is_recurrent:
+        #     model.reset_hidden_state()
+
         if model.is_recurrent:
+            # model.prev_state = beginning
             model.reset_hidden_state()
 
         # Update the environment to use the new task
         env.unwrapped.reset_task(tasks[task])
-
+        task_total_rewards = []
+        task_total_states = []
+        task_total_actions = []
         # Perform sampling and update model
-        task_total_rewards, task_total_states, task_total_actions = ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate, eval=True)
+        # task_total_rewards, task_total_states, task_total_actions = ppo_sample(env, model, num_actions, num_traj, traj_len, ppo_epochs, mini_batch_size, batch_size, gamma, tau, clip_param, learning_rate, eval=True)
         
+        rewards, _, _ = eval_model_on_task(model, env, num_traj, num_actions)
+        
+        task_total_rewards.append(sum(rewards))
+
         all_rewards.append(task_total_rewards)
         all_states.append(task_total_states)
         all_actions.append(task_total_actions)
@@ -443,6 +458,7 @@ def eval_model_on_task(model, env, num_traj, num_actions):
                 state = state.unsqueeze(0)
 
             dist, _ = model(state)
+            print(F.softmax(dist, dim=1))
             m = Categorical(logits=dist)
             action = m.sample()
             
@@ -455,10 +471,28 @@ def eval_model_on_task(model, env, num_traj, num_actions):
             clean_rewards.append(reward)
 
             state = next_state
+        
+        state = torch.from_numpy(state).float().unsqueeze(0)
+        if model.is_recurrent:
+            done_entry = torch.tensor([[done]]).float()
+            reward_entry = torch.tensor([[reward]]).float()
+            action_vector = torch.FloatTensor(num_actions)
+            action_vector.zero_()
+            if (action > -1):
+                action_vector[action] = 1
+            
+            action_vector = action_vector.unsqueeze(0)
+            # print('{} {} {} {}'.format(state, action_vector, reward_entry, done_entry))
+            state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
+            state = state.unsqueeze(0)
+
+        dist, _ = model(state)
 
         task_total_actions.append(clean_actions)
         task_total_rewards.append(sum(clean_rewards))
         task_total_states.append(clean_states)
     print(F.softmax(dist, dim=1))
+    print(task_total_actions)
+    print(task_total_rewards)
 
     return task_total_rewards, task_total_states, task_total_actions
