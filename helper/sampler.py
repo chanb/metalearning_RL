@@ -108,7 +108,7 @@ class Sampler():
 
       # Get information from model and take action
       with torch.no_grad():
-        dist, value, next_hidden_state = self.model(state, hidden_state, to_print=False)
+        dist, value, next_hidden_state = self.model(state, hidden_state)#, to_print=False)
         action = dist.sample()
         log_prob = dist.log_prob(action)
         next_state, reward, done, _ = self.env.step(action.item())

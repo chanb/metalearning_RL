@@ -49,11 +49,11 @@ def meta_train(task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo
   tau, clip_param, learning_rate, vf_coef, ent_coef, max_grad_norm, target_kl, non_linearity):
 
   # Create the model
-  model = GRUActorCritic(num_actions, 2 + num_states + num_actions, non_linearity=non_linearity)
+  # model = GRUActorCritic(num_actions, 2 + num_states + num_actions, non_linearity=non_linearity)
 
   # model = FCNActorCritic(num_actions, num_states, non_linearity=non_linearity)
-  # fcn = LinearEmbedding(input_size=2 + num_states + num_actions, output_size=32)
-  # model = SNAILActorCritic(num_actions, args.num_traj, args.traj_len, fcn, non_linearity=non_linearity)
+  fcn = LinearEmbedding(input_size=2 + num_states + num_actions, output_size=32)
+  model = SNAILActorCritic(num_actions, args.num_traj, args.traj_len, fcn, non_linearity=non_linearity)
 
   # Set the optimizer
   optimizer = optim.Adam(model.parameters(), lr=learning_rate)

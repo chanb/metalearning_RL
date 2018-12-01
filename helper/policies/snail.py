@@ -56,12 +56,13 @@ class SNAILPolicy(Policy):
     if x.shape[0] < self.T:
       x = torch.cat((torch.FloatTensor(self.T - x.shape[0], x.shape[1], x.shape[2]).zero_(), x))
 
+    x = x.transpose(0, 1)
     x = self.encoder(x) # result: traj_len x 32
     x = self.tc_1(x)
     x = self.tc_2(x)
     x = self.attention_1(x)
     x = self.affine_2(x)
-    x = x[self.T-1, :, :] # pick_last_action
+    x = x[:, self.T-1, :] # pick_last_action
     if (to_print):
       print('Distribution: {}'.format(F.softmax(x, dim=1)))
     return Categorical(logits=x), next_hidden_state
