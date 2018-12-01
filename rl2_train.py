@@ -62,13 +62,7 @@ def meta_train(task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo
   agent = PPO(model, optimizer, ppo_epochs, mini_batchsize, batchsize, clip_param, vf_coef, ent_coef, max_grad_norm, target_kl)
   meta_learner = MetaLearner(task, num_actions, num_states, num_tasks, num_traj, traj_len)
 
-  # Testing sampler
-
-  # env = gym.make(task)
-  # env.unwrapped.reset_task({'mean': [1,0,0,0,0]})
-  # sampler = Sampler(model, env, num_actions, gamma, tau)
-  # sampler.sample(batchsize)
-  meta_learner.tasks[0] = {'mean': [1,0,0,0,0]}
+  # meta_learner.tasks[0] = {'mean': [1,0,0,0,0]}
 
   meta_learner.train(model, optimizer, agent, gamma, tau)
 
