@@ -67,6 +67,8 @@ def meta_train(task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo
   # env = gym.make(task)
   # env.unwrapped.reset_task({'mean': [1,0,0,0,0]})
   # sampler = Sampler(model, env, num_actions, gamma, tau)
+  # sampler.sample(batchsize)
+  meta_learner.tasks[0] = {'mean': [1,0,0,0,0]}
 
   meta_learner.train(model, optimizer, agent, gamma, tau)
 

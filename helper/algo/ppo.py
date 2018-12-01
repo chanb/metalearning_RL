@@ -21,7 +21,7 @@ class PPO:
   def ppo_iter(self, mini_batch_size, states, actions, log_probs, returns, advantages, hidden_states):
     batch_size = states.size(0)
     for _ in range(batch_size // mini_batch_size):
-      rand_ids = np.random.choice(batch_size, mini_batch_size, False)
+      rand_ids = np.random.choice(batch_size, mini_batch_size, True)
       yield states[rand_ids, :], actions[rand_ids, :], log_probs[rand_ids, :].squeeze(1).squeeze(1), returns[rand_ids, :].squeeze(1).squeeze(1), \
             advantages[rand_ids, :].squeeze(1).squeeze(1), hidden_states[rand_ids, :]
 
@@ -30,7 +30,7 @@ class PPO:
     print('PPO Update')
     for epoch in range(self.ppo_epochs):
       for state, action, old_log_probs, ret, advantage, hidden_state in self.ppo_iter(self.mini_batchsize, sampler.states, sampler.actions, sampler.log_probs, sampler.returns,
-        sampler.advantages, sampler.hidden_states):
+        sampler.advantages, sampler.get_hidden_state()):
         # Computes the new log probability from the updated model
         new_log_probs = []
         values = []

@@ -43,7 +43,7 @@ class SNAILPolicy(Policy):
     self.affine_2 = nn.Linear(num_channels, self.K)
 
 
-  def forward(self, x, hidden_state):
+  def forward(self, x, hidden_state, to_print=True):
     if hidden_state.size()[0] == 0:
       x = x
     elif hidden_state.shape[0] >= self.T:
@@ -62,4 +62,6 @@ class SNAILPolicy(Policy):
     x = self.attention_1(x)
     x = self.affine_2(x)
     x = x[self.T-1, :, :] # pick_last_action
-    return Categorical(logit = x), next_hidden_state
+    if (to_print):
+      print('Distribution: {}'.format(F.softmax(x, dim=1)))
+    return Categorical(logits=x), next_hidden_state

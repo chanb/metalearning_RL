@@ -13,10 +13,13 @@ class SNAILActorCritic(nn.Module):
                               non_linearity=non_linearity)
     self.actor = SNAILPolicy(output_size, max_num_traj, max_traj_len, encoder, hidden_size=policy_hidden_size)
 
-  def forward(self, x, hidden_state):
+  def forward(self, x, hidden_state, to_print=True):
     val, critic_hidden_state = self.critic(x, hidden_state)
-    mu, actor_hidden_state = self.actor(x, hidden_state)
-    return mu, val, actor_hidden_state, critic_hidden_state
+    dist, actor_hidden_state = self.actor(x, hidden_state, to_print)
 
-  def init_hidden(self):
+    assert torch.all(torch.eq(critic_hidden_state, actor_hidden_state)), 'They should have same hidden state'
+
+    return dist, val.unsqueeze(0), actor_hidden_state
+
+  def init_hidden_state(self):
     return torch.FloatTensor()

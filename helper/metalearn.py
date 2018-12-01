@@ -40,14 +40,15 @@ class MetaLearner():
       if curr_traj == 0:
         self.set_env(curr_task)
         curr_task += 1
+        sampler.last_hidden_state = None
 
         if curr_task % 10 == 0:
           print("task {} ==========================================================".format(curr_task))
       
       # If the whole task can fit, sample the whole task
-      if curr_batchsize + (self.num_traj - curr_traj) <= agent.batchsize:
+      if curr_batchsize + (self.num_traj - curr_traj) < agent.batchsize:
         sample_amount = self.num_traj - curr_traj
-        sampler.sample(sample_amount)
+        sampler.sample(sample_amount, sampler.last_hidden_state)
         sampler.last_hidden_state = None
       else:
         sample_amount = agent.batchsize - curr_batchsize

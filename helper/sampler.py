@@ -11,6 +11,7 @@ class Sampler():
     self.gamma = gamma
     self.tau = tau
     self.last_hidden_state = None
+    self.hidden_states = []
 
     self.reset_storage()
     
@@ -55,7 +56,6 @@ class Sampler():
     self.rewards = []
     self.log_probs = []
     self.masks = []
-    self.hidden_states = []
     self.returns = []
     self.advantages = []
     self.reset_debug()
@@ -69,10 +69,12 @@ class Sampler():
     self.log_probs = torch.cat(self.log_probs)
     self.states = torch.cat(self.states)
     self.actions = torch.cat(self.actions)
-    self.hidden_states = torch.cat(self.hidden_states)
     self.advantages = self.returns - self.values
     self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + EPS)
 
+  # Concatenate hidden state
+  def get_hidden_state(self):
+    return torch.cat(self.hidden_states)
 
   # Insert a sample into the storage
   def insert_storage(self, log_prob, state, action, reward, done, value, hidden_state):
@@ -140,6 +142,7 @@ class Sampler():
         action = -1
         done = 0
 
+
     ########################################################################
     # self.print_debug()
     ########################################################################
@@ -150,7 +153,6 @@ class Sampler():
       state = self.generate_state_vector(done, reward, self.num_actions, action, state)
       with torch.no_grad():
         _, next_val, _, = self.model(state, hidden_state, to_print=False)
-
     self.returns = self.compute_gae(next_val, self.rewards, self.masks, self.values, self.gamma, self.tau)
 
 
