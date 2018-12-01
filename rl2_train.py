@@ -36,6 +36,7 @@ parser.add_argument('--clip_param', type=float, default=0.1, help='clipping para
 parser.add_argument('--vf_coef', type=float, default=0.5, help='value loss coefficient (default: 0.5)')
 parser.add_argument('--ent_coef', type=float, default=0.1, help='entropy coefficient (default: 0.1)')
 parser.add_argument('--max_grad_norm', type=float, default=0.5, help='max norm of gradients (default: 0.5)')
+parser.add_argument('--target_kl', type=float, default=0.01, help='max target kl (default: 0.01)')
 
 parser.add_argument('--out_file', type=str, help='the output file that stores the model')
 
@@ -45,7 +46,7 @@ eps = np.finfo(np.float32).eps.item()
 
 # Performs meta training
 def meta_train(task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo_epochs, mini_batchsize, batchsize, gamma, 
-  tau, clip_param, learning_rate, vf_coef, ent_coef, max_grad_norm, non_linearity):
+  tau, clip_param, learning_rate, vf_coef, ent_coef, max_grad_norm, target_kl, non_linearity):
 
   # Create the model
   model = GRUActorCritic(num_actions, 2 + num_states + num_actions, non_linearity=non_linearity)
@@ -56,17 +57,24 @@ def meta_train(task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo
 
   # Set the optimizer
   optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+  
+  # Create the agent that uses PPO
+  agent = PPO(model, optimizer, ppo_epochs, mini_batchsize, batchsize, clip_param, vf_coef, ent_coef, max_grad_norm, target_kl)
+
 
   meta_learner = MetaLearner(task, num_actions, num_states, num_tasks, num_traj, traj_len)
 
   # Testing sampler
   meta_learner.set_env(0)
-  sampler = Sampler(model, meta_learner.env, num_actions, gamma, tau)
-  
-  agent = PPO(model, optimizer, ppo_epochs, mini_batchsize, batchsize, clip_param, vf_coef, ent_coef, max_grad_norm)
+  env = gym.make(task)
+  env.unwrapped.reset_task({'mean': [1,0,0,0,0]})
+  sampler = Sampler(model, env, num_actions, gamma, tau)
 
-  sampler.sample(batchsize)
-  agent.update(sampler)
+  for i in range(10):
+    print('{} iteration ==============='.format(i + 1))
+    sampler.sample(batchsize)
+    agent.update(sampler)
+    sampler.reset_storage()
 
   return model
 
@@ -84,7 +92,7 @@ def main():
 
   model = meta_train(task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
     args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, args.vf_coef, 
-    args.ent_coef, args.max_grad_norm, args.non_linearity)
+    args.ent_coef, args.max_grad_norm, args.target_kl, args.non_linearity)
 
   if (model):
     if os.path.exists(args.out_file):

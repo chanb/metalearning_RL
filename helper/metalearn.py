@@ -21,5 +21,9 @@ class MetaLearner():
       assert (i < self.num_tasks and i >= 0), 'i = {} is out of range. There is only {} tasks'.format(i, self.num_tasks)
     self.env.unwrapped.reset_task(self.tasks[i])
 
-  def sample(self):
-    pass
+  def sample(self, model, optimizer, gamma, tau):
+    sampler = Sampler(model, self.env, self.num_actions, gamma, tau)
+    for i in range(self.num_tasks):
+      self.set_env(i)
+
+      

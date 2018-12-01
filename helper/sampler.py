@@ -12,7 +12,6 @@ class Sampler():
     self.tau = tau
 
     self.reset_storage()
-    self.reset_debug()
     
 
   # Reset the current environment
@@ -30,6 +29,7 @@ class Sampler():
     self.hidden_states = []
     self.returns = []
     self.advantages = []
+    self.reset_debug()
 
   # Computes the advantage where lambda = tau
   def compute_gae(self, next_value, rewards, masks, values, gamma=0.99, tau=0.95):
