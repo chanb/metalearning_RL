@@ -34,26 +34,24 @@ class MetaLearner():
     i = 0
 
     while i < total_num_steps:
-      print('{} {} {}'.format(curr_traj, self.num_traj, curr_batchsize))
+      # print('{} {} {}'.format(curr_traj, self.num_traj, curr_batchsize))
       if curr_traj == 0:
         self.set_env(curr_task)
         curr_task += 1
       
       # If the whole task can fit, sample the whole task
       if curr_batchsize + (self.num_traj - curr_traj) <= agent.batchsize:
-        print('yes')
         sample_amount = self.num_traj - curr_traj
         sampler.sample(sample_amount)
         sampler.last_hidden_state = None
       else:
-        print('no')
         sample_amount = agent.batchsize - curr_batchsize
         sampler.sample(sample_amount, sampler.last_hidden_state)
-      print(sample_amount)
       i += sample_amount
       curr_batchsize += sample_amount
       curr_traj += sample_amount
 
+      # Update the batch because it's full
       if curr_batchsize == agent.batchsize:
         sampler.concat_storage()
         agent.update(sampler)
@@ -62,7 +60,8 @@ class MetaLearner():
 
       if curr_traj == self.num_traj:
         curr_traj = 0
-      
+    
+    # For the remaining samples, don't waste and update
     if total_num_steps % agent.batchsize != 0:
       sampler.concat_storage()
       agent.update(sampler)

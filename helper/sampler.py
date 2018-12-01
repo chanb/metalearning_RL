@@ -76,20 +76,23 @@ class Sampler():
     action = -1
     done = 0
 
+    #TODO: Add code to handle non recurrent case
     hidden_state = last_hidden_state
     if last_hidden_state is None:
-      hidden_state = torch.zeros([1, 1, self.model.hidden_size])
+      hidden_state = self.model.init_hidden_state()
 
+    # We sample batchsize amount of data
     for i in range(batchsize):
       # Set the vector state
       if self.model.is_recurrent:
         state = self.generate_state_vector(done, reward, self.num_actions, action, state)
 
       # Get information from model and take action
-      dist, value, next_hidden_state = self.model(state, hidden_state)
-      action = dist.sample()
-      log_prob = dist.log_prob(action)
-      next_state, reward, done, _ = self.env.step(action.item())
+      with torch.no_grad():
+        dist, value, next_hidden_state = self.model(state, hidden_state)
+        action = dist.sample()
+        log_prob = dist.log_prob(action)
+        next_state, reward, done, _ = self.env.step(action.item())
 
       ########################################################################
       # Storing this for debugging
@@ -109,6 +112,7 @@ class Sampler():
 
       state = next_state
       state = torch.from_numpy(state).float().unsqueeze(0)
+      
       hidden_state = next_hidden_state
 
       # Grab hidden state for the extra information
@@ -132,7 +136,8 @@ class Sampler():
     # Compute the return
     if self.model.is_recurrent:
       state = self.generate_state_vector(done, reward, self.num_actions, action, state)
-      _, next_val, _, = self.model(state, hidden_state, to_print=False)
+      with torch.no_grad():
+        _, next_val, _, = self.model(state, hidden_state, to_print=False)
 
     self.returns = self.compute_gae(next_val, self.rewards, self.masks, self.values, self.gamma, self.tau)
 

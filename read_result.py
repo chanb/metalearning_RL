@@ -28,14 +28,14 @@ with open(args.file, 'rb') as f:  # Python 3: open(..., 'rb')
     one_task = all_rewards_matrix[1][:]
 
     if(args.task == 'bandit'):
-        # all_rewards_matrix = np.cumsum(all_rewards_matrix, axis=0)
+        all_rewards_matrix = np.cumsum(all_rewards_matrix, axis=0)
         # computes std dev of each row
         reward_err = np.std(all_rewards_matrix, axis=1)
         avg_reward = np.average(all_rewards_matrix, axis=1)
         # normalizing
-        # for i in range(len(avg_reward)):
-        #     avg_reward[i] = avg_reward[i]/(i+1)
-        #     reward_err[i] = reward_err[i]/(i+1) #+ avg_reward[i]
+        for i in range(len(avg_reward)):
+            avg_reward[i] = avg_reward[i]/(i+1)
+            reward_err[i] = reward_err[i]/(i+1) #+ avg_reward[i]
     elif(args.task == 'mdp'):
         reward_err = np.std(all_rewards_matrix, axis=1)
         avg_reward = np.average(all_rewards_matrix, axis=1)
