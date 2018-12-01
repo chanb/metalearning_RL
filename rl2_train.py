@@ -74,6 +74,7 @@ def meta_train(task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo
 
 def main():
   assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid Task'
+  assert (args.mini_batch_size <= args.batch_size), 'Mini-batch size needs to be <= batch size'
   task = ''
   if args.task == 'bandit':
     task = "Bandit-K{}-v0".format(args.num_actions)

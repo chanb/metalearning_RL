@@ -16,7 +16,7 @@ parser.add_argument('--task', type=str, default='bandit', help='the task to lear
 parser.add_argument('--algo', type=str, default='ppo', help='the algorithm to evaluate (default: ppo)')
 
 parser.add_argument('--num_actions', type=int, default=5, help='number of arms for MAB or number of actions for MDP (default: 5)')
-parser.add_argument('--num_tasks', type=int, default=5, help='number of similar tasks to run (default: 5)')
+parser.add_argument('--num_tasks', type=int, default=100, help='number of similar tasks to run (default: 100)')
 parser.add_argument('--num_traj', type=int, default=10, help='number of trajectories to interact with (default: 10)')
 parser.add_argument('--traj_len', type=int, default=1, help='fixed trajectory length (default: 1)')
 

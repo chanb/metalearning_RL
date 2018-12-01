@@ -23,6 +23,7 @@ class PPO:
             advantages[rand_ids, :].squeeze(1).squeeze(1), hidden_states[rand_ids, :]
 
   def update(self, sampler):
+    print('PPO Update')
     for epoch in range(self.ppo_epochs):
       for state, action, old_log_probs, ret, advantage, hidden_state in self.ppo_iter(self.mini_batchsize, sampler.states, sampler.actions, sampler.log_probs, sampler.returns,
         sampler.advantages, sampler.hidden_states):
@@ -57,8 +58,8 @@ class PPO:
         # This is L(Clip) - c_1L(VF) + c_2L(S)
         # Take negative because we're doing gradient descent
         loss = -(actor_loss - self.vf_coef * critic_loss + self.ent_coef * entropy)
-        print('kl: {} \nactions: {} \nratio: {} \nadv: {} \nsurr1: {} \nsurr2: {} \nactor: {} \ncritic: {} \nloss: {}'.format(
-          kl, action.squeeze(1).squeeze(1), ratio, advantage, surr_1, surr_2, actor_loss, critic_loss, loss))
+        # print('kl: {} \nactions: {} \nratio: {} \nadv: {} \nsurr1: {} \nsurr2: {} \nactor: {} \ncritic: {} \nloss: {}'.format(
+        #   kl, action.squeeze(1).squeeze(1), ratio, advantage, surr_1, surr_2, actor_loss, critic_loss, loss))
 
         self.optimizer.zero_grad()
         loss.backward(retain_graph=True)
