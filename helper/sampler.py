@@ -1,5 +1,7 @@
 import torch
 
+eps = 1e-5
+
 # This samples from the current environment using the provided model
 class Sampler():
   def __init__(self, model, env, num_actions, gamma=0.99, tau=0.3):
@@ -27,7 +29,7 @@ class Sampler():
     self.masks = []
     self.hidden_states = []
     self.returns = []
-    self.advantage = []
+    self.advantages = []
 
   # Computes the advantage where lambda = tau
   def compute_gae(self, next_value, rewards, masks, values, gamma=0.99, tau=0.95):
@@ -109,7 +111,7 @@ class Sampler():
         done = 0
 
     ########################################################################
-    self.print_debug()
+    # self.print_debug()
     ########################################################################
     
     #TODO: Remove to_print
@@ -126,7 +128,9 @@ class Sampler():
     self.log_probs = torch.cat(self.log_probs)
     self.states = torch.cat(self.states)
     self.actions = torch.cat(self.actions)
-    self.advantage = self.returns - self.values
+    self.hidden_states = torch.cat(self.hidden_states)
+    self.advantages = self.returns - self.values
+    self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + eps)
 
   # Reset debugging information
   def reset_debug(self):
