@@ -29,6 +29,7 @@ class PPO:
   def update(self, sampler):
     print('PPO Update')
     for epoch in range(self.ppo_epochs):
+      print('PPO epoch {}'.format(epoch))
       for state, action, old_log_probs, ret, advantage, hidden_state in self.ppo_iter(self.mini_batchsize, sampler.states, sampler.actions, sampler.log_probs, sampler.returns, sampler.advantages, sampler.get_hidden_state()):
         # Computes the new log probability from the updated model
         new_log_probs = []
@@ -65,9 +66,9 @@ class PPO:
         #   kl, action.squeeze(1).squeeze(1), ratio, advantage, surr_1, surr_2, actor_loss, critic_loss, loss))
 
         self.optimizer.zero_grad()
-        loss.backward(retain_graph=True)
+        loss.backward()
         # Try clipping
-        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
         self.optimizer.step()
 
 

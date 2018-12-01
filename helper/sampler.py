@@ -49,19 +49,18 @@ class Sampler():
   # Concatenate storage for more accessibility
   def concat_storage(self):
     # Store in better format
-    self.returns = torch.cat(self.returns)
-    self.values = torch.cat(self.values)
-    self.log_probs = torch.cat(self.log_probs)
+    self.returns = torch.cat(self.returns).detach()
+    self.values = torch.cat(self.values).detach()
+    self.log_probs = torch.cat(self.log_probs).detach()
     self.states = torch.cat(self.states)
     self.actions = torch.cat(self.actions)
     self.advantages = self.returns - self.values
     self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + EPS)
-    # print('returns {} logprobs {} value {} states {} actions {} adv {}'.format(self.returns.shape, self.log_probs.shape, self.values.shape, self.states.shape, self.actions.shape, self.advantages.shape))
 
 
   # Concatenate hidden state
   def get_hidden_state(self):
-    return torch.cat(self.hidden_states)
+    return torch.cat(self.hidden_states).detach()
 
 
   # Insert a sample into the storage
@@ -73,6 +72,12 @@ class Sampler():
       self.masks.append(1 - done)
       self.values.append(value)
       self.hidden_states.append(hidden_state)
+
+
+  def reset_traj(self):
+    state = self.env.reset()
+    state = torch.from_numpy(state).float().unsqueeze(0)
+    return state, 0, -1, 0
 
 
   # Generate the state vector for RNN
@@ -92,11 +97,7 @@ class Sampler():
 
   # Sample batchsize amount of moves
   def sample(self, batchsize, last_hidden_state=None):
-    state = self.env.reset()
-    state = torch.from_numpy(state).float().unsqueeze(0)
-    reward = 0
-    action = -1
-    done = 0
+    state, reward, action, done = self.reset_traj()
 
     #TODO: Add code to handle non recurrent case
     hidden_state = last_hidden_state
@@ -111,7 +112,7 @@ class Sampler():
 
       # Get information from model and take action
       with torch.no_grad():
-        dist, value, next_hidden_state = self.model(state, hidden_state)#, to_print=False)
+        dist, value, next_hidden_state = self.model(state, hidden_state)
         action = dist.sample()
         log_prob = dist.log_prob(action)
         next_state, reward, done, _ = self.env.step(action.item())
@@ -139,11 +140,7 @@ class Sampler():
 
         #TODO: Remove to_print
         _, _, hidden_state = self.model(state, hidden_state, to_print=False)
-        state = self.env.reset()
-        state = torch.from_numpy(state).float().unsqueeze(0)
-        reward = 0
-        action = -1
-        done = 0
+        state, reward, action, done = self.reset_traj()
 
 
     ########################################################################
