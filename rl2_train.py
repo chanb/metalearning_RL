@@ -69,9 +69,9 @@ def meta_train(task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo
   agent.update(sampler)
 
   return model
-    
 
-if __name__ == '__main__':
+def main():
+  assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid Task'
   task = ''
   if args.task == 'bandit':
     task = "Bandit-K{}-v0".format(args.num_actions)
@@ -81,9 +81,6 @@ if __name__ == '__main__':
     task = "TabularMDP-v0"
     num_actions = 5
     num_states = 10
-  else:
-    print('Invalid Task')
-    exit
 
   model = meta_train(task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
     args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, args.vf_coef, 
@@ -95,3 +92,7 @@ if __name__ == '__main__':
     torch.save(model, args.out_file)
   else:
     print('Model is not generated')
+
+
+if __name__ == '__main__':
+  main()
