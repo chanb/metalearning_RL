@@ -23,7 +23,7 @@ parser.add_argument('--learning_rate', type=float, default=3e-4, help='learning 
 parser.add_argument('--gamma', type=float, default=0.99, help='discount factor (default: 0.99)')
 
 parser.add_argument('--num_actions', type=int, default=5, help='number of arms for MAB or number of actions for MDP (default: 5)')
-parser.add_argument('--num_tasks', type=int, default=5, help='number of similar tasks to run (default: 5)')
+parser.add_argument('--num_tasks', type=int, default=100, help='number of similar tasks to run (default: 100)')
 parser.add_argument('--num_traj', type=int, default=10, help='number of trajectories to interact with (default: 10)')
 parser.add_argument('--traj_len', type=int, default=1, help='fixed trajectory length (default: 1)')
 
@@ -60,21 +60,15 @@ def meta_train(task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo
   
   # Create the agent that uses PPO
   agent = PPO(model, optimizer, ppo_epochs, mini_batchsize, batchsize, clip_param, vf_coef, ent_coef, max_grad_norm, target_kl)
-
-
   meta_learner = MetaLearner(task, num_actions, num_states, num_tasks, num_traj, traj_len)
 
   # Testing sampler
-  meta_learner.set_env(0)
-  env = gym.make(task)
-  env.unwrapped.reset_task({'mean': [1,0,0,0,0]})
-  sampler = Sampler(model, env, num_actions, gamma, tau)
 
-  for i in range(10):
-    print('{} iteration ==============='.format(i + 1))
-    sampler.sample(batchsize)
-    agent.update(sampler)
-    sampler.reset_storage()
+  # env = gym.make(task)
+  # env.unwrapped.reset_task({'mean': [1,0,0,0,0]})
+  # sampler = Sampler(model, env, num_actions, gamma, tau)
+
+  meta_learner.train(model, optimizer, agent, gamma, tau)
 
   return model
 

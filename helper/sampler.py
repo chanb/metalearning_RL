@@ -10,6 +10,7 @@ class Sampler():
     self.num_actions = num_actions
     self.gamma = gamma
     self.tau = tau
+    self.last_hidden_state = None
 
     self.reset_storage()
     
@@ -56,15 +57,28 @@ class Sampler():
     state = state.unsqueeze(0)
     return state
 
+  def concat_storage(self):
+    # Store in better format
+    self.returns = torch.cat(self.returns)
+    self.values = torch.cat(self.values)
+    self.log_probs = torch.cat(self.log_probs)
+    self.states = torch.cat(self.states)
+    self.actions = torch.cat(self.actions)
+    self.hidden_states = torch.cat(self.hidden_states)
+    self.advantages = self.returns - self.values
+    self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + eps)
+
   # Sample batchsize amount of moves
-  def sample(self, batchsize):
+  def sample(self, batchsize, last_hidden_state=None):
     state = self.env.reset()
     state = torch.from_numpy(state).float().unsqueeze(0)
     reward = 0
     action = -1
     done = 0
 
-    hidden_state = torch.zeros([1, 1, self.model.hidden_size])
+    hidden_state = last_hidden_state
+    if last_hidden_state is None:
+      hidden_state = torch.zeros([1, 1, self.model.hidden_size])
 
     for i in range(batchsize):
       # Set the vector state
@@ -113,7 +127,7 @@ class Sampler():
     ########################################################################
     # self.print_debug()
     ########################################################################
-    
+    self.last_hidden_state = hidden_state
     #TODO: Remove to_print
     # Compute the return
     if self.model.is_recurrent:
@@ -121,16 +135,6 @@ class Sampler():
       _, next_val, _, = self.model(state, hidden_state, to_print=False)
 
     self.returns = self.compute_gae(next_val, self.rewards, self.masks, self.values, self.gamma, self.tau)
-  
-    # Store in better format
-    self.returns = torch.cat(self.returns)
-    self.values = torch.cat(self.values)
-    self.log_probs = torch.cat(self.log_probs)
-    self.states = torch.cat(self.states)
-    self.actions = torch.cat(self.actions)
-    self.hidden_states = torch.cat(self.hidden_states)
-    self.advantages = self.returns - self.values
-    self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + eps)
 
   # Reset debugging information
   def reset_debug(self):
