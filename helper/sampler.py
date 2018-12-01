@@ -15,23 +15,6 @@ class Sampler():
     self.reset_storage()
     
 
-  # Reset the current environment
-  def set_env(self, task):
-    self.env.unwrapped.reset_task(task)
-
-  # Reset the storage
-  def reset_storage(self):
-    self.actions = []
-    self.values = []
-    self.states = []
-    self.rewards = []
-    self.log_probs = []
-    self.masks = []
-    self.hidden_states = []
-    self.returns = []
-    self.advantages = []
-    self.reset_debug()
-
   # Computes the advantage where lambda = tau
   def compute_gae(self, next_value, rewards, masks, values, gamma=0.99, tau=0.95):
     values = values + [next_value]
@@ -42,6 +25,7 @@ class Sampler():
       gae = delta + gamma * tau * masks[step] * gae
       returns.insert(0, gae + values[step])
     return returns
+
 
   # Generate the state vector for RNN
   def generate_state_vector(self, done, reward, num_actions, action, state):
@@ -57,6 +41,26 @@ class Sampler():
     state = state.unsqueeze(0)
     return state
 
+
+  # Reset the current environment
+  def set_env(self, task):
+    self.env.unwrapped.reset_task(task)
+
+
+  # Reset the storage
+  def reset_storage(self):
+    self.actions = []
+    self.values = []
+    self.states = []
+    self.rewards = []
+    self.log_probs = []
+    self.masks = []
+    self.hidden_states = []
+    self.returns = []
+    self.advantages = []
+    self.reset_debug()
+
+
   # Concatenate storage for more accessibility
   def concat_storage(self):
     # Store in better format
@@ -69,6 +73,7 @@ class Sampler():
     self.advantages = self.returns - self.values
     self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + EPS)
 
+
   # Insert a sample into the storage
   def insert_storage(self, log_prob, state, action, reward, done, value, hidden_state):
       self.log_probs.append(log_prob)
@@ -78,6 +83,7 @@ class Sampler():
       self.masks.append(1 - done)
       self.values.append(value)
       self.hidden_states.append(hidden_state)
+
 
   # Sample batchsize amount of moves
   def sample(self, batchsize, last_hidden_state=None):
@@ -147,11 +153,13 @@ class Sampler():
 
     self.returns = self.compute_gae(next_val, self.rewards, self.masks, self.values, self.gamma, self.tau)
 
+
   # Reset debugging information
   def reset_debug(self):
     self.clean_actions = []
     self.clean_states = []
     self.clean_rewards = []
+
 
   # Print debugging information
   def print_debug(self):
