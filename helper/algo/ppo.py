@@ -1,7 +1,9 @@
 import numpy as np
 import torch
 
-clip_base = 1.0
+CLIP_BASE = 1.0
+
+# This performs PPO update using the Sampler storage
 class PPO:
   def __init__(self, model, optimizer, ppo_epochs, mini_batchsize, batchsize, clip_param, vf_coef, ent_coef, max_grad_norm, target_kl):
     self.model = model
@@ -15,6 +17,7 @@ class PPO:
     self.max_grad_norm = max_grad_norm
     self.target_kl = target_kl
 
+  # Samples minibatch
   def ppo_iter(self, mini_batch_size, states, actions, log_probs, returns, advantages, hidden_states):
     batch_size = states.size(0)
     for _ in range(batch_size // mini_batch_size):
@@ -22,6 +25,7 @@ class PPO:
       yield states[rand_ids, :], actions[rand_ids, :], log_probs[rand_ids, :].squeeze(1).squeeze(1), returns[rand_ids, :].squeeze(1).squeeze(1), \
             advantages[rand_ids, :].squeeze(1).squeeze(1), hidden_states[rand_ids, :]
 
+  # Perform PPO Update
   def update(self, sampler):
     print('PPO Update')
     for epoch in range(self.ppo_epochs):
@@ -47,7 +51,7 @@ class PPO:
           break
         surr_1 = ratio * advantage
         
-        surr_2 = torch.clamp(ratio, clip_base - self.clip_param, clip_base + self.clip_param) * advantage
+        surr_2 = torch.clamp(ratio, CLIP_BASE - self.clip_param, CLIP_BASE + self.clip_param) * advantage
         
         # Clipped Surrogate Objective Loss
         actor_loss = torch.min(surr_1, surr_2).mean()

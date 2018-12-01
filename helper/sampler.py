@@ -1,6 +1,6 @@
 import torch
 
-eps = 1e-5
+EPS = 1e-5
 
 # This samples from the current environment using the provided model
 class Sampler():
@@ -57,6 +57,7 @@ class Sampler():
     state = state.unsqueeze(0)
     return state
 
+  # Concatenate storage for more accessibility
   def concat_storage(self):
     # Store in better format
     self.returns = torch.cat(self.returns)
@@ -66,7 +67,17 @@ class Sampler():
     self.actions = torch.cat(self.actions)
     self.hidden_states = torch.cat(self.hidden_states)
     self.advantages = self.returns - self.values
-    self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + eps)
+    self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + EPS)
+
+  # Insert a sample into the storage
+  def insert_storage(self, log_prob, state, action, reward, done, value, hidden_state):
+      self.log_probs.append(log_prob)
+      self.states.append(state)
+      self.actions.append(action)
+      self.rewards.append(reward)
+      self.masks.append(1 - done)
+      self.values.append(value)
+      self.hidden_states.append(hidden_state)
 
   # Sample batchsize amount of moves
   def sample(self, batchsize, last_hidden_state=None):
@@ -102,14 +113,9 @@ class Sampler():
       ########################################################################
 
       # Store the information
-      self.log_probs.append(log_prob.unsqueeze(0).unsqueeze(0))
-      self.states.append(state)
-      self.actions.append(action.unsqueeze(0).unsqueeze(0))
-      self.rewards.append(reward)
-      self.masks.append(1 - done)
-      self.values.append(value)
-      self.hidden_states.append(hidden_state)
+      self.insert_storage(log_prob.unsqueeze(0).unsqueeze(0), state, action.unsqueeze(0).unsqueeze(0), reward, done, value, hidden_state)
 
+      # Update to the next value
       state = next_state
       state = torch.from_numpy(state).float().unsqueeze(0)
       

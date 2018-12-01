@@ -2,6 +2,7 @@ import gym
 from helper.sampler import Sampler
 from helper.algo import PPO
 
+# This does the meta learning from RL^2 paper
 class MetaLearner():
   def __init__(self, task, num_actions, num_states, num_tasks, num_traj, traj_len):
     self.num_actions = num_actions
@@ -23,6 +24,7 @@ class MetaLearner():
       assert (i < self.num_tasks and i >= 0), 'i = {} is out of range. There is only {} tasks'.format(i, self.num_tasks)
     self.env.unwrapped.reset_task(self.tasks[i])
 
+  # Meta train model
   def train(self, model, optimizer, agent, gamma, tau):
     sampler = Sampler(model, self.env, self.num_actions, gamma, tau)
 
@@ -38,6 +40,9 @@ class MetaLearner():
       if curr_traj == 0:
         self.set_env(curr_task)
         curr_task += 1
+
+        if curr_task % 10 == 0:
+          print("task {} ==========================================================".format(curr_task))
       
       # If the whole task can fit, sample the whole task
       if curr_batchsize + (self.num_traj - curr_traj) <= agent.batchsize:
