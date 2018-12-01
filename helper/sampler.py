@@ -28,21 +28,6 @@ class Sampler():
     return returns
 
 
-  # Generate the state vector for RNN
-  def generate_state_vector(self, done, reward, num_actions, action, state):
-    done_entry = torch.tensor([[done]]).float()
-    reward_entry = torch.tensor([[reward]]).float()
-    action_vector = torch.FloatTensor(num_actions)
-    action_vector.zero_()
-    if (action > -1):
-      action_vector[action] = 1
-    
-    action_vector = action_vector.unsqueeze(0)
-    state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
-    state = state.unsqueeze(0)
-    return state
-
-
   # Reset the current environment
   def set_env(self, task):
     self.env.unwrapped.reset_task(task)
@@ -71,10 +56,13 @@ class Sampler():
     self.actions = torch.cat(self.actions)
     self.advantages = self.returns - self.values
     self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + EPS)
+    # print('returns {} logprobs {} value {} states {} actions {} adv {}'.format(self.returns.shape, self.log_probs.shape, self.values.shape, self.states.shape, self.actions.shape, self.advantages.shape))
+
 
   # Concatenate hidden state
   def get_hidden_state(self):
     return torch.cat(self.hidden_states)
+
 
   # Insert a sample into the storage
   def insert_storage(self, log_prob, state, action, reward, done, value, hidden_state):
@@ -85,6 +73,21 @@ class Sampler():
       self.masks.append(1 - done)
       self.values.append(value)
       self.hidden_states.append(hidden_state)
+
+
+  # Generate the state vector for RNN
+  def generate_state_vector(self, done, reward, num_actions, action, state):
+    done_entry = torch.tensor([[done]]).float()
+    reward_entry = torch.tensor([[reward]]).float()
+    action_vector = torch.FloatTensor(num_actions)
+    action_vector.zero_()
+    if (action > -1):
+      action_vector[action] = 1
+    
+    action_vector = action_vector.unsqueeze(0)
+    state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
+    state = state.unsqueeze(0)
+    return state
 
 
   # Sample batchsize amount of moves

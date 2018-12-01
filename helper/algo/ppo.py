@@ -29,8 +29,7 @@ class PPO:
   def update(self, sampler):
     print('PPO Update')
     for epoch in range(self.ppo_epochs):
-      for state, action, old_log_probs, ret, advantage, hidden_state in self.ppo_iter(self.mini_batchsize, sampler.states, sampler.actions, sampler.log_probs, sampler.returns,
-        sampler.advantages, sampler.get_hidden_state()):
+      for state, action, old_log_probs, ret, advantage, hidden_state in self.ppo_iter(self.mini_batchsize, sampler.states, sampler.actions, sampler.log_probs, sampler.returns, sampler.advantages, sampler.get_hidden_state()):
         # Computes the new log probability from the updated model
         new_log_probs = []
         values = []
