@@ -3,4 +3,4 @@
 # python read_result.py --file result.pkl --task bandit --out_file exp1
 
 
-python rl2_train.py --out_file test.pt --batch_size 15 --num_tasks 6 --mini_batch_size 10 --num_traj 6 --tau 0.3 --gamma 0.99 --learning_rate 0.05 --ppo_epochs 3 --clip_param 0.2
+python rl2_train.py --out_file test.pt --batch_size 15 --num_tasks 6 --mini_batch_size 10 --num_traj 6 --tau 0.3 --gamma 0.99 --learning_rate 0.05 --ppo_epochs 3 --clip_param 0.2 --traj_len 10 --task mdp
