@@ -37,7 +37,7 @@ class GRUActorCritic(nn.Module):
     dist = self.policy(x).squeeze(0)
     
     if (to_print):
-      print('Distribution: {} \nVal: {}'.format(F.softmax(dist, dim=1), val))
+      print('Distribution: {}'.format(F.softmax(dist, dim=1)))
 
     return Categorical(logits=dist), val, h
 

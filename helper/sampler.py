@@ -19,7 +19,7 @@ def make_env(env_name):
 
 # This samples from the current environment using the provided model
 class Sampler():
-  def __init__(self, model, env_name, num_actions, gamma=0.99, tau=0.3, num_workers=mp.cpu_count() - 1):
+  def __init__(self, model, env_name, num_actions, deterministic=False, gamma=0.99, tau=0.3, num_workers=mp.cpu_count() - 1):
     self.model = model
     self.env_name = env_name
     self.num_actions = num_actions
@@ -27,6 +27,7 @@ class Sampler():
     self.tau = tau
     self.last_hidden_state = None
     self.hidden_states = []
+    self.deterministic = deterministic
 
     # This is for multi-processing
     self.num_workers = num_workers
@@ -138,8 +139,12 @@ class Sampler():
 
       # Get information from model and take action
       with torch.no_grad():
-        dist, value, next_hidden_state = self.model(state, hidden_state)
-        action = dist.sample()
+        dist, value, next_hidden_state = self.model(state, hidden_state, to_print=False)
+        
+        if (self.deterministic):
+          action = dist.probs.argmax(dim=-1, keepdim=False)
+        else:
+          action = dist.sample()
         log_prob = dist.log_prob(action)
         next_state, reward, done, _ = self.envs.step(action.cpu().numpy())
         done = done.astype(int)
@@ -152,6 +157,7 @@ class Sampler():
 
       ########################################################################
       # Storing this for debugging
+      print(reward, action)
       self.clean_actions.append(action)
       self.clean_states.append(state)
       self.clean_rewards.append(reward)
