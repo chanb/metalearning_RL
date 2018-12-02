@@ -20,9 +20,10 @@ class PPO:
   # Samples minibatch
   def ppo_iter(self, mini_batch_size, states, actions, log_probs, returns, advantages, values, hidden_states):
     batch_size = states.size(0)
+    # print('log_prob: {} \nstate: {}\naction: {} \nreward: {} \nadv:{}, \nvalue: {}'.format(log_probs.shape, states.shape, actions.shape, returns.shape, advantages.shape, values.shape, hidden_states.shape))
     for _ in range(batch_size // mini_batch_size):
       rand_ids = np.random.choice(batch_size, mini_batch_size, True)
-      yield states[rand_ids, :], actions[rand_ids, :], log_probs[rand_ids, :].squeeze(1).squeeze(1), returns[rand_ids, :].squeeze(1).squeeze(1), advantages[rand_ids, :].squeeze(1).squeeze(1), values[rand_ids, :].squeeze(1).squeeze(1), hidden_states[rand_ids, :]
+      yield states[rand_ids, :], actions[rand_ids, :], log_probs[rand_ids, :], returns[rand_ids, :], advantages[rand_ids, :], values[rand_ids, :], hidden_states[rand_ids, :]
 
   # Perform PPO Update
   def update(self, sampler):
@@ -36,19 +37,20 @@ class PPO:
         for sample in range(self.mini_batchsize):
           dist, value, _, = self.model(state[sample].unsqueeze(0), hidden_state[sample].unsqueeze(0), to_print=False)
           entropy = dist.entropy().mean()
-          new_log_probs.append(dist.log_prob(action[sample]))
+          new_log_probs.append(dist.log_prob(action[sample]).unsqueeze(0))
           values.append(value)
-        new_log_probs = torch.tensor(new_log_probs)
-        values = torch.tensor(values)
+          # print('value: {} \nentropy: {} \nlog_prob: {}'.format(value, entropy, dist.log_prob(action[sample])))
+        new_log_probs = torch.cat(new_log_probs)
+        values = torch.cat(values)
         
         # Compute the values for objective function 
         # (ratio for some reason favours bad action. Probably the reason why it's not converging with negated obj func)
-        ratio = torch.exp(new_log_probs - old_log_probs)
+        ratio = torch.exp(new_log_probs - old_log_probs).unsqueeze(2)
         kl = (old_log_probs - new_log_probs).mean()
         if kl > 1.5 * self.target_kl:
           print('Early breaking due to high KL')
           break
-
+        
         surr_1 = ratio * advantage
         surr_2 = torch.clamp(ratio, CLIP_BASE - self.clip_param, CLIP_BASE + self.clip_param) * advantage
         

@@ -39,10 +39,12 @@ class Sampler():
     values = values + [next_value]
     gae = 0
     returns = []
+    
     for step in reversed(range(len(rewards))):
       delta = rewards[step] + gamma * values[step + 1] * masks[step] - values[step]
       gae = delta + gamma * tau * masks[step] * gae
       returns.insert(0, gae + values[step])
+
     return returns
 
 
@@ -71,9 +73,9 @@ class Sampler():
   # Concatenate storage for more accessibility
   def concat_storage(self):
     # Store in better format
-    self.returns = torch.cat(self.returns).detach()
-    self.values = torch.cat(self.values).detach()
-    self.log_probs = torch.cat(self.log_probs).detach()
+    self.returns = torch.cat(self.returns)#.detach()
+    self.values = torch.cat(self.values)#.detach()
+    self.log_probs = torch.cat(self.log_probs)#.detach()
     self.states = torch.cat(self.states)
     self.actions = torch.cat(self.actions)
     self.advantages = self.returns - self.values
@@ -87,13 +89,15 @@ class Sampler():
 
   # Insert a sample into the storage
   def insert_storage(self, log_prob, state, action, reward, done, value, hidden_state):
-      self.log_probs.append(log_prob)
-      self.states.append(state)
-      self.actions.append(action)
-      self.rewards.append(reward)
-      self.masks.append(1 - done)
-      self.values.append(value)
-      self.hidden_states.append(hidden_state)
+    # print('============================================')
+    # print('log_prob: {} \nstate: {}\naction: {} \nreward: {} \ndone:{}, \nvalue: {}'.format(log_prob, state, action, reward, done, value))
+    self.log_probs.append(log_prob)
+    self.states.append(state)
+    self.actions.append(action)
+    self.rewards.append(torch.Tensor(reward).unsqueeze(1))
+    self.masks.append(torch.Tensor(1 - done).unsqueeze(1))
+    self.values.append(value)
+    self.hidden_states.append(hidden_state)
 
 
   def reset_traj(self):
@@ -106,15 +110,12 @@ class Sampler():
     done_entry = done.float().unsqueeze(1)
     reward_entry = reward.float().unsqueeze(1)
     action_vector = torch.zeros([self.num_workers, num_actions])
+
     assert all(action > -1) or all(action == -1), 'All processes should be at the same step'
     if (all(action > -1)):
-      action_vector.scatter_(1, action.unsqueeze(1), 1)
-    #TODO: Remove printing
-    # print("tes!!!!!t")
-    # print('{}\n{}\n{}\n{}'.format(done_entry, reward_entry, action_vector, state))
+      action_vector.scatter_(1, action.unsqueeze(1), 1)\
     
     state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
-    # print(state)
     state = state.unsqueeze(0)
     return state
 
@@ -137,19 +138,17 @@ class Sampler():
 
       # Get information from model and take action
       with torch.no_grad():
-        dist, value, next_hidden_state = self.model(state, hidden_state, to_print=False)
+        dist, value, next_hidden_state = self.model(state, hidden_state)
         action = dist.sample()
         log_prob = dist.log_prob(action)
         next_state, reward, done, _ = self.envs.step(action.cpu().numpy())
         done = done.astype(int)
-        
+
         reward = torch.from_numpy(reward).float()
         done = torch.from_numpy(done).float()
-
-        print('{}\n{}\n{}'.format(next_state, reward, done))
         
       # Store the information
-      self.insert_storage(log_prob, state, action, reward, done, value, hidden_state)
+      self.insert_storage(log_prob.unsqueeze(0), state, action.unsqueeze(0), reward, done, value, hidden_state)
 
       ########################################################################
       # Storing this for debugging
@@ -165,7 +164,7 @@ class Sampler():
       hidden_state = next_hidden_state
 
       # Grab hidden state for the extra information
-      assert all(done) or all(not done), 'All processes be done at the same time'
+      assert all(done) or all(1-done), 'All processes be done at the same time'
       if (all(done)):
         if self.model.is_recurrent:
           state = self.generate_state_vector(done, reward, self.num_actions, action, state)

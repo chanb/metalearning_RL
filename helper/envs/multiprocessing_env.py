@@ -18,7 +18,7 @@ def worker(remote, parent_remote, env_fn_wrapper):
             ob = env.reset()
             remote.send(ob)
         elif cmd == 'reset_task':
-            ob = env.reset_task(data)
+            ob = env.unwrapped.reset_task(data)
             remote.send(ob)
         elif cmd == 'close':
             remote.close()
