@@ -30,7 +30,7 @@ args = parser.parse_args()
 out_result = args.out_file
 
 #TODO: Make it work with new sampler
-def evaluate_model(env, eval_model, tasks, num_actions, num_states, num_traj, traj_len):
+def evaluate_model(env_name, eval_model, tasks, num_actions, num_states, num_traj, traj_len):
   all_rewards = []
   all_actions = []
   all_states = []
@@ -38,7 +38,7 @@ def evaluate_model(env, eval_model, tasks, num_actions, num_states, num_traj, tr
   for task in tasks:
     model = torch.load(eval_model)
 
-    sampler = Sampler(model, env, num_actions, num_workers=1)
+    sampler = Sampler(model, env_name, num_actions, num_workers=1)
     sampler.set_task(task)
     sampler.sample(num_traj * traj_len)
 
@@ -120,7 +120,7 @@ def main():
     tasks = pickle.load(f)[0]
 
   if args.algo == 'ppo':
-    evaluate_model(env, args.eval_model, tasks, num_actions, num_states, args.num_traj, args.traj_len)
+    evaluate_model(task, args.eval_model, tasks, num_actions, num_states, args.num_traj, args.traj_len)
   else:
     random_arm_pull(env, args.num_actions, args.num_tasks, args.num_traj, tasks)
 
