@@ -1,6 +1,6 @@
 import torch
 
-EPS = 1e-5
+EPS = 1e-8
 
 # This samples from the current environment using the provided model
 class Sampler():
@@ -153,6 +153,7 @@ class Sampler():
       state = self.generate_state_vector(done, reward, self.num_actions, action, state)
       with torch.no_grad():
         _, next_val, _, = self.model(state, hidden_state, to_print=False)
+
     self.returns = self.compute_gae(next_val, self.rewards, self.masks, self.values, self.gamma, self.tau)
 
 

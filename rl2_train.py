@@ -34,7 +34,7 @@ parser.add_argument('--ppo_epochs', type=int, default=5, help='ppo epoch (defaul
 parser.add_argument('--clip_param', type=float, default=0.1, help='clipping parameter for PPO (default: 0.1)')
 
 parser.add_argument('--vf_coef', type=float, default=0.5, help='value loss coefficient (default: 0.5)')
-parser.add_argument('--ent_coef', type=float, default=0.1, help='entropy coefficient (default: 0.1)')
+parser.add_argument('--ent_coef', type=float, default=0.01, help='entropy coefficient (default: 0.01)')
 parser.add_argument('--max_grad_norm', type=float, default=0.5, help='max norm of gradients (default: 0.5)')
 parser.add_argument('--target_kl', type=float, default=0.01, help='max target kl (default: 0.01)')
 

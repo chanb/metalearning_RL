@@ -29,12 +29,12 @@ class MetaLearner():
     sampler = Sampler(model, self.env, self.num_actions, gamma, tau)
 
     total_num_steps = self.num_traj * self.traj_len * self.num_tasks
-
+    
     curr_traj = 0
     curr_batchsize = 0
     curr_task = 0
     i = 0
-
+  
     while i < total_num_steps:
       # print('{} {} {}'.format(curr_traj, self.num_traj, curr_batchsize))
       if curr_traj == 0:
