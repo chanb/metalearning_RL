@@ -117,15 +117,15 @@ class Sampler():
         log_prob = dist.log_prob(action)
         next_state, reward, done, _ = self.env.step(action.item())
 
+      # Store the information
+      self.insert_storage(log_prob.unsqueeze(0).unsqueeze(0), state, action.unsqueeze(0).unsqueeze(0), reward, done, value, hidden_state)
+
       ########################################################################
       # Storing this for debugging
       self.clean_actions.append(action.data.item())
       self.clean_states.append(state)
       self.clean_rewards.append(reward)
       ########################################################################
-
-      # Store the information
-      self.insert_storage(log_prob.unsqueeze(0).unsqueeze(0), state, action.unsqueeze(0).unsqueeze(0), reward, done, value, hidden_state)
 
       # Update to the next value
       state = next_state

@@ -19,7 +19,7 @@ parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
 
 parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
 parser.add_argument('--non_linearity', help='non linearity function following last output layer')
-parser.add_argument('--learning_rate', type=float, default=3e-4, help='learning rate for optimizer (default: 1e-2)')
+parser.add_argument('--learning_rate', type=float, default=3e-4, help='learning rate for optimizer (default: 3e-4)')
 parser.add_argument('--gamma', type=float, default=0.99, help='discount factor (default: 0.99)')
 
 parser.add_argument('--num_actions', type=int, default=5, help='number of arms for MAB or number of actions for MDP (default: 5)')
@@ -63,6 +63,8 @@ def meta_train(task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo
   meta_learner = MetaLearner(task, num_actions, num_states, num_tasks, num_traj, traj_len)
 
   # meta_learner.tasks[0] = {'mean': [1,0,0,0,0]}
+  # meta_learner.tasks[1] = {'mean': [0,1,0,0,0]}
+  # meta_learner.tasks[2] = {'mean': [0,0,1,0,0]}
 
   meta_learner.train(model, optimizer, agent, gamma, tau)
 
