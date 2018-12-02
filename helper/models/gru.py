@@ -25,7 +25,7 @@ class GRUActorCritic(nn.Module):
       self.non_linearity = nn.ReLU()
     else:
       self.non_linearity = None
-    # self.apply(weight_init)
+    self.apply(weight_init)
 
   #TODO: Remove to_print
   def forward(self, x, h, to_print=True):

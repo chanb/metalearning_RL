@@ -142,7 +142,11 @@ class Sampler():
         dist, value, next_hidden_state = self.model(state, hidden_state, to_print=False)
         
         if (self.deterministic):
-          action = dist.probs.argmax(dim=-1, keepdim=False)
+          if (len(dist.probs.unique()) == 1):
+            action = np.random.randint(0, self.num_actions, size=self.num_workers)
+            action = torch.from_numpy(action)
+          else:
+            action = dist.probs.argmax(dim=-1, keepdim=False)
         else:
           action = dist.sample()
         log_prob = dist.log_prob(action)

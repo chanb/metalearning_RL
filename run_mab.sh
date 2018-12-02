@@ -1,7 +1,7 @@
 num_traj=10
 batchsize=10000
 minibatchsize=256
-num_tasks=2500
+num_tasks=25000
 epochs=5
 lr=3e-4
 clip_param=0.1
