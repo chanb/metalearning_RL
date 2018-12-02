@@ -29,6 +29,7 @@ args = parser.parse_args()
 
 out_result = args.out_file
 
+#TODO: Make it work with new sampler
 def evaluate_model(env, eval_model, tasks, num_actions, num_states, num_traj, traj_len):
   all_rewards = []
   all_actions = []
