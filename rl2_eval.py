@@ -38,8 +38,8 @@ def evaluate_model(env, eval_model, tasks, num_actions, num_states, num_traj, tr
   for task in tasks:
     model = torch.load(eval_model)
 
-    sampler = Sampler(model, env, num_actions)
-    sampler.set_env(task)
+    sampler = Sampler(model, env, num_actions, num_workers=1)
+    sampler.set_task(task)
     sampler.sample(num_traj * traj_len)
 
     task_total_rewards = []
