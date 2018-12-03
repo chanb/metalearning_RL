@@ -20,7 +20,8 @@ class PPO:
   # Samples minibatch
   def ppo_iter(self, mini_batch_size, states, actions, log_probs, returns, advantages, values, hidden_states):
     batch_size = states.size(0)
-    # print('log_prob: {} \nstate: {}\naction: {} \nreward: {} \nadv:{}, \nvalue: {}'.format(log_probs.shape, states.shape, actions.shape, returns.shape, advantages.shape, values.shape, hidden_states.shape))
+    #TODO: Test no randomize minibatchq
+    # rand_ids = np.array(range(batch_size))
     rand_ids = np.random.choice(batch_size, batch_size, False)
     for batch_id in range(batch_size // mini_batch_size):
       samples = rand_ids[batch_id * mini_batch_size : batch_id * mini_batch_size + mini_batch_size]
@@ -56,25 +57,23 @@ class PPO:
         surr_2 = torch.clamp(ratio, CLIP_BASE - self.clip_param, CLIP_BASE + self.clip_param) * advantage
         
         # Clipped Surrogate Objective Loss
-        actor_loss = torch.min(surr_1, surr_2).mean()
+        actor_loss = -torch.min(surr_1, surr_2).mean()
         
         value_clipped = old_value + torch.clamp(old_value - values, -self.clip_param, self.clip_param)
         val_1 = (ret - values).pow(2)
         val_2 = (ret - value_clipped).pow(2)
 
         # Mean Squared Error Loss Function
-        critic_loss = 0.5 * torch.min(val_1, val_2).pow(2).mean()
+        critic_loss = 0.5 * torch.max(val_1, val_2).pow(2).mean()
         
         # This is L(Clip) - c_1L(VF) + c_2L(S)
         # Take negative because we're doing gradient descent
-        loss = -(actor_loss - self.vf_coef * critic_loss + self.ent_coef * entropy)
-        # print('kl: {} \nactions: {} \nratio: {} \nadv: {} \nsurr1: {} \nsurr2: {} \nactor: {} \ncritic: {} \nloss: {}'.format(
-        #   kl, action.squeeze(1).squeeze(1), ratio, advantage, surr_1, surr_2, actor_loss, critic_loss, loss))
+        loss = actor_loss + self.vf_coef * critic_loss - self.ent_coef * entropy
 
         self.optimizer.zero_grad()
         loss.backward()
         # Try clipping
-        # torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
         self.optimizer.step()
 
 

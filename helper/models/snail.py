@@ -7,6 +7,9 @@ from helper.values import SNAILValue
 class SNAILActorCritic(nn.Module):
   def __init__(self, output_size, max_num_traj, max_traj_len, encoder, input_size=1, policy_hidden_size=32, value_hidden_size=16, non_linearity='none'):
     super(SNAILActorCritic, self).__init__()
+    self.K = output_size
+    self.N = max_num_traj
+    self.T = max_num_traj * max_traj_len
     self.is_recurrent = True
     self.critic = SNAILValue(output_size, max_num_traj, max_traj_len, encoder,
                               encoder_hidden_size=policy_hidden_size, hidden_size=value_hidden_size,
@@ -21,5 +24,5 @@ class SNAILActorCritic(nn.Module):
 
     return dist, val.unsqueeze(0), actor_hidden_state
 
-  def init_hidden_state(self):
-    return torch.FloatTensor()
+  def init_hidden_state(self, batchsize=1):
+    return torch.zeros([1, batchsize, self.T])
