@@ -21,9 +21,10 @@ class PPO:
   def ppo_iter(self, mini_batch_size, states, actions, log_probs, returns, advantages, values, hidden_states):
     batch_size = states.size(0)
     # print('log_prob: {} \nstate: {}\naction: {} \nreward: {} \nadv:{}, \nvalue: {}'.format(log_probs.shape, states.shape, actions.shape, returns.shape, advantages.shape, values.shape, hidden_states.shape))
-    for _ in range(batch_size // mini_batch_size):
-      rand_ids = np.random.choice(batch_size, mini_batch_size, True)
-      yield states[rand_ids, :], actions[rand_ids, :], log_probs[rand_ids, :], returns[rand_ids, :], advantages[rand_ids, :], values[rand_ids, :], hidden_states[rand_ids, :]
+    rand_ids = np.random.choice(batch_size, batch_size, False)
+    for batch_id in range(batch_size // mini_batch_size):
+      samples = rand_ids[batch_id * mini_batch_size : batch_id * mini_batch_size + mini_batch_size]
+      yield states[samples, :], actions[samples, :], log_probs[samples, :], returns[samples, :], advantages[samples, :], values[samples, :], hidden_states[samples, :]
 
   # Perform PPO Update
   def update(self, sampler):
