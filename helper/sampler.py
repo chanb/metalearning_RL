@@ -85,7 +85,7 @@ class Sampler():
 
   # Concatenate hidden state
   def get_hidden_state(self):
-    return torch.cat(self.hidden_states).detach()
+    return torch.cat(self.hidden_states)#.detach()
 
 
   # Insert a sample into the storage
@@ -140,21 +140,21 @@ class Sampler():
       # Get information from model and take action
       with torch.no_grad():
         dist, value, next_hidden_state = self.model(state, hidden_state, to_print=False)
-        
-        if (self.deterministic):
-          if (len(dist.probs.unique()) == 1):
-            action = np.random.randint(0, self.num_actions, size=self.num_workers)
-            action = torch.from_numpy(action)
-          else:
-            action = dist.probs.argmax(dim=-1, keepdim=False)
+      
+      if (self.deterministic):
+        if (len(dist.probs.unique()) == 1):
+          action = np.random.randint(0, self.num_actions, size=self.num_workers)
+          action = torch.from_numpy(action)
         else:
-          action = dist.sample()
-        log_prob = dist.log_prob(action)
-        next_state, reward, done, _ = self.envs.step(action.cpu().numpy())
-        done = done.astype(int)
+          action = dist.probs.argmax(dim=-1, keepdim=False)
+      else:
+        action = dist.sample()
+      log_prob = dist.log_prob(action)
+      next_state, reward, done, _ = self.envs.step(action.cpu().numpy())
+      done = done.astype(int)
 
-        reward = torch.from_numpy(reward).float()
-        done = torch.from_numpy(done).float()
+      reward = torch.from_numpy(reward).float()
+      done = torch.from_numpy(done).float()
         
       # Store the information
       self.insert_storage(log_prob.unsqueeze(0), state, action.unsqueeze(0), reward, done, value, hidden_state)
@@ -180,7 +180,8 @@ class Sampler():
           state = self.generate_state_vector(done, reward, self.num_actions, action, state)
 
         #TODO: Remove to_print
-        _, _, hidden_state = self.model(state, hidden_state, to_print=False)
+        with torch.no_grad():
+          _, _, hidden_state = self.model(state, hidden_state, to_print=False)
         state, reward, action, done = self.reset_traj()
 
 
@@ -195,7 +196,7 @@ class Sampler():
       with torch.no_grad():
         _, next_val, _, = self.model(state, hidden_state, to_print=False)
 
-    self.returns = self.compute_gae(next_val, self.rewards, self.masks, self.values, self.gamma, self.tau)
+    self.returns = self.compute_gae(next_val.detach(), self.rewards, self.masks, self.values, self.gamma, self.tau)
 
 
   # Reset debugging information

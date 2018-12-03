@@ -34,8 +34,10 @@ def evaluate_model(env_name, eval_model, tasks, num_actions, num_states, num_tra
   all_rewards = []
   all_actions = []
   all_states = []
-
+  curr_task = 1
   for task in tasks:
+    if curr_task % 10 == 0:
+      print("task {} ==========================================================".format(curr_task))
     model = torch.load(eval_model)
     sampler = Sampler(model, env_name, num_actions, deterministic=False, num_workers=1)
 
@@ -65,6 +67,7 @@ def evaluate_model(env_name, eval_model, tasks, num_actions, num_states, num_tra
     all_actions.append(task_total_actions)
     all_states.append(task_total_states)
     sampler.envs.close()
+    curr_task += 1
 
   with open(out_result, 'wb') as f:
       pickle.dump([all_rewards, all_actions, all_states, num_actions, num_states], f)
