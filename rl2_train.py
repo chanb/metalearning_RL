@@ -101,7 +101,7 @@ def main():
     num_actions = 5
     num_states = 10
 
-  if (os.path.exists(tmp_folder)):
+  if (not os.path.exists(tmp_folder)):
     os.mkdir(tmp_folder)
 
   model = meta_train(args.metalearn_epochs, task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
