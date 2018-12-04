@@ -71,9 +71,9 @@ class Sampler():
   # Concatenate storage for more accessibility
   def concat_storage(self):
     # Store in better format
-    self.returns = torch.cat(self.returns)#.detach()
-    self.values = torch.cat(self.values)#.detach()
-    self.log_probs = torch.cat(self.log_probs)#.detach()
+    self.returns = torch.cat(self.returns)
+    self.values = torch.cat(self.values)
+    self.log_probs = torch.cat(self.log_probs)
     self.states = torch.cat(self.states)
     self.actions = torch.cat(self.actions)
     self.advantages = self.returns - self.values
@@ -82,7 +82,7 @@ class Sampler():
 
   # Concatenate hidden state
   def get_hidden_state(self):
-    return torch.cat(self.hidden_states)#.detach()
+    return torch.stack(self.hidden_states)
 
 
   # Insert a sample into the storage

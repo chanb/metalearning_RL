@@ -44,19 +44,10 @@ class SNAILPolicy(Policy):
 
 
   def forward(self, x, hidden_state, to_print=True):
-    if hidden_state.size()[0] == 0:
-      x = x
-    elif hidden_state.shape[0] >= self.T:
-      x = torch.cat((hidden_state[1:(self.T), :, :], x))
-    else:
-      x = torch.cat((hidden_state, x))
-
+    x = x.transpose(0, 1)  
+    x = torch.cat((hidden_state[:, 1:(self.T), :], x), 1)
     next_hidden_state = x
 
-    if x.shape[0] < self.T:
-      x = torch.cat((torch.FloatTensor(self.T - x.shape[0], x.shape[1], x.shape[2]).zero_(), x))
-
-    x = x.transpose(0, 1)
     x = self.encoder(x) # result: traj_len x 32
     x = self.tc_1(x)
     x = self.tc_2(x)

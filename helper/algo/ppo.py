@@ -37,7 +37,7 @@ class PPO:
         new_log_probs = []
         values = []
         for sample in range(self.mini_batchsize):
-          dist, value, _, = self.model(state[sample].unsqueeze(0), hidden_state[sample].unsqueeze(0), to_print=False)
+          dist, value, _, = self.model(state[sample].unsqueeze(0), hidden_state[sample], to_print=False)
           entropy = dist.entropy().mean()
           new_log_probs.append(dist.log_prob(action[sample]).unsqueeze(0))
           values.append(value)
