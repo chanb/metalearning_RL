@@ -17,7 +17,7 @@ import os
 
 parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
 
-parser.add_argument('--metalearn_epochs', type=int, default=1000, help='number of epochs for meta learning')
+parser.add_argument('--metalearn_epochs', type=int, default=1000, help='number of epochs for meta learning (default: 1000)')
 parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
 parser.add_argument('--non_linearity', help='non linearity function following last output layer')
 parser.add_argument('--learning_rate', type=float, default=3e-4, help='learning rate for optimizer (default: 3e-4)')
