@@ -17,7 +17,7 @@ import os
 
 parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
 
-parser.add_argument('--num_workers', type=int, default=3, helper='number of workers to batch')
+parser.add_argument('--num_workers', type=int, default=3, helper='number of workers to batch (default: 3)')
 
 parser.add_argument('--model_type', type=str, default='gru', help='the model to use (gru or snail) (default: gru)')
 parser.add_argument('--metalearn_epochs', type=int, default=300, help='number of epochs for meta learning (default: 300)')
