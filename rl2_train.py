@@ -17,6 +17,7 @@ import os
 
 parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
 
+parser.add_argument('--metalearn_epochs', type=int, default=1000, help='number of epochs for meta learning')
 parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
 parser.add_argument('--non_linearity', help='non linearity function following last output layer')
 parser.add_argument('--learning_rate', type=float, default=3e-4, help='learning rate for optimizer (default: 3e-4)')
@@ -41,12 +42,12 @@ parser.add_argument('--target_kl', type=float, default=0.01, help='max target kl
 parser.add_argument('--out_file', type=str, help='the output file that stores the model')
 
 args = parser.parse_args()
-
+tmp_folder = './tmp/'
 eps = np.finfo(np.float32).eps.item()
 
 # Performs meta training
-def meta_train(task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo_epochs, mini_batchsize, batchsize, gamma, 
-  tau, clip_param, learning_rate, vf_coef, ent_coef, max_grad_norm, target_kl, non_linearity):
+def meta_train(metalearn_epochs, task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo_epochs, mini_batchsize, batchsize, gamma, 
+  tau, clip_param, learning_rate, vf_coef, ent_coef, max_grad_norm, target_kl, non_linearity, out_file):
 
   # Create the model
   model = GRUActorCritic(num_actions, 2 + num_states + num_actions, non_linearity=non_linearity)
@@ -66,7 +67,24 @@ def meta_train(task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo
   # meta_learner.tasks[1] = {'mean': [0,1,0,0,0]}
   # meta_learner.tasks[2] = {'mean': [0,0,1,0,0]}
 
-  meta_learner.train(model, optimizer, agent, gamma, tau)
+  for i in range(metalearn_epochs):
+    print('Meta-train epoch {}'.format(i))
+
+    # Decay learning rate
+    decayed_lr = learning_rate - (learning_rate * (i / float(metalearn_epochs)))
+    for param_group in agent.optimizer.param_groups:
+      param_group['lr'] = decayed_lr
+
+    # Linear decay on clipping parameter
+    agent.clip_param = clip_param  * (1 - i / float(metalearn_epochs))
+
+    meta_learner.train(model, agent, gamma, tau)
+
+    # Temporary save model
+    temp_out_file = '{}{}_{}'.format(tmp_folder, i, out_file)
+    if os.path.exists(temp_out_file):
+      os.remove(temp_out_file)
+    torch.save(model, temp_out_file)
 
   return model
 
@@ -83,9 +101,12 @@ def main():
     num_actions = 5
     num_states = 10
 
-  model = meta_train(task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
+  if (os.path.exists(tmp_folder)):
+    os.mkdir(tmp_folder)
+
+  model = meta_train(args.metalearn_epochs, task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
     args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, args.vf_coef, 
-    args.ent_coef, args.max_grad_norm, args.target_kl, args.non_linearity)
+    args.ent_coef, args.max_grad_norm, args.target_kl, args.non_linearity, args.out_file)
 
   if (model):
     if os.path.exists(args.out_file):

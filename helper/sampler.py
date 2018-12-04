@@ -7,9 +7,6 @@ from helper.envs.multiprocessing_env import SubprocVecEnv
 EPS = 1e-8
 
 
-# Reference: MAML-PyTorch, RL-Adventure, pytorch-ppo-acktr-a2c, openAI baseline, openAI spinningup
-
-
 # Returns a callable function for SubprocVecEnv
 def make_env(env_name):
   def _make_env():

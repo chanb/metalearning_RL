@@ -26,7 +26,7 @@ class MetaLearner():
     sampler.set_task(self.tasks[i])
 
   # Meta train model
-  def train(self, model, optimizer, agent, gamma, tau):
+  def train(self, model, agent, gamma, tau):
     sampler = Sampler(model, self.task_name, self.num_actions, deterministic=False, gamma=gamma, tau=tau)
 
     total_num_steps = self.num_traj * self.traj_len * self.num_tasks
@@ -81,6 +81,8 @@ class MetaLearner():
       sampler.concat_storage()
       agent.update(sampler)
       sampler.reset_storage()
+      
+    sampler.envs.close()
         
 
       
