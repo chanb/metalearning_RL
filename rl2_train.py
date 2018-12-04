@@ -17,7 +17,7 @@ import os
 
 parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
 
-parser.add_argument('--metalearn_epochs', type=int, default=1000, help='number of epochs for meta learning (default: 1000)')
+parser.add_argument('--metalearn_epochs', type=int, default=300, help='number of epochs for meta learning (default: 300)')
 parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
 parser.add_argument('--non_linearity', help='non linearity function following last output layer')
 parser.add_argument('--learning_rate', type=float, default=3e-4, help='learning rate for optimizer (default: 3e-4)')
@@ -63,12 +63,8 @@ def meta_train(metalearn_epochs, task, num_actions, num_states, num_tasks, num_t
   agent = PPO(model, optimizer, ppo_epochs, mini_batchsize, batchsize, clip_param, vf_coef, ent_coef, max_grad_norm, target_kl)
   meta_learner = MetaLearner(task, num_actions, num_states, num_tasks, num_traj, traj_len)
 
-  # meta_learner.tasks[0] = {'mean': [1,0,0,0,0]}
-  # meta_learner.tasks[1] = {'mean': [0,1,0,0,0]}
-  # meta_learner.tasks[2] = {'mean': [0,0,1,0,0]}
-
   for i in range(metalearn_epochs):
-    print('Meta-train epoch {}'.format(i))
+    print('Meta-train epoch {}'.format(i + 1))
 
     # Decay learning rate
     decayed_lr = learning_rate - (learning_rate * (i / float(metalearn_epochs)))
