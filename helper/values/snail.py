@@ -46,13 +46,9 @@ class SNAILValue(Value):
 
 
   def forward(self, x, hidden_state):
-    x = x.transpose(0, 1)
-    print('X: {} Hidden State: {}'.format(x.shape, hidden_state.shape))
-  
+    x = x.transpose(0, 1)  
     x = torch.cat((hidden_state[:, 1:(self.T), :], x), 1)
-
     next_hidden_state = x
-    print('X: {} Hidden State: {}'.format(x.shape, hidden_state.shape))
 
     x = self.encoder(x)
     x = self.value_encoder(x)
