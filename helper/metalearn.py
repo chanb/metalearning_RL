@@ -4,7 +4,8 @@ from helper.algo import PPO
 
 # This does the meta learning from RL^2 paper
 class MetaLearner():
-  def __init__(self, task, num_actions, num_states, num_tasks, num_traj, traj_len):
+  def __init__(self, num_workers, task, num_actions, num_states, num_tasks, num_traj, traj_len):
+    self.num_workers = num_workers
     self.num_actions = num_actions
     self.num_states = num_states
     self.num_tasks = num_tasks
@@ -27,7 +28,7 @@ class MetaLearner():
 
   # Meta train model
   def train(self, model, agent, gamma, tau):
-    sampler = Sampler(model, self.task_name, self.num_actions, deterministic=False, gamma=gamma, tau=tau)
+    sampler = Sampler(model, self.task_name, self.num_actions, deterministic=False, gamma=gamma, tau=tau, num_workers=self.num_workers)
 
     total_num_steps = self.num_traj * self.traj_len * self.num_tasks
     
@@ -81,7 +82,7 @@ class MetaLearner():
       sampler.concat_storage()
       agent.update(sampler)
       sampler.reset_storage()
-      
+
     sampler.envs.close()
         
 

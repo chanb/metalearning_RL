@@ -17,6 +17,8 @@ import os
 
 parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
 
+parser.add_argument('--num_workers', type=int, default=3, helper='number of workers to batch')
+
 parser.add_argument('--model_type', type=str, default='gru', help='the model to use (gru or snail) (default: gru)')
 parser.add_argument('--metalearn_epochs', type=int, default=300, help='number of epochs for meta learning (default: 300)')
 parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
@@ -47,7 +49,7 @@ tmp_folder = './tmp/'
 eps = np.finfo(np.float32).eps.item()
 
 # Performs meta training
-def meta_train(model_type, metalearn_epochs, task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo_epochs, mini_batchsize, batchsize, gamma, 
+def meta_train(num_workers, model_type, metalearn_epochs, task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo_epochs, mini_batchsize, batchsize, gamma, 
   tau, clip_param, learning_rate, vf_coef, ent_coef, max_grad_norm, target_kl, non_linearity, out_file):
 
   num_feature = 2 + num_states + num_actions
@@ -64,7 +66,7 @@ def meta_train(model_type, metalearn_epochs, task, num_actions, num_states, num_
   
   # Create the agent that uses PPO
   agent = PPO(model, optimizer, ppo_epochs, mini_batchsize, batchsize, clip_param, vf_coef, ent_coef, max_grad_norm, target_kl)
-  meta_learner = MetaLearner(task, num_actions, num_states, num_tasks, num_traj, traj_len)
+  meta_learner = MetaLearner(num_workers, task, num_actions, num_states, num_tasks, num_traj, traj_len)
 
   for i in range(metalearn_epochs):
     print('Meta-train epoch {}'.format(i + 1))
@@ -88,6 +90,7 @@ def meta_train(model_type, metalearn_epochs, task, num_actions, num_states, num_
   return model
 
 def main():
+  assert args.num_workers > 0, 'Need to have at least one worker'
   assert (args.model_type == 'gru' or args.model_type == 'snail'), 'Invalid model'
   assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid Task'
   assert (args.mini_batch_size <= args.batch_size), 'Mini-batch size needs to be <= batch size'
@@ -104,7 +107,7 @@ def main():
   if (not os.path.exists(tmp_folder)):
     os.mkdir(tmp_folder)
 
-  model = meta_train(args.model_type, args.metalearn_epochs, task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
+  model = meta_train(args.num_workers, args.model_type, args.metalearn_epochs, task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
     args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, args.vf_coef, 
     args.ent_coef, args.max_grad_norm, args.target_kl, args.non_linearity, args.out_file)
 
