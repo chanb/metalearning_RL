@@ -17,6 +17,7 @@ import os
 
 parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
 
+parser.add_argument('--model_type', type=str, default='gru', help='the model to use (gru or snail) (default: gru)')
 parser.add_argument('--metalearn_epochs', type=int, default=300, help='number of epochs for meta learning (default: 300)')
 parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
 parser.add_argument('--non_linearity', help='non linearity function following last output layer')
@@ -46,17 +47,17 @@ tmp_folder = './tmp/'
 eps = np.finfo(np.float32).eps.item()
 
 # Performs meta training
-def meta_train(metalearn_epochs, task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo_epochs, mini_batchsize, batchsize, gamma, 
+def meta_train(model_type, metalearn_epochs, task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo_epochs, mini_batchsize, batchsize, gamma, 
   tau, clip_param, learning_rate, vf_coef, ent_coef, max_grad_norm, target_kl, non_linearity, out_file):
 
   num_feature = 2 + num_states + num_actions
 
   # Create the model
-  model = GRUActorCritic(num_actions, num_feature, non_linearity=non_linearity)
-
-  # model = FCNActorCritic(num_actions, num_states, non_linearity=non_linearity)
-  # fcn = LinearEmbedding(input_size=num_feature, output_size=32)
-  # model = SNAILActorCritic(num_actions, args.num_traj, args.traj_len, fcn, input_size=num_feature, non_linearity=non_linearity)
+  if (model_type == 'gru'):
+    model = GRUActorCritic(num_actions, num_feature, non_linearity=non_linearity)
+  elif (model_type == 'snail'):
+    fcn = LinearEmbedding(input_size=num_feature, output_size=32)
+    model = SNAILActorCritic(num_actions, args.num_traj, args.traj_len, fcn, input_size=num_feature, non_linearity=non_linearity)
 
   # Set the optimizer
   optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -87,6 +88,7 @@ def meta_train(metalearn_epochs, task, num_actions, num_states, num_tasks, num_t
   return model
 
 def main():
+  assert (args.model_type == 'gru' or args.model_type == 'snail'), 'Invalid model'
   assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid Task'
   assert (args.mini_batch_size <= args.batch_size), 'Mini-batch size needs to be <= batch size'
   task = ''
@@ -102,7 +104,7 @@ def main():
   if (not os.path.exists(tmp_folder)):
     os.mkdir(tmp_folder)
 
-  model = meta_train(args.metalearn_epochs, task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
+  model = meta_train(args.model_type, args.metalearn_epochs, task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
     args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, args.vf_coef, 
     args.ent_coef, args.max_grad_norm, args.target_kl, args.non_linearity, args.out_file)
 
