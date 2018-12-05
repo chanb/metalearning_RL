@@ -66,7 +66,7 @@ def meta_train(num_workers, model_type, metalearn_epochs, task, num_actions, num
   
   # Create the agent that uses PPO
   agent = PPO(model, optimizer, ppo_epochs, mini_batchsize, batchsize, clip_param, vf_coef, ent_coef, max_grad_norm, target_kl)
-  meta_learner = MetaLearner(num_workers, task, num_actions, num_states, num_tasks, num_traj, traj_len)
+  meta_learner = MetaLearner(model, num_workers, task, num_actions, num_states, num_tasks, num_traj, traj_len, gamma, tau)
 
   for i in range(metalearn_epochs):
     print('Meta-train epoch {}'.format(i + 1))
@@ -79,7 +79,7 @@ def meta_train(num_workers, model_type, metalearn_epochs, task, num_actions, num
     # Linear decay on clipping parameter
     agent.clip_param = clip_param  * (1 - i / float(metalearn_epochs))
 
-    meta_learner.train(model, agent, gamma, tau)
+    meta_learner.train(agent)
 
     # Temporary save model
     temp_out_file = '{}{}_{}'.format(tmp_folder, i, out_file)
@@ -87,6 +87,7 @@ def meta_train(num_workers, model_type, metalearn_epochs, task, num_actions, num
       os.remove(temp_out_file)
     torch.save(model, temp_out_file)
 
+  meta_learner.sampler.envs.close()
   return model
 
 def main():
