@@ -17,7 +17,7 @@ import os
 
 parser = argparse.ArgumentParser(description='RL2 for MAB and MDP')
 
-parser.add_argument('--num_workers', type=int, default=3, help='number of workers to batch (default: 3)')
+parser.add_argument('--num_workers', type=int, default=1, help='number of workers to batch (default: 1)')
 
 parser.add_argument('--model_type', type=str, default='gru', help='the model to use (gru or snail) (default: gru)')
 parser.add_argument('--metalearn_epochs', type=int, default=300, help='number of epochs for meta learning (default: 300)')
@@ -39,7 +39,7 @@ parser.add_argument('--clip_param', type=float, default=0.1, help='clipping para
 
 parser.add_argument('--vf_coef', type=float, default=0.5, help='value loss coefficient (default: 0.5)')
 parser.add_argument('--ent_coef', type=float, default=0.01, help='entropy coefficient (default: 0.01)')
-parser.add_argument('--max_grad_norm', type=float, default=0.5, help='max norm of gradients (default: 0.5)')
+parser.add_argument('--max_grad_norm', type=float, default=0.9, help='max norm of gradients (default: 0.9)')
 parser.add_argument('--target_kl', type=float, default=0.01, help='max target kl (default: 0.01)')
 
 parser.add_argument('--out_file', type=str, help='the output file that stores the model')
