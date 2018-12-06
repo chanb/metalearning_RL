@@ -61,9 +61,9 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
   - 75 Trajectories, 333 Tasks
     - GRU: Not Started
     - SNAIL: Not Started  
-  - 100 Trajectories, 250 Tasks
-    - GRU: Not Started
-    - SNAIL: Not Started
+  - 100 Trajectories, 250 Tasks (comps 4)
+    - GRU: Running
+    - SNAIL: Running
 
 ## References:
 https://github.com/higgsfield/RL-Adventure-2/blob/master/3.ppo.ipynb  
