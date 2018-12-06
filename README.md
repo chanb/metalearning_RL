@@ -25,7 +25,7 @@ This project follows RL^2 and SNAIL paper and attempts to reproduce the results 
 - `out_file (str)`: This is the name of the model file to be output
 
 ## Installation:
-You should be able to simply run `pip install` on the `requirements.txt`:
+You should be able to simply run `pip install` on the `requirements.txt`:  
 `$ pip install -r requirements.txt`
 
 ## Sample Commands:
