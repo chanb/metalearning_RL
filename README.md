@@ -2,7 +2,7 @@
 
 This project follows RL^2 and SNAIL paper and attempts to reproduce the results presented.
 `rl2_train.py` trains a model, given the arguments:
-- `num_workers (int)`: (Default: `3`) This spawns specified amount of workers to perform parallel sampling (# of actors in PPO paper)
+- `num_workers (int)`: (Default: `1`) This spawns specified amount of workers to perform parallel sampling (# of actors in PPO paper)
 - `model_type (str)`: (Default: `gru`) This chooses either `gru` (from RL^2) or `snail` as the model to train
 - `metalearn_epochs (int)` (Default: `300`) This is the number of iterations to train the model. After each iteration, a snapshot is taken for plotting the learning curve
 - `task (str)`: (Default: `mdp`) This supports either `mdp` (tabular MDP) or `bandit` (multi-armed bandit)
