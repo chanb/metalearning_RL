@@ -41,10 +41,10 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
     - GRU: Running
     - SNAIL: Running  
   - 100 Trajectories, 2500 Tasks (comps2)
-    - GRU: Running
-    - SNAIL: Running
+    - GRU: Running (Failed due to resource error)
+    - SNAIL: Running (Failed due to resource error)
   - 500 Trajectories, 500 Tasks (comps1)
-    - GRU: Running
+    - GRU: Running (Failed due to resource error)
     - SNAIL: Running
 - **10 Armed Bandit (To be run)**:
 - **50 Armed Bandit (To be run)**:
@@ -62,8 +62,8 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
     - GRU: Not Started
     - SNAIL: Not Started  
   - 100 Trajectories, 250 Tasks (comps4)
-    - GRU: Running
-    - SNAIL: Running
+    - GRU: Running (Failed due to resource error)
+    - SNAIL: Running (Failed due to resource error)
 
 ## References:
 https://github.com/higgsfield/RL-Adventure-2/blob/master/3.ppo.ipynb  
