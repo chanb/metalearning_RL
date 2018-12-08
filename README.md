@@ -50,7 +50,7 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
 - **50 Armed Bandit (To be run)**:
 - Tabular MDP:  
   - 10 Trajectories, 2500 Tasks (compsbk3)
-    - GRU: Paused
+    - GRU: Running
     - SNAIL: Paused  
   - 25 Trajectories, 1000 Tasks
     - GRU: Not Started
