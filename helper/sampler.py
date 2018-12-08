@@ -86,6 +86,10 @@ class Sampler():
     return torch.stack(self.hidden_states)
 
 
+  # Reset hidden state
+  def reset_hidden_state(self):
+    self.hidden_states = []
+
   # Insert a sample into the storage
   def insert_storage(self, log_prob, state, action, reward, done, value, hidden_state):
     # print('============================================')
