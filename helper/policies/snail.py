@@ -53,7 +53,6 @@ class SNAILPolicy(Policy):
     x = self.tc_2(x)
     x = self.attention_1(x)
     x = self.affine_2(x)
-    print('MOVES: {}'.format(x))
     x = x[:, self.T-1, :] # pick_last_action
     if (to_print):
       print('Distribution: {}'.format(F.softmax(x, dim=1)))
