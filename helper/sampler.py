@@ -16,7 +16,8 @@ def make_env(env_name):
 
 # This samples from the current environment using the provided model
 class Sampler():
-  def __init__(self, model, env_name, num_actions, deterministic=False, gamma=0.99, tau=0.3, num_workers=mp.cpu_count() - 1):
+  def __init__(self, device, model, env_name, num_actions, deterministic=False, gamma=0.99, tau=0.3, num_workers=mp.cpu_count() - 1):
+    self.device = device
     self.model = model
     self.env_name = env_name
     self.num_actions = num_actions
@@ -92,8 +93,8 @@ class Sampler():
     self.log_probs.append(log_prob)
     self.states.append(state)
     self.actions.append(action)
-    self.rewards.append(torch.Tensor(reward).unsqueeze(1))
-    self.masks.append(torch.Tensor(1 - done).unsqueeze(1))
+    self.rewards.append(torch.Tensor(reward).unsqueeze(1).to(self.device))
+    self.masks.append(torch.Tensor(1 - done).unsqueeze(1).to(self.device))
     self.values.append(value)
     self.hidden_states.append(hidden_state)
 
@@ -111,11 +112,11 @@ class Sampler():
 
     assert all(action > -1) or all(action == -1), 'All processes should be at the same step'
     if (all(action > -1)):
-      action_vector.scatter_(1, action.unsqueeze(1), 1)\
+      action_vector.scatter_(1, action.cpu().unsqueeze(1), 1)
     
     state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
     state = state.unsqueeze(0)
-    return state
+    return state.to(self.device)
 
 
   # Sample batchsize amount of moves
@@ -126,7 +127,7 @@ class Sampler():
     #TODO: Add code to handle non recurrent case
     hidden_state = last_hidden_state
     if last_hidden_state is None:
-      hidden_state = self.model.init_hidden_state(self.num_workers)
+      hidden_state = self.model.init_hidden_state(self.num_workers).to(self.device)
 
     # We sample batchsize amount of data
     for i in range(batchsize):
@@ -168,7 +169,7 @@ class Sampler():
       state = next_state
       state = torch.from_numpy(state).float()
       
-      hidden_state = next_hidden_state
+      hidden_state = next_hidden_state.to(self.device)
 
       # Grab hidden state for the extra information
       assert all(done) or all(1-done), 'All processes be done at the same time'

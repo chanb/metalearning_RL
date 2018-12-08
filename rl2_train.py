@@ -49,7 +49,7 @@ tmp_folder = './tmp/'
 eps = np.finfo(np.float32).eps.item()
 
 # Performs meta training
-def meta_train(num_workers, model_type, metalearn_epochs, task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo_epochs, mini_batchsize, batchsize, gamma, 
+def meta_train(device, num_workers, model_type, metalearn_epochs, task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo_epochs, mini_batchsize, batchsize, gamma, 
   tau, clip_param, learning_rate, vf_coef, ent_coef, max_grad_norm, target_kl, non_linearity, out_file):
 
   num_feature = 2 + num_states + num_actions
@@ -61,12 +61,14 @@ def meta_train(num_workers, model_type, metalearn_epochs, task, num_actions, num
     fcn = LinearEmbedding(input_size=num_feature, output_size=32)
     model = SNAILActorCritic(num_actions, args.num_traj, args.traj_len, fcn, input_size=num_feature, non_linearity=non_linearity)
 
+  model = model.to(device)
+
   # Set the optimizer
   optimizer = optim.Adam(model.parameters(), lr=learning_rate)
   
   # Create the agent that uses PPO
   agent = PPO(model, optimizer, ppo_epochs, mini_batchsize, batchsize, clip_param, vf_coef, ent_coef, max_grad_norm, target_kl)
-  meta_learner = MetaLearner(model, num_workers, task, num_actions, num_states, num_tasks, num_traj, traj_len, gamma, tau)
+  meta_learner = MetaLearner(device, model, num_workers, task, num_actions, num_states, num_tasks, num_traj, traj_len, gamma, tau)
 
   for i in range(metalearn_epochs):
     print('Meta-train epoch {}'.format(i + 1))
@@ -108,7 +110,9 @@ def main():
   if (not os.path.exists(tmp_folder)):
     os.mkdir(tmp_folder)
 
-  model = meta_train(args.num_workers, args.model_type, args.metalearn_epochs, task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+  model = meta_train(device, args.num_workers, args.model_type, args.metalearn_epochs, task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
     args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, args.vf_coef, 
     args.ent_coef, args.max_grad_norm, args.target_kl, args.non_linearity, args.out_file)
 

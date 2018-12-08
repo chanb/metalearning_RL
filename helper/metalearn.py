@@ -4,7 +4,7 @@ from helper.algo import PPO
 
 # This does the meta learning from RL^2 paper
 class MetaLearner():
-  def __init__(self, model, num_workers, task, num_actions, num_states, num_tasks, num_traj, traj_len, gamma, tau):
+  def __init__(self, device, model, num_workers, task, num_actions, num_states, num_tasks, num_traj, traj_len, gamma, tau):
     self.num_workers = num_workers
     self.num_actions = num_actions
     self.num_states = num_states
@@ -15,7 +15,7 @@ class MetaLearner():
 
     self.env = gym.make(task)
     self.sample_tasks()
-    self.sampler = Sampler(model, self.task_name, self.num_actions, deterministic=False, gamma=gamma, tau=tau, num_workers=self.num_workers)
+    self.sampler = Sampler(device, model, self.task_name, self.num_actions, deterministic=False, gamma=gamma, tau=tau, num_workers=self.num_workers)
 
   # Resample the tasks
   def sample_tasks(self):
