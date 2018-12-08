@@ -17,6 +17,11 @@ class MetaLearner():
     self.sample_tasks()
     self.sampler = Sampler(device, model, self.task_name, self.num_actions, deterministic=False, gamma=gamma, tau=tau, num_workers=self.num_workers)
 
+  # Clean sampler
+  def clean_sampler(self):
+    self.sampler.reset_storage()
+    self.sampler.last_hidden_state = None
+
   # Resample the tasks
   def sample_tasks(self):
     self.tasks = self.env.unwrapped.sample_tasks(self.num_tasks)
@@ -29,7 +34,6 @@ class MetaLearner():
 
   # Meta train model
   def train(self, agent):
-
     total_num_steps = self.num_traj * self.traj_len * self.num_tasks
     
     curr_traj = 0
@@ -81,7 +85,5 @@ class MetaLearner():
     if total_num_steps % agent.batchsize != 0:
       self.sampler.concat_storage()
       agent.update(self.sampler)
-    self.sampler.reset_storage()
-    self.sampler.reset_hidden_state()
-    self.sampler.last_hidden_state = None
+      self.sampler.reset_storage()
 

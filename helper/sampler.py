@@ -24,14 +24,13 @@ class Sampler():
     self.gamma = gamma
     self.tau = tau
     self.last_hidden_state = None
-    self.hidden_states = []
     self.deterministic = deterministic
+
+    self.reset_storage()
 
     # This is for multi-processing
     self.num_workers = num_workers
     self.envs = SubprocVecEnv([make_env(env_name) for _ in range(num_workers)])
-
-    self.reset_storage()
 
   # Computes the advantage where lambda = tau
   def compute_gae(self, next_value, rewards, masks, values, gamma=0.99, tau=0.95):
@@ -66,6 +65,7 @@ class Sampler():
     self.masks = []
     self.returns = []
     self.advantages = []
+    self.hidden_states = []
     self.reset_debug()
 
 
@@ -85,10 +85,6 @@ class Sampler():
   def get_hidden_state(self):
     return torch.stack(self.hidden_states)
 
-
-  # Reset hidden state
-  def reset_hidden_state(self):
-    self.hidden_states = []
 
   # Insert a sample into the storage
   def insert_storage(self, log_prob, state, action, reward, done, value, hidden_state):

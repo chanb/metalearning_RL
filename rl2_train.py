@@ -72,7 +72,7 @@ def meta_train(device, num_workers, model_type, metalearn_epochs, task, num_acti
 
   for i in range(metalearn_epochs):
     print('Meta-train epoch {}'.format(i + 1))
-
+    meta_learner.clean_sampler()
     # Decay learning rate
     decayed_lr = learning_rate - (learning_rate * (i / float(metalearn_epochs)))
     for param_group in agent.optimizer.param_groups:
