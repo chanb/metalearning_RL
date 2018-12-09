@@ -24,7 +24,7 @@ class Sampler():
     self.gamma = gamma
     self.tau = tau
     self.last_hidden_state = None
-    self.deterministic = deterministic
+    self.get_next_action = self.exploit if deterministic else self.random_sample
 
     self.reset_storage()
 
@@ -48,8 +48,8 @@ class Sampler():
 
   # Set the current task
   def set_task(self, task):
-    #print('Env Setup:')
-    #print(task)
+    # print('Env Setup:')
+    # print(task)
     tasks = [task for _ in range(self.num_workers)]
     reset = self.envs.reset_task(tasks)
     return all(reset)
@@ -66,7 +66,7 @@ class Sampler():
     self.returns = []
     self.advantages = []
     self.hidden_states = []
-    self.reset_debug()
+    # self.reset_debug()
 
 
   # Concatenate storage for more accessibility
@@ -81,15 +81,13 @@ class Sampler():
     self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + EPS)
 
 
-  # Concatenate hidden state
-  def get_hidden_state(self):
+  # Concatenate hidden states
+  def get_hidden_states(self):
     return torch.stack(self.hidden_states)
 
 
   # Insert a sample into the storage
   def insert_storage(self, log_prob, state, action, reward, done, value, hidden_state):
-    # print('============================================')
-    # print('log_prob: {} \nstate: {}\naction: {} \nreward: {} \ndone:{}, \nvalue: {}'.format(log_prob, state, action, reward, done, value))
     self.log_probs.append(log_prob)
     self.states.append(state)
     self.actions.append(action)
@@ -99,6 +97,7 @@ class Sampler():
     self.hidden_states.append(hidden_state)
 
 
+  # Resets the trajectory to the beginning
   def reset_traj(self):
     states = self.envs.reset()
     return torch.from_numpy(states), torch.zeros([self.num_workers, ]), torch.from_numpy(np.full((self.num_workers, ), -1)), torch.zeros([self.num_workers, ])
@@ -119,12 +118,24 @@ class Sampler():
     return state.to(self.device)
 
 
+  # Exploit the best action
+  def exploit(self, dist):
+    if (len(dist.probs.unique()) == 1):
+      action = np.random.randint(0, self.num_actions, size=self.num_workers)
+      return torch.from_numpy(action)
+    return dist.probs.argmax(dim=-1, keepdim=False)
+
+
+  # Randomly sample action based on the categorical distribution
+  def random_sample(self, dist):
+    return dist.sample()
+
+
+  #TODO: Add code to handle non recurrent case
   # Sample batchsize amount of moves
   def sample(self, batchsize, last_hidden_state=None):
-
     state, reward, action, done = self.reset_traj()
 
-    #TODO: Add code to handle non recurrent case
     hidden_state = last_hidden_state
     if last_hidden_state is None:
       hidden_state = self.model.init_hidden_state(self.num_workers).to(self.device)
@@ -132,21 +143,15 @@ class Sampler():
     # We sample batchsize amount of data
     for i in range(batchsize):
       # Set the vector state
-      if self.model.is_recurrent:
-        state = self.generate_state_vector(done, reward, self.num_actions, action, state)
+      state = self.generate_state_vector(done, reward, self.num_actions, action, state)
 
       # Get information from model and take action
       with torch.no_grad():
         dist, value, next_hidden_state = self.model(state, hidden_state, to_print=False)
       
-      if (self.deterministic):
-        if (len(dist.probs.unique()) == 1):
-          action = np.random.randint(0, self.num_actions, size=self.num_workers)
-          action = torch.from_numpy(action)
-        else:
-          action = dist.probs.argmax(dim=-1, keepdim=False)
-      else:
-        action = dist.sample()
+      # Decide if we should exploit all the time
+      action = self.get_next_action(dist)
+
       log_prob = dist.log_prob(action)
       next_state, reward, done, _ = self.envs.step(action.cpu().numpy())
       done = done.astype(int)
@@ -158,11 +163,12 @@ class Sampler():
       self.insert_storage(log_prob.unsqueeze(0), state, action.unsqueeze(0), reward, done, value, hidden_state)
 
       ########################################################################
+      # print(reward, action)
+
       # Storing this for debugging
-      #print(reward, action)
-      self.clean_actions.append(action)
-      self.clean_states.append(state)
-      self.clean_rewards.append(reward)
+      # self.clean_actions.append(action)
+      # self.clean_states.append(state)
+      # self.clean_rewards.append(reward)
       ########################################################################
 
       # Update to the next value
@@ -174,25 +180,22 @@ class Sampler():
       # Grab hidden state for the extra information
       assert all(done) or all(1-done), 'All processes be done at the same time'
       if (all(done)):
-        if self.model.is_recurrent:
-          state = self.generate_state_vector(done, reward, self.num_actions, action, state)
+        state = self.generate_state_vector(done, reward, self.num_actions, action, state)
 
-        #TODO: Remove to_print
         with torch.no_grad():
           _, _, hidden_state = self.model(state, hidden_state, to_print=False)
         state, reward, action, done = self.reset_traj()
 
-
     ########################################################################
     # self.print_debug()
     ########################################################################
+
     self.last_hidden_state = hidden_state
-    #TODO: Remove to_print
+
     # Compute the return
-    if self.model.is_recurrent:
-      state = self.generate_state_vector(done, reward, self.num_actions, action, state)
-      with torch.no_grad():
-        _, next_val, _, = self.model(state, hidden_state, to_print=False)
+    state = self.generate_state_vector(done, reward, self.num_actions, action, state)
+    with torch.no_grad():
+      _, next_val, _, = self.model(state, hidden_state, to_print=False)
 
     self.returns = self.compute_gae(next_val.detach(), self.rewards, self.masks, self.values, self.gamma, self.tau)
 

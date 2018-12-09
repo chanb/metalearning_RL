@@ -39,7 +39,7 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
 - 5 Armed Bandit:
   - 10 Trajectories, 25000 Tasks 
     - GRU: Running (compsbk3)
-    - SNAIL: Not Started
+    - SNAIL: Running (compsgpu2)
   - 100 Trajectories, 2500 Tasks
     - GRU: Not Started
     - SNAIL: Not Started

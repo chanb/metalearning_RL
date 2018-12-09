@@ -20,8 +20,6 @@ class PPO:
   # Samples minibatch
   def ppo_iter(self, mini_batch_size, states, actions, log_probs, returns, advantages, values, hidden_states):
     batch_size = states.size(0)
-    #TODO: Test no randomize minibatchq
-    # rand_ids = np.array(range(batch_size))
     rand_ids = np.random.choice(batch_size, batch_size, False)
     for batch_id in range(batch_size // mini_batch_size):
       samples = rand_ids[batch_id * mini_batch_size : batch_id * mini_batch_size + mini_batch_size]
@@ -30,40 +28,39 @@ class PPO:
   # Perform PPO Update
   def update(self, sampler):
     print('PPO Update')
-    for epoch in range(self.ppo_epochs):
-      print('PPO epoch {}'.format(epoch))
-      for state, action, old_log_probs, ret, advantage, old_value, hidden_state in self.ppo_iter(self.mini_batchsize, sampler.states, sampler.actions, sampler.log_probs, sampler.returns, sampler.advantages, sampler.values, sampler.get_hidden_state()):
+    for _ in range(self.ppo_epochs):
+      for state, action, old_log_probs, ret, advantage, old_value, hidden_state in self.ppo_iter(self.mini_batchsize, sampler.states, sampler.actions, sampler.log_probs, sampler.returns, sampler.advantages, sampler.values, sampler.get_hidden_states()):
         # Computes the new log probability from the updated model
         new_log_probs = []
         values = []
+
         for sample in range(self.mini_batchsize):
           dist, value, _, = self.model(state[sample].unsqueeze(0), hidden_state[sample], to_print=False)
           entropy = dist.entropy().mean()
           new_log_probs.append(dist.log_prob(action[sample]).unsqueeze(0))
           values.append(value)
-          # print('value: {} \nentropy: {} \nlog_prob: {}'.format(value, entropy, dist.log_prob(action[sample])))
+
         new_log_probs = torch.cat(new_log_probs)
-        values = torch.cat(values)
-        
-        # Compute the values for objective function 
-        # (ratio for some reason favours bad action. Probably the reason why it's not converging with negated obj func)
-        ratio = torch.exp(new_log_probs - old_log_probs).unsqueeze(2)
+
+        # Early breaking
         kl = (old_log_probs - new_log_probs).mean()
         if kl > 1.5 * self.target_kl:
-          print('Early breaking due to high KL')
           break
+        
+        # Clipped Surrogate Objective Loss
+        ratio = torch.exp(new_log_probs - old_log_probs).unsqueeze(2)
         
         surr_1 = ratio * advantage
         surr_2 = torch.clamp(ratio, CLIP_BASE - self.clip_param, CLIP_BASE + self.clip_param) * advantage
         
-        # Clipped Surrogate Objective Loss
         actor_loss = -torch.min(surr_1, surr_2).mean()
         
+        # Clipped Value Objective Loss
+        values = torch.cat(values)
         value_clipped = old_value + torch.clamp(old_value - values, -self.clip_param, self.clip_param)
         val_1 = (ret - values).pow(2)
         val_2 = (ret - value_clipped).pow(2)
 
-        # Mean Squared Error Loss Function
         critic_loss = 0.5 * torch.max(val_1, val_2).pow(2).mean()
         
         # This is L(Clip) - c_1L(VF) + c_2L(S)
@@ -72,8 +69,10 @@ class PPO:
 
         self.optimizer.zero_grad()
         loss.backward()
-        # Try clipping
+        # Try clipping gradient
         torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
         self.optimizer.step()
-
-
+      else:
+        continue
+      print('Early breaking due to high KL divergence')
+      break
