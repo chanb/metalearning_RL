@@ -41,7 +41,7 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
     - GRU: Running (compsbk3)
     - SNAIL: Running (compsgpu2)
   - 100 Trajectories, 2500 Tasks
-    - GRU: Running (comps2)
+    - GRU: Not Started
     - SNAIL: Running (comps1)
   - 500 Trajectories, 500 Tasks
     - GRU: Running (vws24)
