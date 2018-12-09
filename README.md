@@ -41,17 +41,17 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
     - GRU: Running (compsbk3)
     - SNAIL: Running (compsgpu2)
   - 100 Trajectories, 2500 Tasks
-    - GRU: Not Started
-    - SNAIL: Not Started
+    - GRU: Running (comps2)
+    - SNAIL: Running (comps1)
   - 500 Trajectories, 500 Tasks
-    - GRU: Running (angeline's vector machine)
+    - GRU: Running (vws24)
     - SNAIL: Not Started
 - **10 Armed Bandit (To be run)**:
 - **50 Armed Bandit (To be run)**:
 - Tabular MDP:  
   - 10 Trajectories, 2500 Tasks
     - GRU: Running (compsbk3)
-    - SNAIL: Paused  
+    - SNAIL: Running (comps4)  
   - 25 Trajectories, 1000 Tasks
     - GRU: Not Started
     - SNAIL: Not Started  
