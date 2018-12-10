@@ -1,13 +1,13 @@
 import torch
 import torch.nn as nn
-import numpy as np
+import math
 from helper.values.value import Value
-from helper.snail_blocks import *
+from helper.snail_blocks import TCBlock, AttentionBlock
 
 
 class SNAILValue(Value):
   # K arms, trajectory of length N
-  def __init__(self, output_size, max_num_traj, max_traj_len, encoder, input_size=1, encoder_hidden_size=32, hidden_size=16, non_linearity='none'):
+  def __init__(self, output_size, max_num_traj, max_traj_len, encoder, encoder_hidden_size=32, hidden_size=16):
     super(SNAILValue, self).__init__(output_size)
     self.K = output_size
     self.N = max_num_traj
@@ -35,15 +35,6 @@ class SNAILValue(Value):
 
     self.affine_2 = nn.Linear(num_channels, 1)
 
-    if non_linearity == 'sigmoid':
-      self.non_linearity = nn.Sigmoid()
-    elif non_linearity == 'tanh':
-      self.non_linearity = nn.Tanh()
-    elif non_linearity == 'relu':
-      self.non_linearity = nn.ReLU()
-    else:
-      self.non_linearity = None
-
 
   def forward(self, x, hidden_state):
     x = x.transpose(0, 1)  
@@ -57,6 +48,4 @@ class SNAILValue(Value):
     x = self.attention_1(x)
     x = self.affine_2(x)
     x = x[:, self.T-1, :].squeeze()  # pick_last_action
-    if (self.non_linearity):
-      x = self.non_linearity(x)
     return x.unsqueeze(0).unsqueeze(0), next_hidden_state

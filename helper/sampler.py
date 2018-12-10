@@ -16,7 +16,7 @@ def make_env(env_name):
 
 # This samples from the current environment using the provided model
 class Sampler():
-  def __init__(self, device, model, env_name, num_actions, deterministic=False, gamma=0.99, tau=0.3, num_workers=mp.cpu_count() - 1):
+  def __init__(self, device, model, env_name, num_actions, deterministic=False, gamma=0.99, tau=0.3, num_workers=mp.cpu_count() - 1, evaluate=False):
     self.device = device
     self.model = model
     self.env_name = env_name
@@ -25,6 +25,8 @@ class Sampler():
     self.tau = tau
     self.last_hidden_state = None
     self.get_next_action = self.exploit if deterministic else self.random_sample
+    self.save_evaluate = self.store_clean if evaluate else lambda action, state, reward: None
+    self.reset_evaluate = self.reset_clean if evaluate else lambda: None
 
     self.reset_storage()
 
@@ -66,7 +68,7 @@ class Sampler():
     self.returns = []
     self.advantages = []
     self.hidden_states = []
-    self.reset_debug()
+    self.reset_evaluate()
 
 
   # Concatenate storage for more accessibility
@@ -109,9 +111,11 @@ class Sampler():
     reward_entry = reward.float().unsqueeze(1)
     action_vector = torch.zeros([self.num_workers, num_actions])
 
-    assert all(action > -1) or all(action == -1), 'All processes should be at the same step'
-    if (all(action > -1)):
+    # Try to speed up while having some check
+    if all(action > -1):
       action_vector.scatter_(1, action.cpu().unsqueeze(1), 1)
+    elif not all(action == -1):
+      assert False, 'All processes should be at the same step'
     
     state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
     state = state.unsqueeze(0)
@@ -147,7 +151,7 @@ class Sampler():
 
       # Get information from model and take action
       with torch.no_grad():
-        dist, value, next_hidden_state = self.model(state, hidden_state, to_print=False)
+        dist, value, next_hidden_state = self.model(state, hidden_state)
       
       # Decide if we should exploit all the time
       action = self.get_next_action(dist)
@@ -161,15 +165,7 @@ class Sampler():
         
       # Store the information
       self.insert_storage(log_prob.unsqueeze(0), state, action.unsqueeze(0), reward, done, value, hidden_state)
-
-      ########################################################################
-      print(reward, action)
-
-      # Storing this for debugging
-      self.clean_actions.append(action)
-      self.clean_states.append(state)
-      self.clean_rewards.append(reward)
-      ########################################################################
+      self.save_evaluate(action, state, reward)
 
       # Update to the next value
       state = next_state
@@ -178,13 +174,16 @@ class Sampler():
       hidden_state = next_hidden_state.to(self.device)
 
       # Grab hidden state for the extra information
-      assert all(done) or all(1-done), 'All processes be done at the same time'
       if (all(done)):
         state = self.generate_state_vector(done, reward, self.num_actions, action, state)
 
         with torch.no_grad():
-          _, _, hidden_state = self.model(state, hidden_state, to_print=False)
+          _, _, hidden_state = self.model(state, hidden_state)
         state, reward, action, done = self.reset_traj()
+      elif not all(1 - done):
+        # This is due to environment setting
+        # TODO: Allow different trajectory lengths
+        assert False, 'All processes be done at the same time'
 
     ########################################################################
     # self.print_debug()
@@ -195,19 +194,28 @@ class Sampler():
     # Compute the return
     state = self.generate_state_vector(done, reward, self.num_actions, action, state)
     with torch.no_grad():
-      _, next_val, _, = self.model(state, hidden_state, to_print=False)
+      _, next_val, _, = self.model(state, hidden_state)
 
     self.returns = self.compute_gae(next_val.detach(), self.rewards, self.masks, self.values, self.gamma, self.tau)
 
 
-  # Reset debugging information
-  def reset_debug(self):
+  # Storing this for evaluation
+  def store_clean(self, action, state, reward):
+    print(reward, action)
+
+    self.clean_actions.append(action)
+    self.clean_states.append(state)
+    self.clean_rewards.append(reward)
+
+
+  # Reset evaluate information
+  def reset_clean(self):
     self.clean_actions = []
     self.clean_states = []
     self.clean_rewards = []
 
 
   # Print debugging information
-  def print_debug(self):
+  def print_clean(self):
     for action, state, reward in zip(self.clean_actions, self.clean_states, self.clean_rewards):
       print('action: {} reward: {} state: {}'.format(action, reward, state))

@@ -5,7 +5,7 @@ from helper.values import SNAILValue
 
 
 class SNAILActorCritic(nn.Module):
-  def __init__(self, output_size, max_num_traj, max_traj_len, encoder, input_size=1, policy_hidden_size=32, value_hidden_size=16, non_linearity='none'):
+  def __init__(self, output_size, max_num_traj, max_traj_len, encoder, input_size=1, policy_hidden_size=32, value_hidden_size=16):
     super(SNAILActorCritic, self).__init__()
     self.input_size = input_size
     self.K = output_size
@@ -13,15 +13,15 @@ class SNAILActorCritic(nn.Module):
     self.T = max_num_traj * max_traj_len
     self.is_recurrent = True
     self.critic = SNAILValue(output_size, max_num_traj, max_traj_len, encoder,
-                              encoder_hidden_size=policy_hidden_size, hidden_size=value_hidden_size,
-                              non_linearity=non_linearity)
+                              encoder_hidden_size=policy_hidden_size, hidden_size=value_hidden_size)
     self.actor = SNAILPolicy(output_size, max_num_traj, max_traj_len, encoder, hidden_size=policy_hidden_size)
 
-  def forward(self, x, hidden_state, to_print=True):
+  def forward(self, x, hidden_state):
     val, critic_hidden_state = self.critic(x, hidden_state)
-    dist, actor_hidden_state = self.actor(x, hidden_state, to_print)
+    dist, actor_hidden_state = self.actor(x, hidden_state)
 
-    assert torch.all(torch.eq(critic_hidden_state, actor_hidden_state)), 'They should have same hidden state'
+    # This is a good check, but unnecessary
+    #assert torch.all(torch.eq(critic_hidden_state, actor_hidden_state)), 'They should have same hidden state'
 
     return dist, val.unsqueeze(0), actor_hidden_state
 

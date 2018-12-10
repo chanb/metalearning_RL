@@ -22,7 +22,6 @@ parser.add_argument('--num_workers', type=int, default=1, help='number of worker
 parser.add_argument('--model_type', type=str, default='gru', help='the model to use (gru or snail) (default: gru)')
 parser.add_argument('--metalearn_epochs', type=int, default=300, help='number of epochs for meta learning (default: 300)')
 parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
-parser.add_argument('--non_linearity', help='non linearity function following last output layer')
 parser.add_argument('--learning_rate', type=float, default=3e-4, help='learning rate for optimizer (default: 3e-4)')
 parser.add_argument('--gamma', type=float, default=0.99, help='discount factor (default: 0.99)')
 
@@ -50,16 +49,16 @@ eps = np.finfo(np.float32).eps.item()
 
 # Performs meta training
 def meta_train(device, num_workers, model_type, metalearn_epochs, task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo_epochs, mini_batchsize, batchsize, gamma, 
-  tau, clip_param, learning_rate, vf_coef, ent_coef, max_grad_norm, target_kl, non_linearity, out_file):
+  tau, clip_param, learning_rate, vf_coef, ent_coef, max_grad_norm, target_kl, out_file):
 
   num_feature = 2 + num_states + num_actions
 
   # Create the model
   if (model_type == 'gru'):
-    model = GRUActorCritic(num_actions, num_feature, non_linearity=non_linearity)
+    model = GRUActorCritic(num_actions, num_feature)
   elif (model_type == 'snail'):
     fcn = LinearEmbedding(input_size=num_feature, output_size=32)
-    model = SNAILActorCritic(num_actions, args.num_traj, args.traj_len, fcn, input_size=num_feature, non_linearity=non_linearity)
+    model = SNAILActorCritic(num_actions, args.num_traj, args.traj_len, fcn, input_size=num_feature)
 
   model = model.to(device)
 
@@ -114,7 +113,7 @@ def main():
 
   model = meta_train(device, args.num_workers, args.model_type, args.metalearn_epochs, task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
     args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, args.vf_coef, 
-    args.ent_coef, args.max_grad_norm, args.target_kl, args.non_linearity, args.out_file)
+    args.ent_coef, args.max_grad_norm, args.target_kl, args.out_file)
 
   if (model):
     if os.path.exists(args.out_file):

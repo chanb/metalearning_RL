@@ -15,7 +15,7 @@ class PPO:
     self.vf_coef = vf_coef
     self.ent_coef = ent_coef
     self.max_grad_norm = max_grad_norm
-    self.target_kl = target_kl
+    self.target_kl = target_kl * 1.5
 
   # Samples minibatch
   def ppo_iter(self, mini_batch_size, states, actions, log_probs, returns, advantages, values, hidden_states):
@@ -28,14 +28,15 @@ class PPO:
   # Perform PPO Update
   def update(self, sampler):
     print('PPO Update')
-    for _ in range(self.ppo_epochs):
+    early_break = False
+    for last_epoch in range(self.ppo_epochs):
       for state, action, old_log_probs, ret, advantage, old_value, hidden_state in self.ppo_iter(self.mini_batchsize, sampler.states, sampler.actions, sampler.log_probs, sampler.returns, sampler.advantages, sampler.values, sampler.get_hidden_states()):
         # Computes the new log probability from the updated model
         new_log_probs = []
         values = []
 
         for sample in range(self.mini_batchsize):
-          dist, value, _, = self.model(state[sample].unsqueeze(0), hidden_state[sample], to_print=False)
+          dist, value, _, = self.model(state[sample].unsqueeze(0), hidden_state[sample])
           entropy = dist.entropy().mean()
           new_log_probs.append(dist.log_prob(action[sample]).unsqueeze(0))
           values.append(value)
@@ -44,7 +45,7 @@ class PPO:
 
         # Early breaking
         kl = (old_log_probs - new_log_probs).mean()
-        if kl > 1.5 * self.target_kl:
+        if kl > self.target_kl:
           break
         
         # Clipped Surrogate Objective Loss
@@ -74,5 +75,6 @@ class PPO:
         self.optimizer.step()
       else:
         continue
-      print('Early breaking due to high KL divergence')
+      early_break = True
       break
+    print('PPO Update Done - Early Break: {}, Last Epoch: {}'.format(early_break, last_epoch))
