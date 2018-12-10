@@ -58,9 +58,9 @@ class TabularMDPEnv(gym.Env):
         self._task = task
         self._transitions = task['transitions']
         self._rewards_mean = task['rewards_mean']
-        print('Env Setup')
-        print(self._transitions)
-        print(self._rewards_mean)
+        #print('Env Setup')
+        #print(self._transitions)
+        #print(self._rewards_mean)
 
     def reset(self):
         # From [1]: "an episode always starts on the first state"
