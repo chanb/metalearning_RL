@@ -1,7 +1,6 @@
 import numpy as np
 import torch
 
-from torch.distributions import Categorical
 from helper.envs.bandit import BernoulliBanditEnv
 from helper.policies.categorical_mlp import CategoricalMLPPolicy
 from helper.baseline import LinearFeatureBaseline
@@ -41,7 +40,7 @@ def evaluate(env, task, policy, max_path_length=100):
     for _ in range(max_path_length):
         #env.render()
         obs_tensor = torch.from_numpy(obs).to(device='cpu').type(torch.FloatTensor)
-        action_tensor = Categorical(logits=policy(obs_tensor, params=None)).sample()
+        action_tensor = policy(obs_tensor, params=None).sample()
         action = action_tensor.cpu().numpy()
         obs, rew, done, _ = env.step(action)
         cum_reward += rew
