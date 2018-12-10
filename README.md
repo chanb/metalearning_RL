@@ -36,21 +36,26 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
 
 ## Experiment Status:
 - 5 Armed Bandit:
-  - 10 Trajectories, 25000 Tasks 
-    - GRU: Running (vws24)
-    - SNAIL: Running (compsgpu2)
-  - 100 Trajectories, 2500 Tasks
+  - 10 Trajectories, 100 Tasks 
+    - GRU: Running (vws24)  
+    `python rl2_train.py --model_type gru --out_file test_gru_single_worker.pt --batch_size 1000 --num_tasks 100 --mini_batch_size 256 --num_traj 10 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
+    - SNAIL: Running (compsgpu2)  
+    `python rl2_train.py --model_type snail --out_file test_snail_single_worker.pt --batch_size 1000 --num_tasks 100 --mini_batch_size 256 --num_traj 10 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
+  - 100 Trajectories, 100 Tasks
     - GRU: Not Started
-    - SNAIL: Running (comps1)
+    - SNAIL: Running (comps1)  
+    `python rl2_train.py --model_type snail --out_file test_snail_single_worker_100traj.pt --batch_size 10000 --num_tasks 100 --mini_batch_size 256 --num_traj 100 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
   - 500 Trajectories, 500 Tasks
     - GRU: Done (vws24) 3 days
     - SNAIL: Not Started
 - **10 Armed Bandit (To be run)**:
 - **50 Armed Bandit (To be run)**:
 - Tabular MDP:  
-  - 10 Trajectories, 2500 Tasks
-    - GRU: Running (compsbk3)
+  - 10 Trajectories, 100 Tasks
+    - GRU: Running (compsbk3)  
+    `python rl2_train.py --model_type gru --out_file test_gru_single_worker_mdp.pt --batch_size 10000 --num_tasks 100 --mini_batch_size 256 --num_traj 10 --traj_len 10 --task mdp --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1 --metalearn_epochs 1500`
     - SNAIL: Running (comps4)  
+    `python rl2_train.py --model_type snail --out_file test_snail_single_worker_mdp.pt --batch_size 10000 --num_tasks 100 --mini_batch_size 256 --num_traj 10 --traj_len 10 --task mdp --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1 --metalearn_epochs 1500`
   - 25 Trajectories, 1000 Tasks
     - GRU: Not Started
     - SNAIL: Not Started  
