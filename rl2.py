@@ -48,7 +48,7 @@ def meta_train():
         task = "Bandit-K{}-v0".format(args.num_actions)
         num_actions = args.num_actions
         num_states = 1
-        non_linearity = 'sigmoid'
+        non_linearity = 'none'
     elif args.task == 'mdp':
         task = "TabularMDP-v0"
         num_actions = 5
