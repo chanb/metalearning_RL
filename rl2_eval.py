@@ -29,7 +29,6 @@ args = parser.parse_args()
 
 out_result = args.out_file
 
-#TODO: Make it work with new sampler
 def evaluate_model(env_name, eval_model, tasks, num_actions, num_states, num_traj, traj_len):
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
   all_rewards = []
@@ -40,7 +39,7 @@ def evaluate_model(env_name, eval_model, tasks, num_actions, num_states, num_tra
     if curr_task % 10 == 0:
       print("task {} ==========================================================".format(curr_task))
     model = torch.load(eval_model).to(device)
-    sampler = Sampler(device, model, env_name, num_actions, deterministic=False, num_workers=1)
+    sampler = Sampler(device, model, env_name, num_actions, deterministic=False, num_workers=1, evaluate=True)
 
     sampler.set_task(task)
     sampler.sample(num_traj * traj_len)

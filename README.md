@@ -6,7 +6,6 @@ This project follows RL^2 and SNAIL paper and attempts to reproduce the results 
 - `model_type (str)`: (Default: `gru`) This chooses either `gru` (from RL^2) or `snail` as the model to train
 - `metalearn_epochs (int)` (Default: `300`) This is the number of iterations to train the model. After each iteration, a snapshot is taken for plotting the learning curve
 - `task (str)`: (Default: `mdp`) This supports either `mdp` (tabular MDP) or `bandit` (multi-armed bandit)
-- `non_linearity (str)`: (Default: `none`) This is the non linearity function following the last output layer of the value network. This supports `none`, `tanh`, `relu`, and `sigmoid`
 - `learning_rate (float)`: (Default: `3e-4`) This is the learning rate for the Adam optimizer
 - `gamma (float)`: (Default: `0.99`) This is the discount factor
 - `num_actions (int)`: (Default: `5`) This is the number of actions in the action space for the given task. This should only be tweaked for multi-armed bandit (unless new environment is provided)
