@@ -43,7 +43,7 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
     - GRU: Not Started
     - SNAIL: Running (comps1)
   - 500 Trajectories, 500 Tasks
-    - GRU: Done (vws24)
+    - GRU: Done (vws24) 3 days
     - SNAIL: Not Started
 - **10 Armed Bandit (To be run)**:
 - **50 Armed Bandit (To be run)**:
