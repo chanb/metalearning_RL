@@ -34,9 +34,9 @@ class PPO:
         values = []
 
         for sample in range(self.mini_batchsize):
-          dist, value, _, = self.model(state[sample].unsqueeze(0), hidden_state[sample])
+          dist, value, _, = self.model(state[sample], hidden_state[sample])
           entropy = dist.entropy().mean()
-          new_log_probs.append(dist.log_prob(action[sample]).unsqueeze(0))
+          new_log_probs.append(dist.log_prob(action[sample]))
           values.append(value)
 
         new_log_probs = torch.cat(new_log_probs)

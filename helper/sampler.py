@@ -91,8 +91,8 @@ class Sampler():
   # Insert a sample into the storage
   def insert_storage(self, log_prob, state, action, reward, done, value, hidden_state):
     self.log_probs.append(log_prob)
-    self.states.append(state)
-    self.actions.append(action)
+    self.states.append(state.unsqueeze(0))
+    self.actions.append(action.unsqueeze(0))
     self.rewards.append(torch.Tensor(reward).unsqueeze(1).to(self.device))
     self.masks.append(torch.Tensor(1 - done).unsqueeze(1).to(self.device))
     self.values.append(value)
