@@ -66,7 +66,7 @@ class Sampler():
     self.returns = []
     self.advantages = []
     self.hidden_states = []
-    # self.reset_debug()
+    self.reset_debug()
 
 
   # Concatenate storage for more accessibility
@@ -163,12 +163,12 @@ class Sampler():
       self.insert_storage(log_prob.unsqueeze(0), state, action.unsqueeze(0), reward, done, value, hidden_state)
 
       ########################################################################
-      # print(reward, action)
+      print(reward, action)
 
       # Storing this for debugging
-      # self.clean_actions.append(action)
-      # self.clean_states.append(state)
-      # self.clean_rewards.append(reward)
+      self.clean_actions.append(action)
+      self.clean_states.append(state)
+      self.clean_rewards.append(reward)
       ########################################################################
 
       # Update to the next value
