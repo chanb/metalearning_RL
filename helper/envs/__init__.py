@@ -19,3 +19,12 @@ register(
     kwargs={'num_states': 10, 'num_actions': 5},
     max_episode_steps=10
 )
+
+# 2D Navigation
+# ----------------------------------------
+
+register(
+    '2DNavigation-v0',
+    entry_point='helper.envs.navigation:Navigation2DEnv',
+    max_episode_steps=100
+)

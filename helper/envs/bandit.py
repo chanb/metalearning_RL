@@ -43,8 +43,6 @@ class BernoulliBanditEnv(gym.Env):
     def reset_task(self, task):
         self._task = task
         self._means = task['mean']
-        print("Env Setup")
-        print(self._means)
 
     def reset(self):
         return np.zeros(1, dtype=np.float32)

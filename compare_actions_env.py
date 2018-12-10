@@ -13,5 +13,5 @@ with open(args.res_file, 'rb') as f:
 with open(args.env_file, 'rb') as f:
   tasks = pickle.load(f)[0]
 
-action_env_pair = np.array([(np.array(all_actions[i]).flatten(), tasks[i]['mean']) for i in range(len(all_actions))])
-print(action_env_pair)
+for i in range(len(all_actions)):
+  print(np.array(all_actions[i]).flatten(), tasks[i]['mean']) 

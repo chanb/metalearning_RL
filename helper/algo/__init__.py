@@ -1,2 +1,1 @@
-from .ppo import ppo
-from .reinforce import reinforce
+from .ppo import PPO

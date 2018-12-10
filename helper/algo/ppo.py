@@ -1,179 +1,77 @@
-import gym
 import numpy as np
-import argparse
-import helper.envs
 import torch
-import torch.optim as optim
-import torch.nn.functional as F
-from torch.distributions import Categorical
 
-# Computes the advantage where lambda = tau
-def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
-    values = values + [next_value]
-    gae = 0
-    returns = []
-    for step in reversed(range(len(rewards))):
-        delta = rewards[step] + gamma * values[step + 1] * masks[step] - values[step]
-        gae = delta + gamma * tau * masks[step] * gae
-        returns.insert(0, gae + values[step])
-    return returns
+CLIP_BASE = 1.0
 
+# This performs PPO update using the Sampler storage
+class PPO:
+  def __init__(self, model, optimizer, ppo_epochs, mini_batchsize, batchsize, clip_param, vf_coef, ent_coef, max_grad_norm, target_kl):
+    self.model = model
+    self.optimizer = optimizer
+    self.ppo_epochs = ppo_epochs
+    self.batchsize = batchsize
+    self.mini_batchsize = mini_batchsize
+    self.clip_param = clip_param
+    self.vf_coef = vf_coef
+    self.ent_coef = ent_coef
+    self.max_grad_norm = max_grad_norm
+    self.target_kl = target_kl * 1.5
 
-def ppo_iter(mini_batch_size, states, actions, log_probs, returns, advantages):
+  # Samples minibatch
+  def ppo_iter(self, mini_batch_size, states, actions, log_probs, returns, advantages, values, hidden_states):
     batch_size = states.size(0)
-    for _ in range(batch_size // mini_batch_size):
-        rand_ids = np.random.randint(0, batch_size, mini_batch_size)
-        yield states[rand_ids, :], actions[rand_ids, :], log_probs[rand_ids, :], returns[rand_ids, :], \
-              advantages[rand_ids, :]
+    rand_ids = np.random.choice(batch_size, batch_size, False)
+    for batch_id in range(batch_size // mini_batch_size):
+      samples = rand_ids[batch_id * mini_batch_size : batch_id * mini_batch_size + mini_batch_size]
+      yield states[samples, :], actions[samples, :], log_probs[samples, :], returns[samples, :], advantages[samples, :], values[samples, :], hidden_states[samples, :]
 
+  # Perform PPO Update
+  def update(self, sampler):
+    for last_epoch in range(self.ppo_epochs):
+      for state, action, old_log_probs, ret, advantage, old_value, hidden_state in self.ppo_iter(self.mini_batchsize, sampler.states, sampler.actions, sampler.log_probs, sampler.returns, sampler.advantages, sampler.values, sampler.get_hidden_states()):
+        # Computes the new log probability from the updated model
+        new_log_probs = []
+        values = []
 
-def ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantages,
-               clip_param=0.2, evaluate=False):
-    # Use Clipping Surrogate Objective to update
-    for i in range(ppo_epochs):
-        model.zero_grad()
-        for state, action, old_log_probs, ret, advantage in ppo_iter(mini_batch_size, states, actions, log_probs, returns,
-                                                                advantages):
-            
-            dist, value = model(state, keep=False)
-            m = Categorical(logits=dist)
-            entropy = m.entropy().mean()
-            new_log_probs = m.log_prob(action)
+        for sample in range(self.mini_batchsize):
+          dist, value, _, = self.model(state[sample], hidden_state[sample])
+          entropy = dist.entropy().mean()
+          new_log_probs.append(dist.log_prob(action[sample]))
+          values.append(value)
 
-            ratio = (new_log_probs - old_log_probs).exp()
-            
-            surr_1 = ratio * advantage
-            surr_2 = torch.clamp(ratio, 1.0 - clip_param, 1.0 + clip_param) * advantage
+        new_log_probs = torch.cat(new_log_probs)
 
-            # Clipped Surrogate Objective Loss
-            actor_loss = -torch.min(surr_1, surr_2).mean()
-
-            # Mean Squared Error Loss Function
-            critic_loss = F.mse_loss(ret, value)
-
-            # This is L(Clip) - c_1L(VF) + c_2L(S)
-            # Take negative because we're doing gradient descent
-            loss = -(0.5 * critic_loss + actor_loss) #- 0.0001 * entropy)
-
-            optimizer.zero_grad()
-            loss.backward(retain_graph=model.is_recurrent)
-            optimizer.step()
-
-            if (evaluate):
-                print("new_log_prob: {} old_log_prob: {}".format(new_log_probs, old_log_probs))
-                print("ret: {} val: {}".format(ret, value))
-                print("action: {} return: {} advantage: {} ratio: {} critic_loss: {} actor_loss: {} entropy: {} loss: {}\n".format(action.squeeze().data.item(), ret.squeeze().data.item(), advantage.squeeze().data.item(), ratio.squeeze().data.item(), critic_loss.squeeze().data.item(), actor_loss.squeeze().data.item(), entropy, loss.squeeze().data.item()))
-
-
-
-# Attempt to modify policy so it doesn't go too far
-def ppo(model, optimizer, rl_category, num_actions, num_tasks, max_num_traj, max_traj_len, ppo_epochs, mini_batch_size,
-        gamma, tau, clip_param, evaluate=False):
-    all_rewards = []
-    all_states = []
-    all_actions = []
-
-    # Meta-Learning
-    for task in range(num_tasks):
-        task_total_rewards = []
-        task_total_states = []
-        task_total_actions = []
+        # Early breaking
+        kl = (old_log_probs - new_log_probs).mean()
+        if kl > self.target_kl:
+          break
         
-        if((task + 1) % 10 == 0):
-            print(
-              "Task {} ==========================================================================================================".format(
-                task + 1))
-        env = gym.make(rl_category)
-
-        # PPO (Using actor critic style)
-        for traj in range(max_num_traj):
-            if ((traj + 1) % 10 == 0):
-                print("Trajectory {}".format(traj + 1))
-            state = env.reset()
-            reward = 0.
-            action = -1
-            done = 0
-
-            log_probs = []
-            values = []
-            states = [] # states doesn't only store states, but store concatenation of state, action(onehot), reward, and done
-            actions = []
-            clean_actions = []
-            rewards = []
-            masks = []
-
-            for horizon in range(max_traj_len):
-                state = torch.from_numpy(state).float().unsqueeze(0)
-
-                if model.is_recurrent:
-                    done_entry = torch.tensor([[done]]).float()
-                    reward_entry = torch.tensor([[reward]]).float()
-                    action_vector = torch.FloatTensor(num_actions)
-                    action_vector.zero_()
-                    if (action > -1):
-                        action_vector[action] = 1
-                    
-                    action_vector = action_vector.unsqueeze(0)
-                    
-                    state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
-                    state = state.unsqueeze(0)
-
-                states.append(state)
-
-                dist, value = model(state)
-                if (evaluate):
-                    print('dist: {}'.format(dist))
-                    
-                m = Categorical(dist)
-                action = m.sample()
-                
-                log_prob = m.log_prob(action)
-                state, reward, done, _ = env.step(action.item())
-
-                done = int(done)
-                log_probs.append(log_prob.unsqueeze(0).unsqueeze(0))
-                actions.append(action.unsqueeze(0).unsqueeze(0))
-                clean_actions.append(action.data.item())
-                
-                values.append(value)
-                rewards.append(reward)
-                masks.append(1 - done)
-
-                if (done):
-                    break
-
-            state = torch.from_numpy(state).float().unsqueeze(0)
-            if model.is_recurrent:
-                done_entry = torch.tensor([[done]]).float()
-                reward_entry = torch.tensor([[reward]]).float()
-                action_vector = torch.FloatTensor(num_actions)
-                action_vector.zero_()
-                action_vector[action] = 1
-                action_vector = action_vector.unsqueeze(0)
-                state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
-                state = state.unsqueeze(0)
-
-            _, next_val = model(state)
-
-            returns = compute_gae(next_val, rewards, masks, values, gamma, tau)
-            returns = torch.cat(returns)
-            values = torch.cat(values)
-            log_probs = torch.cat(log_probs)
-            states = torch.cat(states)
-            actions = torch.cat(actions)
-            advantage = returns - values
-
-            task_total_rewards.append(sum(rewards))
-            task_total_states.append(states)
-            task_total_actions.append(clean_actions)
-
-            # This is where we compute loss and update the model
-            ppo_update(model, optimizer, ppo_epochs, mini_batch_size, states, actions, log_probs, returns, advantage
-                       , clip_param=clip_param, evaluate=evaluate)
+        # Clipped Surrogate Objective Loss
+        ratio = torch.exp(new_log_probs - old_log_probs).unsqueeze(2)
         
-        all_rewards.append(task_total_rewards)
-        all_states.append(task_total_states)
-        all_actions.append(task_total_actions)
-        if model.is_recurrent:
-            model.reset_hidden_state()
-    return all_rewards, all_states, all_actions, model
+        surr_1 = ratio * advantage
+        surr_2 = torch.clamp(ratio, CLIP_BASE - self.clip_param, CLIP_BASE + self.clip_param) * advantage
+        
+        actor_loss = -torch.min(surr_1, surr_2).mean()
+        
+        # Clipped Value Objective Loss
+        values = torch.cat(values)
+        value_clipped = old_value + torch.clamp(old_value - values, -self.clip_param, self.clip_param)
+        val_1 = (ret - values).pow(2)
+        val_2 = (ret - value_clipped).pow(2)
+
+        critic_loss = 0.5 * torch.max(val_1, val_2).pow(2).mean()
+        
+        # This is L(Clip) - c_1L(VF) + c_2L(S)
+        # Take negative because we're doing gradient descent
+        loss = actor_loss + self.vf_coef * critic_loss - self.ent_coef * entropy
+
+        self.optimizer.zero_grad()
+        loss.backward()
+        # Try clipping gradient
+        torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.max_grad_norm)
+        self.optimizer.step()
+      else:
+        continue
+      break
+    print('PPO Update Done - Last Epoch: {}'.format(1 + last_epoch))
