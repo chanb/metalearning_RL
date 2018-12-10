@@ -114,7 +114,7 @@ class Sampler():
     # Try to speed up while having some check
     if all(action > -1):
       action_vector.scatter_(1, action.cpu().unsqueeze(1), 1)
-    elif not all(action == -1):
+    elif any(action > -1):
       assert False, 'All processes should be at the same step'
     
     state = torch.cat((state, action_vector, reward_entry, done_entry), 1)
@@ -174,13 +174,13 @@ class Sampler():
       hidden_state = next_hidden_state.to(self.device)
 
       # Grab hidden state for the extra information
-      if (all(done)):
+      if all(done):
         state = self.generate_state_vector(done, reward, self.num_actions, action, state)
 
         with torch.no_grad():
           _, _, hidden_state = self.model(state, hidden_state)
         state, reward, action, done = self.reset_traj()
-      elif not all(1 - done):
+      elif any(done):
         # This is due to environment setting
         # TODO: Allow different trajectory lengths
         assert False, 'All processes be done at the same time'
