@@ -47,8 +47,8 @@ class BernoulliBanditEnv(gym.Env):
         #     self._means[i] = np.random.uniform(0, 1)
         #     self._means[i] = 0
         # self._means[np.random.randint(0, self.k)] = 1
-        print("Env Setup")
-        print(self._means)
+        #print("Env Setup")
+        #print(self._means)
 
     def reset(self):
         return np.zeros(1, dtype=np.float32)

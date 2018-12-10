@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-arms=( 5 10 50 )
+arms=( 5 )
 tasks=( bandit mdp )
 num_tasks=100
 

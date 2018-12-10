@@ -1,23 +1,24 @@
 #!/usr/bin/env bash
 
-num_tasks=100
-arms=( 5 10 50 )
-trajs=( 10 100 500 1000 )
+num_tasks=( 25000 2500 500 )
+num_batches=( 500 50 10 ) #num_tasks divided by meta batch size which is 50
+arms=( 5 )
+trajs=( 10 100 500 )
 
-for traj in ${trajs[@]}; do
+i=0
+while [  $i -lt ${#trajs[@]} ]; do
+    echo i is $i
     for arm in ${arms[@]}; do
-        echo $arm
-        echo $traj
-        python rl2.py --learning_rate 0.001 --algo reinforce --task bandit --num_actions $arm --max_traj_len 1 --max_num_traj $traj --num_tasks $num_tasks
-        python snail.py --learning_rate 0.001 --algo reinforce --task bandit --num_actions $arm --max_traj_len 1 --max_num_traj $traj --num_tasks $num_tasks
-        python maml.py -task bandit --num_actions $arm --fast-batch-size $traj --num-batches $num_tasks
+        echo arm is echo $arm
+        python maml.py --task bandit --num_actions $arm --fast-batch-size ${trajs[$i]} --num-batches ${num_batches[$i]} --meta-batch-size 50
     done
+    let i=i+1
 done
 
-trajs=( 10 25 50 75 100 )
+trajs=( 10 )
+num_tasks=2500
+num_batches=50 #num_tasks divided by meta batch size which is 50
 for traj in ${trajs[@]}; do
-    echo $traj
-    python rl2.py --num_tasks $num_tasks --max_num_traj 10 --learning_rate 0.001 --algo reinforce --max_traj_len 10 --task mdp
-    python snail.py --num_tasks $num_tasks --max_num_traj 10 --learning_rate 0.001 --algo reinforce --max_traj_len 10 --task mdp
-    python maml.py -task mdp --fast-batch-size $traj --num-batches $num_tasks
+    echo mdp
+    python maml.py --task mdp --fast-batch-size $traj --num-batches $num_tasks -meta-batch-size 50
 done
