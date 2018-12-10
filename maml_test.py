@@ -1,14 +1,13 @@
 import numpy as np
 import torch
 
+from helper.envs.mdp import TabularMDPEnv
 from helper.envs.bandit import BernoulliBanditEnv
 from helper.policies.categorical_mlp import CategoricalMLPPolicy
 from helper.baseline import LinearFeatureBaseline
 from helper.sampler import BatchSampler
 from helper.metalearner import MetaLearner
 
-import matplotlib as mpl
-mpl.use('TkAgg')
 import matplotlib.pyplot as plt
 
 
@@ -52,10 +51,17 @@ def evaluate(env, task, policy, max_path_length=10):
 
 
 def main(args):
-    env = BernoulliBanditEnv(5)
-    sampler = BatchSampler(env_name=args.env_name, batch_size=args.fast_batch_size, num_workers=args.num_workers)
+    if args.task == 'bandit':
+        env_name = "Bandit-K{}-v0".format(args.num_actions)
+        env = BernoulliBanditEnv(args.num_actions)
+    else:
+        env_name = "TabularMDP-v0"
+        env = TabularMDPEnv(10, 5)
+
+    sampler = BatchSampler(env_name=env_name, batch_size=args.fast_batch_size, num_workers=args.num_workers)
     tasks = sampler.sample_tasks(num_tasks=args.meta_batch_size)
     means = [[] for _ in range(args.num_grad_step)]
+    timesteps = [[] for _ in range(args.num_grad_step)]
     for task in tasks:
         env.reset_task(task)
         policy, baseline = load_meta_learner_params(env, args)
@@ -71,9 +77,11 @@ def main(args):
                 cum_rewards.append(cum_reward)
                 ts.append(t)
             print("========EVAL RESULTS=======")
-            print("Return: {} ".format(np.sum(cum_rewards)))
+            print("Return: {} +- {}, Timesteps:{} +- {}".format(np.mean(cum_rewards), np.std(cum_rewards),
+                                                                np.mean(ts), np.std(ts)))
             print("===========================")
             means[grad].append(np.sum(cum_rewards))
+            timesteps[grad].append(np.mean(ts))
 
             sampler.reset_task(task)
             episodes = sampler.sample(policy)
@@ -89,7 +97,17 @@ def main(args):
     plt.title('Model Performance')
     plt.fill_between(range(args.num_grad_step), np.mean(means, axis=1) - np.std(means, axis=1),
                      np.mean(means, axis=1) + np.std(means, axis=1), color='blue', alpha=0.3, lw=0.001)
-    plt.savefig('plots/{}.png'.format(args.outfile))
+    plt.savefig('plots/{}-rewards.png'.format(args.outfile))
+
+    timesteps = np.array(timesteps)
+    plt.figure(1)
+    plt.plot(range(args.num_grad_step), np.mean(timesteps, axis=1))
+    plt.xlabel('Number of Gradient Updates')
+    plt.ylabel('Average Timestep Taken')
+    plt.title('Model Performance')
+    plt.fill_between(range(args.num_grad_step), np.mean(timesteps, axis=1) - np.std(timesteps, axis=1),
+                     np.mean(timesteps, axis=1) + np.std(timesteps, axis=1), color='blue', alpha=0.3, lw=0.001)
+    plt.savefig('plots/{}-timesteps.png'.format(args.outfile))
 
 
 if __name__ == '__main__':
@@ -100,8 +118,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Test MAML on MAB')
 
     # General
-    parser.add_argument('--env-name', type=str, default='Bandit-K5-v0',
-                        help='name of the environment')
+    parser.add_argument('--task', type=str, default='bandit',
+                        help='bandit or mdp')
+    parser.add_argument('--num-actions', type=int, default=5,
+                        help='number of bandit arms')
     parser.add_argument('--first-order', action='store_true',
                         help='use the first-order approximation of MAML')
 

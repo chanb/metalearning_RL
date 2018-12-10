@@ -50,3 +50,6 @@ class BatchSampler(object):
     def sample_tasks(self, num_tasks):
         tasks = self._env.unwrapped.sample_tasks(num_tasks)
         return tasks
+
+    def get_env(self):
+        return self._env
