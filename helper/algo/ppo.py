@@ -27,8 +27,6 @@ class PPO:
 
   # Perform PPO Update
   def update(self, sampler):
-    print('PPO Update')
-    early_break = False
     for last_epoch in range(self.ppo_epochs):
       for state, action, old_log_probs, ret, advantage, old_value, hidden_state in self.ppo_iter(self.mini_batchsize, sampler.states, sampler.actions, sampler.log_probs, sampler.returns, sampler.advantages, sampler.values, sampler.get_hidden_states()):
         # Computes the new log probability from the updated model
@@ -75,6 +73,5 @@ class PPO:
         self.optimizer.step()
       else:
         continue
-      early_break = True
       break
-    print('PPO Update Done - Early Break: {}, Last Epoch: {}'.format(early_break, last_epoch))
+    print('PPO Update Done - Last Epoch: {}'.format(1 + last_epoch))
