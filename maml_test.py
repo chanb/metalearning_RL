@@ -32,7 +32,8 @@ def load_meta_learner_params(env, args):
     return policy, baseline
 
 
-def evaluate(env, task, policy, max_path_length=100):
+def evaluate(env, task, policy, max_path_length=10):
+    # multi arm bandit is done with just 1 pull
     cum_reward = 0
     t = 0
     env.reset_task(task)
@@ -66,7 +67,7 @@ def main(args):
             ts = []
             print("========GRAD STEP {}========".format(grad))
             for _ in range(args.test_iter):
-                cum_reward, t = evaluate(env, task, policy)
+                cum_reward, t = evaluate(env, task, policy, max_path_length=args.max_path_length)
                 cum_rewards.append(cum_reward)
                 ts.append(t)
             print("========EVAL RESULTS=======")
@@ -87,8 +88,8 @@ def main(args):
     plt.ylabel('Total Reward')
     plt.title('Model Performance')
     plt.fill_between(range(args.num_grad_step), np.mean(means, axis=1) - np.std(means, axis=1),
-                     np.mean(means, axis=1) + np.std(means, axis=1), color = 'blue', alpha=0.3, lw=0.001)
-    plt.savefig('plots/{}-means.png'.format(args.outfile))
+                     np.mean(means, axis=1) + np.std(means, axis=1), color='blue', alpha=0.3, lw=0.001)
+    plt.savefig('plots/{}.png'.format(args.outfile))
 
 
 if __name__ == '__main__':
@@ -127,6 +128,8 @@ if __name__ == '__main__':
                         help='Number of gradient steps to try')
     parser.add_argument('--fast-lr', type=float, default=1,
                         help='Number of gradient steps to try')
+    parser.add_argument('--max-path-length', type=int, default=10,
+                        help='Maximum number of steps per episode')
 
     # Miscellaneous
     parser.add_argument('--output-folder', type=str, default='maml',

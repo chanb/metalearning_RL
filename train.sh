@@ -21,5 +21,5 @@ num_tasks=2500
 num_batches=50 #num_tasks divided by meta batch size which is 50
 for traj in ${trajs[@]}; do
     echo mdp
-    python maml.py --task mdp --fast-batch-size $traj --num-batches $num_tasks --meta-batch-size 50
+    python maml.py --task mdp --fast-batch-size $traj --num-batches $num_batches --meta-batch-size 50
 done
