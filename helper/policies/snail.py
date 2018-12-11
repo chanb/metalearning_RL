@@ -7,14 +7,14 @@ from helper.snail_blocks import TCBlock, AttentionBlock
 
 class SNAILPolicy(nn.Module):
   # K arms, trajectory of length N
-  def __init__(self, output_size, input_size, max_num_traj, max_traj_len, encoders, hidden_size=32):
+  def __init__(self, output_size, input_size, max_num_traj, max_traj_len, encoders, encoders_output_size, hidden_size=32):
     super(SNAILPolicy, self).__init__()
     self.input_size = input_size
     self.T = max_num_traj * max_traj_len
     self.is_recurrent = True
     self.encoders = encoders
 
-    num_channels = hidden_size
+    num_channels = encoders_output_size
     num_filters = int(math.ceil(math.log(self.T)))
 
     self.tc_1 = TCBlock(num_channels, self.T, hidden_size)

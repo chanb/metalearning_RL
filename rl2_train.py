@@ -61,7 +61,7 @@ def meta_train(device, num_workers, model_type, metalearn_epochs, task, num_acti
 
     actor_encoders = shared_encoder
     critic_encoders = shared_encoder
-    model = SNAILActorCritic(num_actions, num_feature, num_traj, traj_len, actor_encoders, critic_encoders, actor_hidden_size=actor_hidden_size, critic_hidden_size=critic_hidden_size)
+    model = SNAILActorCritic(num_actions, num_feature, num_traj, traj_len, actor_encoders, critic_encoders, encoder_output_size, encoder_output_size, actor_hidden_size=actor_hidden_size, critic_hidden_size=critic_hidden_size)
 
   model = model.to(device)
 

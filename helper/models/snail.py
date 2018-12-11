@@ -5,7 +5,7 @@ from helper.values import SNAILValue
 
 
 class SNAILActorCritic(nn.Module):
-  def __init__(self, output_size, input_size, max_num_traj, max_traj_len, actor_encoders, critic_encoders, actor_hidden_size=32, critic_hidden_size=16):
+  def __init__(self, output_size, input_size, max_num_traj, max_traj_len, actor_encoders, critic_encoders, actor_encoders_output_size, critic_encoders_output_size, actor_hidden_size=32, critic_hidden_size=16):
     super(SNAILActorCritic, self).__init__()
 
     self.input_size = input_size
@@ -14,9 +14,9 @@ class SNAILActorCritic(nn.Module):
     self.T = max_num_traj * max_traj_len
     self.is_recurrent = True
 
-    self.actor = SNAILPolicy(output_size, input_size, max_num_traj, max_traj_len, actor_encoders, hidden_size=actor_hidden_size)
+    self.actor = SNAILPolicy(output_size, input_size, max_num_traj, max_traj_len, actor_encoders, actor_encoders_output_size, hidden_size=actor_hidden_size)
 
-    self.critic = SNAILValue(input_size, max_num_traj, max_traj_len, critic_encoders, hidden_size=critic_hidden_size)
+    self.critic = SNAILValue(input_size, max_num_traj, max_traj_len, critic_encoders, critic_encoders_output_size, hidden_size=critic_hidden_size)
 
   def forward(self, x, hidden_state):
     val, _ = self.critic(x, hidden_state)
