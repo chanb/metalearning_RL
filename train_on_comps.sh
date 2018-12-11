@@ -2,7 +2,7 @@
 
 arms=5
 tasks=bandit
-num_tasks=1000
+num_tasks=10
 num_traj=10
 traj_len=1
 
@@ -11,11 +11,11 @@ gamma=0.99
 ppo_epoch=5
 learning_rate=3e-4
 clip_param=0.1
-num_workers=1
+num_workers=3
 
-batchsize=10000
-minibatchsize=256
-metalearn_epoch=300
+batchsize=10
+minibatchsize=5
+metalearn_epoch=1
 
 models=( gru snail )
 

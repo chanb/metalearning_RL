@@ -1,15 +1,12 @@
-import gym
 import numpy as np
 import argparse
-import pickle
 
 import torch
+import torch.nn as nn
 import torch.optim as optim
-from torch.distributions import Categorical
 
-import helper.envs
-from helper.policies import LinearEmbedding
-from helper.models import GRUActorCritic, SNAILActorCritic, FCNActorCritic
+from helper.model_init import LinearEmbedding
+from helper.models import GRUActorCritic, SNAILActorCritic
 from helper.metalearn import MetaLearner
 from helper.sampler import Sampler
 from helper.algo import PPO
@@ -57,8 +54,14 @@ def meta_train(device, num_workers, model_type, metalearn_epochs, task, num_acti
   if (model_type == 'gru'):
     model = GRUActorCritic(num_actions, num_feature)
   elif (model_type == 'snail'):
-    fcn = LinearEmbedding(input_size=num_feature, output_size=32)
-    model = SNAILActorCritic(num_actions, args.num_traj, args.traj_len, fcn, input_size=num_feature)
+    actor_hidden_size = 32
+    critic_hidden_size = 16
+    encoder = LinearEmbedding(input_size=num_feature, output_size=actor_hidden_size)
+    value_encoder = LinearEmbedding(input_size=actor_hidden_size, output_size=critic_hidden_size)
+
+    actor_encoders = nn.Sequential(encoder)
+    critic_encoders = nn.Sequential(encoder, value_encoder)
+    model = SNAILActorCritic(num_actions, num_feature, num_traj, traj_len, actor_encoders, critic_encoders, actor_hidden_size=actor_hidden_size, critic_hidden_size=critic_hidden_size)
 
   model = model.to(device)
 

@@ -5,7 +5,7 @@ from helper.model_init import weight_init
 
 
 class GRUActorCritic(nn.Module):
-  def __init__(self, output_size, input_size=1, hidden_size=256):
+  def __init__(self, output_size, input_size, hidden_size=256):
     super(GRUActorCritic, self).__init__()
     self.is_recurrent = True
     self.hidden_size = hidden_size
@@ -21,7 +21,6 @@ class GRUActorCritic(nn.Module):
     x = self.relu1(x)
     val = self.value(x)
     dist = self.policy(x).squeeze(0)
-
     return Categorical(logits=dist), val, h
 
   def init_hidden_state(self, batchsize=1):

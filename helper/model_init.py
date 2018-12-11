@@ -13,3 +13,12 @@ def weight_init(module):
         nn.init.orthogonal_(param)
       elif 'bias' in name:
         nn.init.constant_(param, 0)
+
+
+class LinearEmbedding(nn.Module):
+  def __init__(self, input_size=1, output_size=32):
+    super(LinearEmbedding, self).__init__()
+    self.fcn = nn.Linear(input_size, output_size)
+
+  def forward(self, x):
+    return self.fcn(x)

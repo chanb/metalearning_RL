@@ -2,33 +2,19 @@ import torch
 import torch.nn as nn
 import math
 from torch.distributions import Categorical
-from helper.policies.policy import Policy
 from helper.snail_blocks import TCBlock, AttentionBlock
 
-class LinearEmbedding(Policy):
-  def __init__(self, input_size=1, output_size=32):
-    super(LinearEmbedding, self).__init__(input_size, output_size)
-    self.fcn = nn.Linear(input_size, output_size)
 
-  def forward(self, x):
-    return self.fcn(x)
-
-
-class SNAILPolicy(Policy):
+class SNAILPolicy(nn.Module):
   # K arms, trajectory of length N
-  def __init__(self, output_size, max_num_traj, max_traj_len, encoder, input_size=1, hidden_size=32):
-    super(SNAILPolicy, self).__init__(input_size, output_size)
-    self.K = output_size
-    self.N = max_num_traj
+  def __init__(self, output_size, input_size, max_num_traj, max_traj_len, encoders, hidden_size=32):
+    super(SNAILPolicy, self).__init__()
+    self.input_size = input_size
     self.T = max_num_traj * max_traj_len
-    self.hidden_size = hidden_size
     self.is_recurrent = True
-    
-    num_channels = 0
+    self.encoders = encoders
 
-    self.encoder = encoder
-    num_channels += hidden_size
-
+    num_channels = hidden_size
     num_filters = int(math.ceil(math.log(self.T)))
 
     self.tc_1 = TCBlock(num_channels, self.T, hidden_size)
@@ -40,7 +26,7 @@ class SNAILPolicy(Policy):
     self.attention_1 = AttentionBlock(num_channels, hidden_size, hidden_size)
     num_channels += hidden_size
 
-    self.affine_2 = nn.Linear(num_channels, self.K)
+    self.affine = nn.Linear(num_channels, output_size)
 
 
   def forward(self, x, hidden_state):
@@ -48,10 +34,13 @@ class SNAILPolicy(Policy):
     x = torch.cat((hidden_state[:, 1:(self.T), :], x), 1)
     next_hidden_state = x
 
-    x = self.encoder(x) # result: traj_len x 32
+    x = self.encoders(x) # result: traj_len x 32
     x = self.tc_1(x)
     x = self.tc_2(x)
     x = self.attention_1(x)
-    x = self.affine_2(x)
-    x = x[:, self.T-1, :] # pick_last_action
+    x = self.affine(x)
+    x = x[:, self.T-1, :]
     return Categorical(logits=x), next_hidden_state
+
+  def init_hidden_state(self, batchsize=1):
+    return torch.zeros([batchsize, self.T, self.input_size])
