@@ -1,6 +1,5 @@
 import gym
 from helper.sampler import Sampler
-from helper.algo import PPO
 
 # This does the meta learning from RL^2 paper
 class MetaLearner():

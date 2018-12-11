@@ -65,7 +65,6 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
     - SNAIL: Not Started
 
 ## TODO:  
-Clean up models
 Allow different trajectory length for multiple workers
 
 ## References:
