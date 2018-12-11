@@ -43,7 +43,7 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
     `python rl2_train.py --model_type snail --out_file train_snail_5bandit_10traj_100tasks.pt --batch_size 1000 --num_tasks 100 --mini_batch_size 256 --num_traj 10 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
   - 10 Trajectories, 1000 Tasks 
     - GRU: Not Started (vws24)  
-    `python rl2_train.py --model_type gru --out_file train_gru_5bandit_10traj_1000tasks.pt --batch_size 10000 --num_tasks 100 --mini_batch_size 256 --num_traj 10 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
+    `python rl2_train.py --model_type gru --out_file train_gru_5bandit_10traj_1000tasks.pt --batch_size 10000 --num_tasks 1000 --mini_batch_size 256 --num_traj 10 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
     - SNAIL: Not Started (vws24)  
     `python rl2_train.py --model_type snail --out_file train_snail_5bandit_10traj_1000tasks.pt --batch_size 10000 --num_tasks 1000 --mini_batch_size 256 --num_traj 10 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
   - 100 Trajectories, 100 Tasks
@@ -56,7 +56,12 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
     `python rl2_train.py --model_type gru --out_file train_gru_5bandit_500traj_100tasks.pt --batch_size 10000 --num_tasks 100 --mini_batch_size 256 --num_traj 500 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
     - SNAIL: Not Started (compsgpu2)
     `python rl2_train.py --model_type snail --out_file train_snail_5bandit_500traj_100tasks.pt --batch_size 10000 --num_tasks 100 --mini_batch_size 256 --num_traj 500 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
-- **10 Armed Bandit (To be run)**:
+- 10 Armed Bandit:
+  - 10 Trajectories, 1000 Tasks 
+    - GRU: Not Started (compsbk3)  
+    `python rl2_train.py --model_type gru --out_file train_gru_10bandit_10traj_1000tasks.pt --batch_size 10000 --num_tasks 1000 --mini_batch_size 256 --num_traj 10 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1 --num_actions 10`
+    - SNAIL: Not Started (compsbk3)  
+    `python rl2_train.py --model_type snail --out_file train_snail_10bandit_10traj_1000tasks.pt --batch_size 10000 --num_tasks 1000 --mini_batch_size 256 --num_traj 10 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1 --num_actions 10`
 - **50 Armed Bandit (To be run)**:
 - Tabular MDP:  
   - 10 Trajectories, 100 Tasks
