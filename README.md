@@ -42,12 +42,12 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
     - SNAIL: Done (compsgpu2)  
     `python rl2_train.py --model_type snail --out_file train_snail_5bandit_10traj_100tasks.pt --batch_size 1000 --num_tasks 100 --mini_batch_size 256 --num_traj 10 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
   - 10 Trajectories, 1000 Tasks 
-    - GRU: Not Started (vws24)  
+    - GRU: Running (vws24)  
     `python rl2_train.py --model_type gru --out_file train_gru_5bandit_10traj_1000tasks.pt --batch_size 10000 --num_tasks 1000 --mini_batch_size 256 --num_traj 10 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
     - SNAIL: Not Started (vws24)  
     `python rl2_train.py --model_type snail --out_file train_snail_5bandit_10traj_1000tasks.pt --batch_size 10000 --num_tasks 1000 --mini_batch_size 256 --num_traj 10 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
   - 100 Trajectories, 100 Tasks
-    - GRU: Running (vws24) (`master` branch code)  
+    - GRU: Done (vws24) (`master` branch code)  
     `python rl2_train.py --model_type gru --out_file train_gru_5bandit_100traj_100tasks.pt --batch_size 10000 --num_tasks 100 --mini_batch_size 256 --num_traj 100 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
     - SNAIL: Running (comps1)  
     `python rl2_train.py --model_type snail --out_file train_snail_5bandit_100traj_100tasks.pt --batch_size 10000 --num_tasks 100 --mini_batch_size 256 --num_traj 100 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
