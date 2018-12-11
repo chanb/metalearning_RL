@@ -34,9 +34,9 @@ $ python rl2_train.py --out_file test_10armed_bandit.pt --batch_size 100 --num_t
 $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 100 --mini_batch_size 20 --num_traj 50 --tau 0.3 --gamma 0.99 --ppo_epochs 7 --learning_rate 0.005 --clip_param 0.2 --model_type snail --metalearn_epochs 1500
 ```
 
-## Experiment Status:
+## Experiment Status (Default: `parallel` branch code):
 - 5 Armed Bandit:
-  - 10 Trajectories, 100 Tasks 
+  - 10 Trajectories, 100 Tasks (`master` branch code)
     - GRU: Done (vws24)  
     `python rl2_train.py --model_type gru --out_file train_gru_5bandit_10traj_100tasks.pt --batch_size 1000 --num_tasks 100 --mini_batch_size 256 --num_traj 10 --tau 0.3 --gamma 0.99 --ppo_epochs 5 --learning_rate 3e-4 --clip_param 0.1 --num_workers 1`
     - SNAIL: Done (compsgpu2)  
