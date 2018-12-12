@@ -201,7 +201,7 @@ class Sampler():
 
   # Storing this for evaluation
   def store_clean(self, action, state, reward):
-    print(reward, action)
+    #print(reward, action)
 
     self.clean_actions.append(action)
     self.clean_states.append(state)
