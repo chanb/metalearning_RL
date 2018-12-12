@@ -30,6 +30,7 @@ args = parser.parse_args()
 out_result = args.out_file
 
 def evaluate_model(env_name, eval_model, tasks, num_actions, num_states, num_traj, traj_len):
+  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
   all_rewards = []
   all_actions = []
   all_states = []
@@ -37,7 +38,7 @@ def evaluate_model(env_name, eval_model, tasks, num_actions, num_states, num_tra
   for task in tasks:
     if curr_task % 10 == 0:
       print("task {} ==========================================================".format(curr_task))
-    model = torch.load(eval_model, map_location=lambda storage, loc: storage)
+    model = torch.load(eval_model).to(device)
     sampler = Sampler(device, model, env_name, num_actions, deterministic=False, num_workers=1, evaluate=True)
 
     sampler.set_task(task)
@@ -71,9 +72,10 @@ def evaluate_model(env_name, eval_model, tasks, num_actions, num_states, num_tra
   with open(out_result, 'wb') as f:
       pickle.dump([all_rewards, all_actions, all_states, num_actions, num_states], f)
 
-def random_arm_pull(env, num_actions, num_tasks, num_traj, tasks, num_update=20):
+def random_arm_pull(env_name, num_actions, num_tasks, num_traj, tasks, num_update=1):
   all_rewards = []
 
+  env = gym.make(env_name)
   # Learn on every sampled task
   for task in range(len(tasks)):
     if((task + 1) % 10 == 0):
@@ -116,8 +118,6 @@ def main():
     task = "TabularMDP-v0"
     num_actions = 5
     num_states = 10
-  
-  env = gym.make(task)
 
   with open(args.eval_tasks, 'rb') as f:
     tasks = pickle.load(f)[0]
@@ -125,7 +125,7 @@ def main():
   if args.algo == 'ppo':
     evaluate_model(task, args.eval_model, tasks, num_actions, num_states, args.num_traj, args.traj_len)
   else:
-    random_arm_pull(env, args.num_actions, args.num_tasks, args.num_traj, tasks)
+    random_arm_pull(task, args.num_actions, args.num_tasks, args.num_traj, tasks)
 
 if __name__ == "__main__":
   main()
