@@ -12,8 +12,12 @@ def evaluate_multiple_tasks(device, env_name, eval_model, tasks, num_actions, nu
   print('Testing model: {}'.format(eval_model))
   pool = ThreadPool(processes=num_workers)
 
-  results = [pool.apply(evaluate_single_task, args=(device, eval_model, env_name, num_actions, task, num_traj, traj_len)) for task in tasks]
+  def evaluate_single_wrapper(task):
+    return evaluate_single_task(device, eval_model, env_name, num_actions, task, num_traj, traj_len)
 
+  results = pool.map(evaluate_single_wrapper, tasks)
+
+  assert results and len(results) > 0, 'results should not be empty'
   all_rewards, all_actions, all_states = zip(*results)
   return all_rewards, all_actions, all_states, eval_model
 
@@ -54,7 +58,12 @@ def evaluate_single_task(device, eval_model, env_name, num_actions, task, num_tr
 def sample_multiple_random_fixed_length(env_name, tasks, num_actions, num_traj, traj_len, num_workers=3):
   pool = mp.Pool(processes=num_workers)
 
-  results = [pool.apply(random_single_task, args=(gym.make(env_name), task, num_actions, num_traj, traj_len)) for task in tasks]
+  def evaluate_single_wrapper(task):
+    return random_single_task(gym.make(env_name), task, num_actions, num_traj, traj_len)
+
+  results = pool.map(evaluate_single_wrapper, tasks)
+
+  assert results and len(results) > 0, 'results should not be empty'
 
   all_rewards, all_actions, all_states = zip(*results)
 

@@ -40,22 +40,28 @@ def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, mode
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     models = glob.glob('./{0}/*_{0}.pt'.format(models_dir))
     models.sort(key=lambda x: int(os.path.basename(x.rstrip(os.sep)).split("_")[0]))
-    results = [pool.apply(evaluate_multiple_tasks, args=(device, env_name, model, tasks, num_actions, num_traj, traj_len)) for model in models]
-  else:
-    results = [pool.apply(sample_multiple_random_fixed_length, args=(env_name, tasks, num_actions, num_traj, traj_len)) for model in range(num_fake_update)]
 
+    def evaluate_multiple_tasks_wrapper(model):
+      return evaluate_multiple_tasks(device, env_name, model, tasks, num_actions, num_traj, traj_len)
+
+  else:
+    models = range(num_fake_update)
+    def evaluate_multiple_tasks_wrapper(model):
+      return sample_multiple_random_fixed_length(env_name, tasks, num_actions, num_traj, traj_len)
+
+  results = pool.map(evaluate_multiple_tasks_wrapper, models)
   assert results and len(results) > 0, 'results should not be empty'
 
   all_rewards, all_actions, all_states, eval_models = zip(*results)
 
   # saves all rewards, actions, and states to a new file for later plotting all on one graph
   with open('{}.pkl'.format(out_file_prefix), 'wb') as pickle_out:
-    pickle.dump([all_rewards, all_actions, all_states], pickle_out)
+    pickle.dump([all_rewards, all_actions, all_states, eval_models], pickle_out)
 
 
 def generate_plot(out_file_prefix):
   with open('{}.pkl'.format(out_file_prefix), 'rb') as f:
-    all_rewards, _, _ = pickle.load(f)
+    all_rewards, _, _, eval_models = pickle.load(f)
 
   all_rewards_matrix = np.array([np.array(curr_model_rewards) for curr_model_rewards in all_rewards])
 
