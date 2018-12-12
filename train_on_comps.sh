@@ -24,7 +24,7 @@ for model in ${models[@]}; do
     policy=train_${model}_${arms}bandit_${num_traj}traj_${num_tasks}tasks
     mkdir -p $policy
 
-    python rl2_train.py --model_type $model --out_file $policy.pt --batch_size $batchsize --num_tasks $num_tasks --mini_batch_size $minibatchsize --num_traj $num_traj --tau $tau --gamma $gamma --ppo_epochs $ppo_epoch --learning_rate $learning_rate --clip_param $clip_param --num_workers $num_workers --num_actions $arms --traj_len $traj_len --metalearn_epoch $metalearn_epoch
+    python -W ignore rl2_train.py --model_type $model --out_file $policy.pt --batch_size $batchsize --num_tasks $num_tasks --mini_batch_size $minibatchsize --num_traj $num_traj --tau $tau --gamma $gamma --ppo_epochs $ppo_epoch --learning_rate $learning_rate --clip_param $clip_param --num_workers $num_workers --num_actions $arms --traj_len $traj_len --metalearn_epoch $metalearn_epoch
 
     mv ./tmp/*_$policy.pt $policy
     mv $policy.pt $policy
