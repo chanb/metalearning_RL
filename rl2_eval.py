@@ -1,4 +1,3 @@
-from multiprocessing.pool import ThreadPool
 import os
 import pickle
 import argparse
@@ -34,8 +33,6 @@ args = parser.parse_args()
 
 
 def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, models_dir, out_file_prefix, num_workers=3, num_fake_update=300):
-  pool = ThreadPool(processes=num_workers)
-
   if algo == 'ppo':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     models = glob.glob('./{0}/*_{0}.pt'.format(models_dir))
@@ -49,7 +46,7 @@ def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, mode
     def evaluate_multiple_tasks_wrapper(model):
       return sample_multiple_random_fixed_length(env_name, tasks, num_actions, num_traj, traj_len)
 
-  results = pool.map(evaluate_multiple_tasks_wrapper, models)
+  results = list(map(evaluate_multiple_tasks_wrapper, models))
   assert results and len(results) > 0, 'results should not be empty'
 
   all_rewards, all_actions, all_states, eval_models = zip(*results)
