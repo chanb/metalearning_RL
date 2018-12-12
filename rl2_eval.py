@@ -42,6 +42,8 @@ def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, mode
   else:
     results = [pool.apply(sample_multiple_random_fixed_length, args=(env_name, tasks, num_actions, num_traj, traj_len)) for model in range(num_fake_update)]
 
+  assert not results or len(results == 0), 'results should not be empty'
+
   all_rewards, all_actions, all_states = zip(*results)
 
   # saves all rewards, actions, and states to a new file for later plotting all on one graph
@@ -74,7 +76,8 @@ def main():
   assert args.num_fake_update > 0, 'Needs to have at least 1 update'
   assert args.num_workers > 0, 'Needs to have at least 1 worker'
   assert (args.algo != 'ppo' or args.models_dir), 'Missing models'
-  assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid Task'
+  assert (args.algo == 'ppo' or args.algo == 'random'), 'Invalid algorithm'
+  assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid task'
   env_name = ''
   if args.task == 'bandit':
     env_name = "Bandit-K{}-v0".format(args.num_actions)
