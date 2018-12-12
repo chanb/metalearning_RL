@@ -74,13 +74,13 @@ class Sampler():
   # Concatenate storage for more accessibility
   def concat_storage(self):
     # Store in better format
-    self.returns = torch.cat(self.returns).to(self.device)
-    self.values = torch.cat(self.values).to(self.device)
-    self.log_probs = torch.cat(self.log_probs).to(self.device)
-    self.states = torch.cat(self.states).to(self.device)
-    self.actions = torch.cat(self.actions).to(self.device)
+    self.returns = torch.cat(self.returns)
+    self.values = torch.cat(self.values)
+    self.log_probs = torch.cat(self.log_probs)
+    self.states = torch.cat(self.states)
+    self.actions = torch.cat(self.actions)
     self.advantages = self.returns - self.values
-    self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + EPS).to(self.device)
+    self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + EPS)
 
 
   # Concatenate hidden states
@@ -93,8 +93,8 @@ class Sampler():
     self.log_probs.append(log_prob)
     self.states.append(state.unsqueeze(0))
     self.actions.append(action.unsqueeze(0))
-    self.rewards.append(torch.Tensor(reward).unsqueeze(1))
-    self.masks.append(torch.Tensor(1 - done).unsqueeze(1))
+    self.rewards.append(torch.Tensor(reward).unsqueeze(1).to(self.device))
+    self.masks.append(torch.Tensor(1 - done).unsqueeze(1).to(self.device))
     self.values.append(value)
     self.hidden_states.append(hidden_state)
 
