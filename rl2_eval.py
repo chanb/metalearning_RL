@@ -29,13 +29,14 @@ parser.add_argument('--num_workers', type=int, help='number of workers to perfor
 parser.add_argument('--models_dir', help='the directory of the models to evaluate. models are retrieved in increasing order based on number prefix')
 parser.add_argument('--eval_tasks', help='the tasks to evaluate on')
 parser.add_argument('--out_file', help='the prefix of the filename to save outputs')
+parser.add_argument('--to_cpu', type=bool, default=False, help='bind everything to cpu')
 
 args = parser.parse_args()
 
 
-def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, models_dir, out_file_prefix, num_workers=3, num_fake_update=300):
+def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, models_dir, out_file_prefix, num_fake_update=300, num_workers=3, to_cpu=False):
   if algo == 'ppo':
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda" if torch.cuda.is_available() and not to_cpu else "cpu")
     models = glob.glob('./{0}/*_{0}.pt'.format(models_dir))
     models.sort(key=lambda x: int(os.path.basename(x.rstrip(os.sep)).split("_")[0]))
 
@@ -101,7 +102,7 @@ def main():
   if args.num_workers is not None:
     num_workers = args.num_workers
 
-  evaluate_result(args.algo, env_name, tasks, num_actions, args.num_traj, args.traj_len, args.models_dir, args.out_file, num_workers, args.num_fake_update)
+  evaluate_result(args.algo, env_name, tasks, num_actions, args.num_traj, args.traj_len, args.models_dir, args.out_file, args.num_fake_update, num_workers, args.to_cpu)
 
   generate_plot(args.out_file)
 
