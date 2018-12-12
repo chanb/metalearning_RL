@@ -74,6 +74,8 @@ https://github.com/VashishtMadhavan/rl2
 https://github.com/noahgolmant/RL-squared  
 https://github.com/pytorch/examples/blob/master/reinforcement_learning/reinforce.py  
 https://medium.com/@sanketgujar95/trust-region-policy-optimization-trpo-and-proximal-policy-optimization-ppo-e6e7075f39ed  
-https://towardsdatascience.com/understanding-gru-networks-2ef37df6c9be
+https://towardsdatascience.com/understanding-gru-networks-2ef37df6c9be  
+https://github.com/eambutu/snail-pytorch  
+https://github.com/sagelywizard/snail
 
 ### Reference codes: MAML-PyTorch, RL-Adventure, pytorch-ppo-acktr-a2c, openAI baseline, openAI spinningup
