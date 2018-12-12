@@ -1,14 +1,16 @@
-import gym
-import numpy as np
-import argparse
+from multiprocessing.pool import ThreadPool
 import pickle
+import argparse
+import glob
+import numpy as np
+import matplotlib as mpl
+mpl.use('TkAgg')
 
+import matplotlib.pyplot as plt
 import torch
 
-import helper.envs
-import os
+from helper.evaluate_model import evaluate_multiple_tasks, sample_multiple_random_fixed_length
 
-from helper.sampler import Sampler
 
 parser = argparse.ArgumentParser(description='Evaluate model on specified task')
 
@@ -20,112 +22,75 @@ parser.add_argument('--num_tasks', type=int, default=100, help='number of simila
 parser.add_argument('--num_traj', type=int, default=10, help='number of trajectories to interact with (default: 10)')
 parser.add_argument('--traj_len', type=int, default=1, help='fixed trajectory length (default: 1)')
 
-parser.add_argument('--eval_model', help='the model to evaluate')
-parser.add_argument('--eval_tasks', help='the tasks to evaluate on')
+parser.add_argument('--num_fake_update', type=int, default=300, help='number of fake gradient updates. used by random sampling (default: 300)')
+parser.add_argument('--num_workers', type=int, default=3, help='number of workers to perform evaluation in parallel (default: 3)')
 
-parser.add_argument('--out_file', help='filename to save output')
+parser.add_argument('--models_dir', help='the directory of the models to evaluate. models are retrieved in increasing order based on number prefix')
+parser.add_argument('--eval_tasks', help='the tasks to evaluate on')
+parser.add_argument('--out_file', help='the prefix of the filename to save outputs')
 
 args = parser.parse_args()
 
-out_result = args.out_file
 
-def evaluate_model(env_name, eval_model, tasks, num_actions, num_states, num_traj, traj_len):
-  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-  all_rewards = []
-  all_actions = []
-  all_states = []
-  curr_task = 1
-  for task in tasks:
-    if curr_task % 10 == 0:
-      print("task {} ==========================================================".format(curr_task))
-    model = torch.load(eval_model).to(device)
-    sampler = Sampler(device, model, env_name, num_actions, deterministic=False, num_workers=1, evaluate=True)
+def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, models_dir, out_file_prefix, num_workers=3, num_fake_update=300):
+  pool = ThreadPool(processes=num_workers)
 
-    sampler.set_task(task)
-    sampler.sample(num_traj * traj_len)
+  if algo == 'ppo':
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    models = glob.glob('./{0}/*_{0}.pt'.format(models_dir))
+    results = [pool.apply(evaluate_multiple_tasks, args=(device, env_name, model, tasks, num_actions, num_traj, traj_len)) for model in models]
+  else:
+    results = [pool.apply(sample_multiple_random_fixed_length, args=(env_name, tasks, num_actions, num_traj, traj_len)) for model in range(num_fake_update)]
 
-    task_total_rewards = []
-    task_total_states = []
-    task_total_actions = []
+  all_rewards, all_actions, all_states = zip(*results)
 
-    for i in range(num_traj):
-      clean_actions = []
-      clean_states = []
-      clean_rewards = []
+  # saves all rewards, actions, and states to a new file for later plotting all on one graph
+  with open('{}.pkl'.format(out_file_prefix), 'wb') as pickle_out:
+    pickle.dump([all_rewards, all_actions, all_states], pickle_out)
 
-      for j in range(traj_len):
-        curr_idx = i * j + i
-        clean_actions.append(sampler.clean_actions[curr_idx])
-        clean_states.append(sampler.clean_states[curr_idx].squeeze(0).squeeze(0))
-        clean_rewards.append(sampler.clean_rewards[curr_idx])
-        
-      task_total_rewards.append(sum(clean_rewards))
-      task_total_states.append(clean_states)
-      task_total_actions.append(clean_actions)
 
-    all_rewards.append(task_total_rewards)
-    all_actions.append(task_total_actions)
-    all_states.append(task_total_states)
-    sampler.envs.close()
-    curr_task += 1
+def generate_plot(out_file_prefix):
+  with open('{}.pkl'.format(out_file_prefix), 'rb') as f:
+    all_rewards, _, _ = pickle.load(f)
 
-  with open(out_result, 'wb') as f:
-      pickle.dump([all_rewards, all_actions, all_states, num_actions, num_states], f)
+  all_rewards_matrix = np.array([np.array(curr_model_rewards) for curr_model_rewards in all_rewards])
 
-def random_arm_pull(env_name, num_actions, num_tasks, num_traj, tasks, num_update=1):
-  all_rewards = []
+  # Compute the average and standard deviation of each model over specified number of tasks
+  models_avg_rewards = np.average(all_rewards_matrix, axis=1)
+  models_std_rewards = np.std(all_rewards_matrix, axis=1)
+  
+  plt.plot(range(1, len(models_avg_rewards) + 1), models_avg_rewards)
+  plt.xlabel('Number of Updates')
+  plt.ylabel('Average Total Reward')
+  plt.title('Model Performance')
 
-  env = gym.make(env_name)
-  # Learn on every sampled task
-  for task in range(len(tasks)):
-    if((task + 1) % 10 == 0):
-      print(
-        "Task {} ==========================================================================================================".format(
-        task + 1))
-
-    # Update the environment to use the new task
-    env.unwrapped.reset_task(tasks[task])
-
-    update_rewards = []
-    # Imitate the number of grad update
-    for _ in range(num_update):
-      rewards = 0
-      # Pull num_traj amount of times
-      for _ in range(num_traj):
-        env.reset()
-        action = np.random.randint(0, num_actions)
-        _, reward, _, _ = env.step(action)
-        rewards += reward
-      update_rewards.append(rewards)
-
-    all_rewards.append(update_rewards)
-
-  with open(out_result, 'wb') as f:
-    pickle.dump([all_rewards, 0, 0, 0, 0], f)
+  plt.fill_between(range(1, len(models_avg_rewards) + 1), models_avg_rewards-models_std_rewards, models_avg_rewards+models_std_rewards, color = 'blue', alpha=0.3, lw=0.001)
+  plt.savefig('{}.png'.format(out_file_prefix))
 
 def main():
   print("TESTING MODEL ========================================================================")
   assert args.out_file, 'Missing output file'
   assert args.eval_tasks, 'Missing tasks'
-  assert (args.algo != 'ppo' or args.eval_model), 'Missing models'
+  assert args.num_fake_update > 0, 'Needs to have at least 1 update'
+  assert args.num_workers > 0, 'Needs to have at least 1 worker'
+  assert (args.algo != 'ppo' or args.models_dir), 'Missing models'
   assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid Task'
-  task = ''
+  env_name = ''
   if args.task == 'bandit':
-    task = "Bandit-K{}-v0".format(args.num_actions)
+    env_name = "Bandit-K{}-v0".format(args.num_actions)
     num_actions = args.num_actions
     num_states = 1
   elif args.task == 'mdp':
-    task = "TabularMDP-v0"
+    env_name = "TabularMDP-v0"
     num_actions = 5
     num_states = 10
 
   with open(args.eval_tasks, 'rb') as f:
     tasks = pickle.load(f)[0]
 
-  if args.algo == 'ppo':
-    evaluate_model(task, args.eval_model, tasks, num_actions, num_states, args.num_traj, args.traj_len)
-  else:
-    random_arm_pull(task, args.num_actions, args.num_tasks, args.num_traj, tasks)
+  evaluate_result(args.algo, env_name, tasks, num_actions, args.num_traj, args.traj_len, args.models_dir, args.out_file, args.num_workers, args.num_fake_update)
 
-if __name__ == "__main__":
+  generate_plot(args.out_file)
+
+if __name__ == '__main__':
   main()
