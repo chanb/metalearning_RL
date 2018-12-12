@@ -40,12 +40,12 @@ def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, mode
     models.sort(key=lambda x: int(os.path.basename(x.rstrip(os.sep)).split("_")[0]))
 
     def evaluate_multiple_tasks_wrapper(model):
-      return evaluate_multiple_tasks(device, env_name, model, tasks, num_actions, num_traj, traj_len)
+      return evaluate_multiple_tasks(device, env_name, model, tasks, num_actions, num_traj, traj_len, num_workers)
 
   else:
     models = range(num_fake_update)
     def evaluate_multiple_tasks_wrapper(model):
-      return sample_multiple_random_fixed_length(env_name, tasks, num_actions, num_traj, traj_len)
+      return sample_multiple_random_fixed_length(env_name, tasks, num_actions, num_traj, traj_len, num_workers)
 
   results = list(map(evaluate_multiple_tasks_wrapper, models))
   assert results is not None and len(results) > 0, 'results should not be empty'
