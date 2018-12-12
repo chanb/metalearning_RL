@@ -1,3 +1,4 @@
+import multiprocessing as mp
 import os
 import pickle
 import argparse
@@ -23,7 +24,7 @@ parser.add_argument('--num_traj', type=int, default=10, help='number of trajecto
 parser.add_argument('--traj_len', type=int, default=1, help='fixed trajectory length (default: 1)')
 
 parser.add_argument('--num_fake_update', type=int, default=300, help='number of fake gradient updates. used by random sampling (default: 300)')
-parser.add_argument('--num_workers', type=int, default=3, help='number of workers to perform evaluation in parallel (default: 3)')
+parser.add_argument('--num_workers', type=int, help='number of workers to perform evaluation in parallel (default: uses number of processors available)')
 
 parser.add_argument('--models_dir', help='the directory of the models to evaluate. models are retrieved in increasing order based on number prefix')
 parser.add_argument('--eval_tasks', help='the tasks to evaluate on')
@@ -47,7 +48,7 @@ def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, mode
       return sample_multiple_random_fixed_length(env_name, tasks, num_actions, num_traj, traj_len)
 
   results = list(map(evaluate_multiple_tasks_wrapper, models))
-  assert results and len(results) > 0, 'results should not be empty'
+  assert results is not None and len(results) > 0, 'results should not be empty'
 
   all_rewards, all_actions, all_states, eval_models = zip(*results)
 
@@ -79,7 +80,7 @@ def main():
   assert args.out_file, 'Missing output file'
   assert args.eval_tasks, 'Missing tasks'
   assert args.num_fake_update > 0, 'Needs to have at least 1 update'
-  assert args.num_workers > 0, 'Needs to have at least 1 worker'
+  assert args.num_workers is None or args.num_workers > 0, 'Needs to have at least 1 worker'
   assert (args.algo != 'ppo' or args.models_dir), 'Missing models'
   assert (args.algo == 'ppo' or args.algo == 'random'), 'Invalid algorithm'
   assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid task'
@@ -96,7 +97,11 @@ def main():
   with open(args.eval_tasks, 'rb') as f:
     tasks = pickle.load(f)[0]
 
-  evaluate_result(args.algo, env_name, tasks, num_actions, args.num_traj, args.traj_len, args.models_dir, args.out_file, args.num_workers, args.num_fake_update)
+  num_workers = mp.cpu_count() - 1
+  if args.num_workers is not None:
+    num_workers = args.num_workers
+
+  evaluate_result(args.algo, env_name, tasks, num_actions, args.num_traj, args.traj_len, args.models_dir, args.out_file, num_workers, args.num_fake_update)
 
   generate_plot(args.out_file)
 
