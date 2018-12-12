@@ -15,7 +15,7 @@ def evaluate_multiple_tasks(device, env_name, eval_model, tasks, num_actions, nu
   results = [pool.apply(evaluate_single_task, args=(device, eval_model, env_name, num_actions, task, num_traj, traj_len)) for task in tasks]
 
   all_rewards, all_actions, all_states = zip(*results)
-  return all_rewards, all_actions, all_states
+  return all_rewards, all_actions, all_states, eval_model
 
 
 # Samples from a single task using a given model

@@ -1,4 +1,5 @@
 from multiprocessing.pool import ThreadPool
+import os
 import pickle
 import argparse
 import glob
@@ -38,13 +39,14 @@ def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, mode
   if algo == 'ppo':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     models = glob.glob('./{0}/*_{0}.pt'.format(models_dir))
+    models.sort(key=lambda x: int(os.path.basename(x.rstrip(os.sep)).split("_")[0]))
     results = [pool.apply(evaluate_multiple_tasks, args=(device, env_name, model, tasks, num_actions, num_traj, traj_len)) for model in models]
   else:
     results = [pool.apply(sample_multiple_random_fixed_length, args=(env_name, tasks, num_actions, num_traj, traj_len)) for model in range(num_fake_update)]
 
-  assert not results or len(results == 0), 'results should not be empty'
+  assert results and len(results) > 0, 'results should not be empty'
 
-  all_rewards, all_actions, all_states = zip(*results)
+  all_rewards, all_actions, all_states, eval_models = zip(*results)
 
   # saves all rewards, actions, and states to a new file for later plotting all on one graph
   with open('{}.pkl'.format(out_file_prefix), 'wb') as pickle_out:
