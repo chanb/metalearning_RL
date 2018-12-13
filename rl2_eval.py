@@ -26,6 +26,7 @@ parser.add_argument('--traj_len', type=int, default=1, help='fixed trajectory le
 
 parser.add_argument('--num_fake_update', type=int, default=300, help='number of fake gradient updates. used by random sampling (default: 300)')
 parser.add_argument('--num_workers', type=int, help='number of workers to perform evaluation in parallel (default: uses number of processors available)')
+parser.add_argument('--skip', type=int, default=5, help='number of updates to skip before next evaluation (default: 5)')
 
 parser.add_argument('--models_dir', help='the directory of the models to evaluate. models are retrieved in increasing order based on number prefix')
 parser.add_argument('--eval_tasks', help='the tasks to evaluate on')
@@ -35,7 +36,7 @@ args = parser.parse_args()
 
 
 # Evaluate the models and save in separate pickle files
-def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, models_dir, out_file_prefix, num_workers=3, num_fake_update=300):
+def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, models_dir, out_file_prefix, num_workers=3, num_fake_update=300, skip=5):
   evaluate_dir = './{}'.format(out_file_prefix)
   if not os.path.exists(evaluate_dir):
     os.mkdir(evaluate_dir)
@@ -47,11 +48,11 @@ def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, mode
     get_id = get_file_number
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     models.sort(key=lambda x: get_file_number(x))
-    models = models[0::5] + [models[-1]]
+    models = models[0::skip] + [models[-1]]
 
     evalaute_wrapper = partial(evaluate_multiple_tasks, device=device, env_name=env_name, tasks=tasks, num_actions=num_actions, num_traj=num_traj, traj_len=traj_len, num_workers=num_workers)
   else:
-    models = list(range(0, num_fake_update, 5)) + [num_fake_update - 1]
+    models = list(range(0, num_fake_update, skip)) + [num_fake_update - 1]
     get_id = lambda x: x
 
     partial_wrapper = partial(sample_multiple_random_fixed_length, env_name=env_name, tasks=tasks, num_actions=num_actions, num_traj=num_traj, traj_len=traj_len, num_workers=num_workers)
@@ -81,9 +82,6 @@ def merge_results(out_file_prefix):
 
 def generate_plot(out_file_prefix, is_random=False):
   with open('./{0}/{0}.pkl'.format(out_file_prefix), 'rb') as f:
-    if not is_random:
-      all_rewards, _, _, eval_models = pickle.load(f)
-    else:
       all_rewards, eval_models = pickle.load(f)
 
   all_rewards_matrix = np.array([np.array(curr_model_rewards) for curr_model_rewards in all_rewards])
@@ -98,8 +96,7 @@ def generate_plot(out_file_prefix, is_random=False):
   plt.ylabel('Average Total Reward')
   plt.title('Model Performance')
 
-  if (not is_random):
-    plt.fill_between(x_range, models_avg_rewards-models_std_rewards, models_avg_rewards+models_std_rewards, color = 'blue', alpha=0.3, lw=0.001)
+  plt.fill_between(x_range, models_avg_rewards - models_std_rewards, models_avg_rewards + models_std_rewards, color = 'blue', alpha=0.3, lw=0.001)
   plt.savefig('./{0}/{0}.png'.format(out_file_prefix))
 
 
@@ -113,10 +110,12 @@ def main():
   assert args.out_file, 'Missing output file'
   assert args.eval_tasks, 'Missing tasks'
   assert args.num_fake_update > 0, 'Needs to have at least 1 update'
+  assert args.skip >= 0, 'the amount of skipping should be at least 0'
   assert args.num_workers is None or args.num_workers > 0, 'Needs to have at least 1 worker'
   assert (args.algo != 'ppo' or args.models_dir), 'Missing models'
   assert (args.algo == 'ppo' or args.algo == 'random'), 'Invalid algorithm'
   assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid task'
+
   env_name = ''
   if args.task == 'bandit':
     env_name = "Bandit-K{}-v0".format(args.num_actions)
@@ -134,7 +133,7 @@ def main():
   if args.num_workers is not None:
     num_workers = args.num_workers
 
-  evaluate_result(args.algo, env_name, tasks, num_actions, args.num_traj, args.traj_len, args.models_dir, args.out_file, num_workers, args.num_fake_update)
+  evaluate_result(args.algo, env_name, tasks, num_actions, args.num_traj, args.traj_len, args.models_dir, args.out_file, num_workers, args.num_fake_update, args.skip)
   
   merge_results(args.out_file)
 

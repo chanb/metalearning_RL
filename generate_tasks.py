@@ -15,7 +15,7 @@ parser.add_argument('--task', type=str, default='bandit', help='the task to lear
 
 args = parser.parse_args()
 
-result_folder = './experiments'
+result_folder = './tasks'
 out_result = '{}/{}_{}_{}.pkl'.format(result_folder, args.task, args.num_actions, args.num_tasks)
 
 def generate_experiment_tasks(num_tasks):
