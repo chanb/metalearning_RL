@@ -57,12 +57,12 @@ def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, mode
 
     partial_wrapper = partial(sample_multiple_random_fixed_length, env_name=env_name, tasks=tasks, num_actions=num_actions, num_traj=num_traj, traj_len=traj_len, num_workers=num_workers)
 
-    evalaute_wrapper = lambda model: partial_wrapper()
+    evalaute_wrapper = lambda eval_model: partial_wrapper()
 
   for model in models:
     print('Evaluating model: {}'.format(model))
     with open('{0}/{1}_{0}.pkl'.format(out_file_prefix, get_id(model)), 'wb') as f:
-      pickle.dump(evalaute_wrapper(model), f)
+      pickle.dump(evalaute_wrapper(eval_model=model), f)
 
 
 # Merge the intermediate pickle files. Only care about the rewards and the models
