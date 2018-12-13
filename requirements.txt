@@ -5,8 +5,11 @@ certifi==2018.11.29
 cffi==1.11.5
 chardet==3.0.4
 cryptography==2.3.1
+cycler==0.10.0
 gym==0.10.5
 idna==2.7
+kiwisolver==1.0.1
+matplotlib==3.0.2
 mkl-fft==1.0.6
 mkl-random==1.0.1
 numpy==1.15.4
@@ -16,7 +19,9 @@ Pillow==5.3.0
 pycparser==2.19
 pyglet==1.4.0a1
 pyOpenSSL==18.0.0
+pyparsing==2.3.0
 PySocks==1.6.8
+python-dateutil==2.7.5
 requests==2.20.1
 scipy==1.1.0
 six==1.12.0
