@@ -10,27 +10,27 @@ import os
 
 from helper.sampler import Sampler
 
-parser = argparse.ArgumentParser(description='Evaluate model on specified task')
-
-parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
-parser.add_argument('--algo', type=str, default='ppo', help='the algorithm to evaluate (default: ppo)')
-
-parser.add_argument('--num_actions', type=int, default=5, help='number of arms for MAB or number of actions for MDP (default: 5)')
-parser.add_argument('--num_tasks', type=int, default=100, help='number of similar tasks to run (default: 100)')
-parser.add_argument('--num_traj', type=int, default=10, help='number of trajectories to interact with (default: 10)')
-parser.add_argument('--traj_len', type=int, default=1, help='fixed trajectory length (default: 1)')
-
-parser.add_argument('--eval_model', help='the model to evaluate')
-parser.add_argument('--eval_tasks', help='the tasks to evaluate on')
-
-parser.add_argument('--out_file', help='filename to save output')
-
-args = parser.parse_args()
+# parser = argparse.ArgumentParser(description='Evaluate model on specified task')
+#
+# parser.add_argument('--task', type=str, default='bandit', help='the task to learn [bandit, mdp] (default: bandit)')
+# parser.add_argument('--algo', type=str, default='ppo', help='the algorithm to evaluate (default: ppo)')
+#
+# parser.add_argument('--num_actions', type=int, default=5, help='number of arms for MAB or number of actions for MDP (default: 5)')
+# parser.add_argument('--num_tasks', type=int, default=100, help='number of similar tasks to run (default: 100)')
+# parser.add_argument('--num_traj', type=int, default=10, help='number of trajectories to interact with (default: 10)')
+# parser.add_argument('--traj_len', type=int, default=1, help='fixed trajectory length (default: 1)')
+#
+# parser.add_argument('--eval_model', help='the model to evaluate')
+# parser.add_argument('--eval_tasks', help='the tasks to evaluate on')
+#
+# parser.add_argument('--out_file', help='filename to save output')
+#
+# args = parser.parse_args()
 
 out_result = args.out_file
-
+to_return = []
 #TODO: Make it work with new sampler
-def evaluate_model(env_name, eval_model, tasks, num_actions, num_states, num_traj, traj_len):
+def evaluate_model(model, algo, env_name, eval_model, tasks, num_actions, num_states, num_traj, traj_len):
   all_rewards = []
   all_actions = []
   all_states = []
@@ -69,8 +69,8 @@ def evaluate_model(env_name, eval_model, tasks, num_actions, num_states, num_tra
     sampler.envs.close()
     curr_task += 1
 
-  with open(out_result, 'wb') as f:
-      pickle.dump([all_rewards, all_actions, all_states, num_actions, num_states], f)
+    to_return.append([all_rewards])
+    return(to_return)
 
 def random_arm_pull(env, num_actions, num_tasks, num_traj, tasks, num_update=20):
   all_rewards = []
@@ -104,29 +104,26 @@ def random_arm_pull(env, num_actions, num_tasks, num_traj, tasks, num_update=20)
 
 def main():
   print("TESTING MODEL ========================================================================")
-  assert args.out_file, 'Missing output file'
-  assert args.eval_tasks, 'Missing tasks'
-  assert (args.algo != 'ppo' or args.eval_model), 'Missing models'
-  assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid Task'
+  # assert args.out_file, 'Missing output file'
+  # assert args.eval_tasks, 'Missing tasks'
+  # assert (args.algo != 'ppo' or args.eval_model), 'Missing models'
+  # assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid Task'
   task = ''
-  if args.task == 'bandit':
-    task = "Bandit-K{}-v0".format(args.num_actions)
-    num_actions = args.num_actions
-    num_states = 1
-  elif args.task == 'mdp':
-    task = "TabularMDP-v0"
-    num_actions = 5
-    num_states = 10
-  
-  env = gym.make(task)
+  # if args.task == 'bandit':
+  #   task = "Bandit-K{}-v0".format(args.num_actions)
+  #   num_actions = args.num_actions
+  #   num_states = 1
+  # elif args.task == 'mdp':
+  #   task = "TabularMDP-v0"
+  #   num_actions = 5
+  #   num_states = 10
+  #
+  # env = gym.make(task)
+  #
+  # with open(args.eval_tasks, 'rb') as f:
+  #   tasks = pickle.load(f)[0]
 
-  with open(args.eval_tasks, 'rb') as f:
-    tasks = pickle.load(f)[0]
-
-  if args.algo == 'ppo':
-    evaluate_model(task, args.eval_model, tasks, num_actions, num_states, args.num_traj, args.traj_len)
-  else:
-    random_arm_pull(env, args.num_actions, args.num_tasks, args.num_traj, tasks)
-
-if __name__ == "__main__":
-  main()
+  # if args.algo == 'ppo':
+  #   evaluate_model(task, args.eval_model, tasks, num_actions, num_states, args.num_traj, args.traj_len)
+  # else:
+  #   random_arm_pull(env, args.num_actions, args.num_tasks, args.num_traj, tasks)
