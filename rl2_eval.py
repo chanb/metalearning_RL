@@ -76,7 +76,7 @@ def merge_results(out_file_prefix):
     all_reward_model_pairs.append((rewards, eval_models))
   
   with open('./{0}/{0}.pkl'.format(out_file_prefix), 'wb') as f:
-    pickle.dump(zip(*all_reward_model_pairs))
+    pickle.dump(zip(*all_reward_model_pairs), f)
 
 
 def generate_plot(out_file_prefix, is_random=False):
