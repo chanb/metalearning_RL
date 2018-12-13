@@ -88,15 +88,11 @@ def generate_plot(out_file_prefix, is_random=False):
       all_rewards, eval_models = pickle.load(f)
   all_rewards_matrix = np.array([np.array(curr_model_rewards) for curr_model_rewards in all_rewards])
 
-  print(eval_models)
-  print(all_rewards_matrix.shape)
-
   # Compute the average and standard deviation of each model over specified number of tasks
   models_avg_rewards = np.average(all_rewards_matrix, axis=1)
   models_std_rewards = np.std(all_rewards_matrix, axis=1)
   
   x_range = list(range(len(all_rewards))) if is_random else list(map(lambda x: get_file_number(x) + 1, eval_models))
-  print(x_range)
   plt.plot(x_range, models_avg_rewards)
   plt.xlabel("Iterations (i'th meta learn epoch)")
   plt.ylabel('Average Total Reward')
