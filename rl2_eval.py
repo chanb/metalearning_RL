@@ -69,28 +69,34 @@ def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, mode
 def merge_results(out_file_prefix):
   results = glob.glob('./{0}/*_{0}.pkl'.format(out_file_prefix))
   assert results, 'directory {} should not be empty'.format(out_file_prefix)
+  results.sort(key=lambda x: get_file_number(x))
 
-  all_reward_model_pairs = []
+  all_rewards = []
+  all_models = []
   for result in results:
     with open(result, 'rb') as f:
       rewards, _, _, eval_models = pickle.load(f)
-    all_reward_model_pairs.append((rewards, eval_models))
+    all_rewards.append(rewards)
+    all_models.append(eval_models)
   
   with open('./{0}/{0}.pkl'.format(out_file_prefix), 'wb') as f:
-    pickle.dump(zip(*all_reward_model_pairs), f)
+    pickle.dump([all_rewards, all_models], f)
 
 
 def generate_plot(out_file_prefix, is_random=False):
   with open('./{0}/{0}.pkl'.format(out_file_prefix), 'rb') as f:
       all_rewards, eval_models = pickle.load(f)
-
   all_rewards_matrix = np.array([np.array(curr_model_rewards) for curr_model_rewards in all_rewards])
+
+  print(eval_models)
+  print(all_rewards_matrix.shape)
 
   # Compute the average and standard deviation of each model over specified number of tasks
   models_avg_rewards = np.average(all_rewards_matrix, axis=1)
   models_std_rewards = np.std(all_rewards_matrix, axis=1)
   
   x_range = list(range(len(all_rewards))) if is_random else list(map(lambda x: get_file_number(x) + 1, eval_models))
+  print(x_range)
   plt.plot(x_range, models_avg_rewards)
   plt.xlabel("Iterations (i'th meta learn epoch)")
   plt.ylabel('Average Total Reward')

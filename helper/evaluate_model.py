@@ -1,4 +1,3 @@
-import multiprocessing as mp
 from multiprocessing.pool import ThreadPool
 from functools import partial
 import gym
@@ -10,8 +9,6 @@ from helper.sampler import Sampler
 
 # Samples from multiple tasks using a given model
 def evaluate_multiple_tasks(device, env_name, eval_model, tasks, num_actions, num_traj, traj_len, num_workers=3):
-  print('Testing model: {}'.format(eval_model))
-
   evaluate_single_wrapper = partial(evaluate_single_task, device=device, eval_model=eval_model, env_name=env_name, num_actions=num_actions, num_traj=num_traj, traj_len=traj_len)
 
   pool = ThreadPool(processes=num_workers)
