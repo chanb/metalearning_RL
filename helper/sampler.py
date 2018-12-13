@@ -50,8 +50,6 @@ class Sampler():
 
   # Set the current task
   def set_task(self, task):
-    # print('Env Setup:')
-    # print(task)
     tasks = [task for _ in range(self.num_workers)]
     reset = self.envs.reset_task(tasks)
 

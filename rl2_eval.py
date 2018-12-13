@@ -37,7 +37,7 @@ def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, mode
   if algo == 'ppo':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     models = glob.glob('./{0}/*_{0}.pt'.format(models_dir))
-    models.sort(key=lambda x: int(get_file_number(x)))
+    models.sort(key=lambda x: get_file_number(x))
 
     results = [evaluate_multiple_tasks(device, env_name, model, tasks, num_actions, num_traj, traj_len, num_workers) for model in models[0::5] + [models[-1]]]
   else:
@@ -62,9 +62,9 @@ def generate_plot(out_file_prefix):
   models_avg_rewards = np.average(all_rewards_matrix, axis=1)
   models_std_rewards = np.std(all_rewards_matrix, axis=1)
   
-  x_range = list(map(get_file_number, eval_models))
+  x_range = list(map(lambda x: get_file_number(x) + 1, eval_models))
   plt.plot(x_range, models_avg_rewards)
-  plt.xlabel('Number of Updates')
+  plt.xlabel("Iterations (i'th meta learn epoch)")
   plt.ylabel('Average Total Reward')
   plt.title('Model Performance')
 
@@ -73,7 +73,7 @@ def generate_plot(out_file_prefix):
 
 
 def get_file_number(filename):
-  return os.path.basename(filename.rstrip(os.sep)).split("_")[0]
+  return int(os.path.basename(filename.rstrip(os.sep)).split("_")[0])
 
 
 def main():

@@ -1,5 +1,6 @@
 import multiprocessing as mp
 from multiprocessing.pool import ThreadPool
+from functools import partial
 import gym
 import numpy as np
 
@@ -10,12 +11,12 @@ from helper.sampler import Sampler
 # Samples from multiple tasks using a given model
 def evaluate_multiple_tasks(device, env_name, eval_model, tasks, num_actions, num_traj, traj_len, num_workers=3):
   print('Testing model: {}'.format(eval_model))
+
+  evaluate_single_wrapper = partial(evaluate_single_task, device=device, eval_model=eval_model, env_name=env_name, num_actions=num_actions, num_traj=num_traj, traj_len=traj_len)
+
   pool = ThreadPool(processes=num_workers)
 
-  def evaluate_single_wrapper(task):
-    return evaluate_single_task(device, eval_model, env_name, num_actions, task, num_traj, traj_len)
-
-  results = pool.map(evaluate_single_wrapper, tasks)
+  results = pool.map(evaluate_single_wrapper, tasks, chunksize=len(tasks)//num_workers)
 
   assert results, 'results should not be empty'
   all_rewards, all_actions, all_states = zip(*results)
@@ -23,7 +24,7 @@ def evaluate_multiple_tasks(device, env_name, eval_model, tasks, num_actions, nu
 
 
 # Samples from a single task using a given model
-def evaluate_single_task(device, eval_model, env_name, num_actions, task, num_traj, traj_len):
+def evaluate_single_task(task, device, eval_model, env_name, num_actions, num_traj, traj_len):
   task_rewards = []
   task_states = []
   task_actions = []
