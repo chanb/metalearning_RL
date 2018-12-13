@@ -34,6 +34,7 @@ parser.add_argument('--out_file', help='the prefix of the filename to save outpu
 args = parser.parse_args()
 
 
+# Evaluate the models and save in separate pickle files
 def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, models_dir, out_file_prefix, num_workers=3, num_fake_update=300):
   evaluate_dir = './{}'.format(out_file_prefix)
   if not os.path.exists(evaluate_dir):
@@ -63,6 +64,7 @@ def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, mode
       pickle.dump(evalaute_wrapper(model), f)
 
 
+# Merge the intermediate pickle files. Only care about the rewards and the models
 def merge_results(out_file_prefix):
   results = glob.glob('./{0}/*_{0}.pkl'.format(out_file_prefix))
   assert results, 'directory {} should not be empty'.format(out_file_prefix)
@@ -101,6 +103,7 @@ def generate_plot(out_file_prefix, is_random=False):
   plt.savefig('./{0}/{0}.png'.format(out_file_prefix))
 
 
+# Helper function to get intermediate file number. Requires the path to be a specific format.
 def get_file_number(filename):
   return int(os.path.basename(filename.rstrip(os.sep)).split("_")[0])
 
@@ -136,6 +139,7 @@ def main():
   merge_result(args.out_file)
 
   generate_plot(args.out_file, args.algo == 'random')
+
 
 if __name__ == '__main__':
   main()
