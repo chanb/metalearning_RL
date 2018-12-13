@@ -136,7 +136,7 @@ def main():
 
   evaluate_result(args.algo, env_name, tasks, num_actions, args.num_traj, args.traj_len, args.models_dir, args.out_file, num_workers, args.num_fake_update)
   
-  merge_result(args.out_file)
+  merge_results(args.out_file)
 
   generate_plot(args.out_file, args.algo == 'random')
 
