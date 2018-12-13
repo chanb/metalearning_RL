@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 arms=5
-task=mdp
+task=bandit
 num_tasks=10
 num_traj=10
-traj_len=10
+traj_len=1
 
 tau=0.3
 gamma=0.99
@@ -15,7 +15,7 @@ num_workers=3
 
 batchsize=10
 minibatchsize=5
-metalearn_epoch=3
+metalearn_epoch=100
 
 models=( gru )
 

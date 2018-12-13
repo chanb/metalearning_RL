@@ -37,18 +37,13 @@ def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, mode
   if algo == 'ppo':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     models = glob.glob('./{0}/*_{0}.pt'.format(models_dir))
-    models.sort(key=lambda x: int(os.path.basename(x.rstrip(os.sep)).split("_")[0]))
+    models.sort(key=lambda x: int(get_file_number(x)))
 
-    def evaluate_multiple_tasks_wrapper(model):
-      return evaluate_multiple_tasks(device, env_name, model, tasks, num_actions, num_traj, traj_len, num_workers)
-
+    results = [evaluate_multiple_tasks(device, env_name, model, tasks, num_actions, num_traj, traj_len, num_workers) for model in models[0::5] + [models[-1]]]
   else:
-    models = range(num_fake_update)
-    def evaluate_multiple_tasks_wrapper(model):
-      return sample_multiple_random_fixed_length(env_name, tasks, num_actions, num_traj, traj_len, num_workers)
+    results = [sample_multiple_random_fixed_length(env_name, tasks, num_actions, num_traj, traj_len) for model in range(0, num_fake_update, 5)]
 
-  results = list(map(evaluate_multiple_tasks_wrapper, models))
-  assert results is not None and len(results) > 0, 'results should not be empty'
+  assert results, 'results should not be empty'
 
   all_rewards, all_actions, all_states, eval_models = zip(*results)
 
@@ -67,13 +62,19 @@ def generate_plot(out_file_prefix):
   models_avg_rewards = np.average(all_rewards_matrix, axis=1)
   models_std_rewards = np.std(all_rewards_matrix, axis=1)
   
-  plt.plot(range(1, len(models_avg_rewards) + 1), models_avg_rewards)
+  x_range = list(map(get_file_number, eval_models))
+  plt.plot(x_range, models_avg_rewards)
   plt.xlabel('Number of Updates')
   plt.ylabel('Average Total Reward')
   plt.title('Model Performance')
 
-  plt.fill_between(range(1, len(models_avg_rewards) + 1), models_avg_rewards-models_std_rewards, models_avg_rewards+models_std_rewards, color = 'blue', alpha=0.3, lw=0.001)
+  plt.fill_between(x_range, models_avg_rewards-models_std_rewards, models_avg_rewards+models_std_rewards, color = 'blue', alpha=0.3, lw=0.001)
   plt.savefig('{}.png'.format(out_file_prefix))
+
+
+def get_file_number(filename):
+  return os.path.basename(filename.rstrip(os.sep)).split("_")[0]
+
 
 def main():
   print("TESTING MODEL ========================================================================")

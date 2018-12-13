@@ -17,7 +17,7 @@ def evaluate_multiple_tasks(device, env_name, eval_model, tasks, num_actions, nu
 
   results = pool.map(evaluate_single_wrapper, tasks)
 
-  assert results is not None and len(results) > 0, 'results should not be empty'
+  assert results, 'results should not be empty'
   all_rewards, all_actions, all_states = zip(*results)
   return all_rewards, all_actions, all_states, eval_model
 
@@ -63,7 +63,7 @@ def sample_multiple_random_fixed_length(env_name, tasks, num_actions, num_traj, 
 
   results = pool.map(evaluate_single_wrapper, tasks)
 
-  assert results is not None and len(results) > 0, 'results should not be empty'
+  assert results, 'results should not be empty'
 
   all_rewards, all_actions, all_states = zip(*results)
 
