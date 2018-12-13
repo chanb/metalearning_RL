@@ -1,39 +1,10 @@
 #!/usr/bin/env bash
 
-arms=( 5 )
-tasks=( bandit mdp )
-num_tasks=100
-
-algos=( rl2 snail maml )
-trajs=( 10 100 500 1000 )
-
-for task in ${tasks[@]}; do
-    if [ $task == "bandit" ]; then
-    actions=$arms
-     else
-        actions=( 5 )
-     fi
-    for action in ${actions[@]}; do
-        python generate_experiments.py --num_tasks $num_tasks --num_actions $action --task $task
-    done
+trajs=( 10 100 500 )
+for traj in ${trajs[@]}; do
+    python maml_test.py --test-iter $traj --task bandit --outfile maml_bandit_5arm_$traj"traj" --policy-file ./saves/maml/reinforce_bandit_5_$traj.pt
+    python maml_test.py --test-iter $traj --task bandit --outfile nomaml_bandit_5arm_$traj"traj"
 done
 
-for task in ${tasks[@]}; do
-    if [ $task == "bandit" ]; then
-        actions=$arms
-    else
-       actions=( 5 )
-    fi
-    for traj in ${trajs[@]}; do
-        for action in ${actions[@]}; do
-            for model in ${models[@]}; do
-                python evaluate_model.py --num_tasks $num_tasks --num_actions $action --task $task \
-                    --eval_model ./saves/$model
-                    --eval_tasks ./experiments/"$task"_"$action"_"$num_tasks".pkl
-                    --out_file ./logs_eval/$model
-                mkdir $algo/logs_eval/$algo
-                mv ./logs_eval/reinforce_"$task"_"$action"_"$num_tasks".pkl ./logs_eval/$algo/reinforce_"$task"_"$action"_"$traj".pkl
-            done
-        done
-    done
-done
+python maml_test.py --test-iter 10 --task mdp --outfile maml_mdp_10traj --policy-file ./saves/maml/reinforce_mdp_5_10.pt
+python maml_test.py --test-iter 10 --task mdp --outfile nomaml_mdp_10traj

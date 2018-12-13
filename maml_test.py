@@ -60,7 +60,7 @@ def main(args):
 
     sampler = BatchSampler(env_name=env_name, batch_size=args.fast_batch_size, num_workers=args.num_workers)
     tasks = sampler.sample_tasks(num_tasks=args.meta_batch_size)
-    means = [[] for _ in range(args.num_grad_step)]
+    total_rewards = [[] for _ in range(args.num_grad_step)]
     timesteps = [[] for _ in range(args.num_grad_step)]
     for task in tasks:
         env.reset_task(task)
@@ -80,7 +80,7 @@ def main(args):
             print("Return: {} +- {}, Timesteps:{} +- {}".format(np.mean(cum_rewards), np.std(cum_rewards),
                                                                 np.mean(ts), np.std(ts)))
             print("===========================")
-            means[grad].append(np.sum(cum_rewards))
+            total_rewards[grad].append(np.sum(cum_rewards))
             timesteps[grad].append(np.mean(ts))
 
             sampler.reset_task(task)
@@ -89,14 +89,14 @@ def main(args):
             policy.load_state_dict(new_params)
 
     # plotting
-    means = np.array(means)
+    total_rewards = np.array(total_rewards)
     plt.figure(0)
-    plt.plot(range(args.num_grad_step), np.mean(means, axis=1))
+    plt.plot(range(args.num_grad_step), np.mean(total_rewards, axis=1))
     plt.xlabel('Number of Updates')
     plt.ylabel('Total Reward')
     plt.title('Model Performance')
-    plt.fill_between(range(args.num_grad_step), np.mean(means, axis=1) - np.std(means, axis=1),
-                     np.mean(means, axis=1) + np.std(means, axis=1), color='blue', alpha=0.3, lw=0.001)
+    plt.fill_between(range(args.num_grad_step), np.mean(total_rewards, axis=1) - np.std(total_rewards, axis=1),
+                     np.mean(total_rewards, axis=1) + np.std(total_rewards, axis=1), color='blue', alpha=0.3, lw=0.001)
     plt.savefig('plots/{}-rewards.png'.format(args.outfile))
 
     timesteps = np.array(timesteps)
@@ -109,13 +109,19 @@ def main(args):
                      np.mean(timesteps, axis=1) + np.std(timesteps, axis=1), color='blue', alpha=0.3, lw=0.001)
     plt.savefig('plots/{}-timesteps.png'.format(args.outfile))
 
+    with open("plots/{}.txt".format(args.outfile), "w") as text_file:
+        text_file.write("Total reward mean: %s \n" % np.mean(total_rewards, axis=1))
+        text_file.write("Total reward std: %s \n" % np.std(total_rewards, axis=1))
+        text_file.write("Timesteps mean: %s \n" % np.mean(timesteps, axis=1))
+        text_file.write("Timesteps std: %s \n" % np.std(timesteps, axis=1))
+
 
 if __name__ == '__main__':
     import argparse
     import os
     import multiprocessing as mp
 
-    parser = argparse.ArgumentParser(description='Test MAML on MAB')
+    parser = argparse.ArgumentParser(description='Test MAML')
 
     # General
     parser.add_argument('--task', type=str, default='bandit',
@@ -138,7 +144,7 @@ if __name__ == '__main__':
     # Optimization
     #parser.add_argument('--num-batches', type=int, default=100,
      #                   help='number of batches')
-    parser.add_argument('--meta-batch-size', type=int, default=100,
+    parser.add_argument('--meta-batch-size', type=int, default=1000,
                         help='number of tasks per batch')
 
     # Test arguments
