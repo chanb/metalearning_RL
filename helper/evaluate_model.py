@@ -57,7 +57,7 @@ def evaluate_single_task(task, device, eval_model, env_name, num_actions, num_tr
 
 # Samples from multiple tasks randomly
 def sample_multiple_random_fixed_length(env_name, tasks, num_actions, num_traj, traj_len, num_workers=3):
-  pool = mp.Pool(processes=num_workers)
+  pool = ThreadPool(processes=num_workers)
 
   def evaluate_single_wrapper(task):
     return random_single_task(gym.make(env_name), task, num_actions, num_traj, traj_len)
@@ -66,9 +66,9 @@ def sample_multiple_random_fixed_length(env_name, tasks, num_actions, num_traj, 
 
   assert results, 'results should not be empty'
 
-  all_rewards, all_actions, all_states = zip(*results)
+  all_rewards, all_actions, all_states, eval_models = zip(*results)
 
-  return all_rewards, all_actions, all_states
+  return all_rewards, all_actions, all_states, eval_models
 
 # Samples from a single task randomly
 def random_single_task(env, task, num_actions, num_traj, traj_len):
@@ -97,4 +97,4 @@ def random_single_task(env, task, num_actions, num_traj, traj_len):
     task_states.append(curr_traj_actions)
     task_actions.append(curr_traj_states)
 
-  return task_rewards, task_actions, task_states
+  return sum(task_rewards), task_actions, task_states, None

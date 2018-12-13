@@ -1,4 +1,5 @@
 import multiprocessing as mp
+from functools import partial
 import os
 import pickle
 import argparse
@@ -34,27 +35,54 @@ args = parser.parse_args()
 
 
 def evaluate_result(algo, env_name, tasks, num_actions, num_traj, traj_len, models_dir, out_file_prefix, num_workers=3, num_fake_update=300):
+  evaluate_dir = './{}'.format(out_file_prefix)
+  if not os.path.exists(evaluate_dir):
+    os.mkdir(evaluate_dir)
+
   if algo == 'ppo':
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     models = glob.glob('./{0}/*_{0}.pt'.format(models_dir))
+    assert models, 'No models found'
+
+    get_id = get_file_number
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     models.sort(key=lambda x: get_file_number(x))
+    models = models[0::5] + [models[-1]]
 
-    results = [evaluate_multiple_tasks(device, env_name, model, tasks, num_actions, num_traj, traj_len, num_workers) for model in models[0::5] + [models[-1]]]
+    evalaute_wrapper = partial(evaluate_multiple_tasks, device=device, env_name=env_name, tasks=tasks, num_actions=num_actions, num_traj=num_traj, traj_len=traj_len, num_workers=num_workers)
   else:
-    results = [sample_multiple_random_fixed_length(env_name, tasks, num_actions, num_traj, traj_len) for model in range(0, num_fake_update, 5)]
+    models = list(range(0, num_fake_update, 5)) + [num_fake_update - 1]
+    get_id = lambda x: x
 
-  assert results, 'results should not be empty'
+    partial_wrapper = partial(sample_multiple_random_fixed_length, env_name=env_name, tasks=tasks, num_actions=num_actions, num_traj=num_traj, traj_len=traj_len, num_workers=num_workers)
 
-  all_rewards, all_actions, all_states, eval_models = zip(*results)
+    evalaute_wrapper = lambda model: partial_wrapper()
 
-  # saves all rewards, actions, and states to a new file for later plotting all on one graph
-  with open('{}.pkl'.format(out_file_prefix), 'wb') as pickle_out:
-    pickle.dump([all_rewards, all_actions, all_states, eval_models], pickle_out)
+  for model in models:
+    print('Evaluating model: {}'.format(model))
+    with open('{0}/{1}_{0}.pkl'.format(out_file_prefix, get_id(model)), 'wb') as f:
+      pickle.dump(evalaute_wrapper(model), f)
 
 
-def generate_plot(out_file_prefix):
-  with open('{}.pkl'.format(out_file_prefix), 'rb') as f:
-    all_rewards, _, _, eval_models = pickle.load(f)
+def merge_results(out_file_prefix):
+  results = glob.glob('./{0}/*_{0}.pkl'.format(out_file_prefix))
+  assert results, 'directory {} should not be empty'.format(out_file_prefix)
+
+  all_reward_model_pairs = []
+  for result in results:
+    with open(result, 'rb') as f:
+      rewards, _, _, eval_models = pickle.load(f)
+    all_reward_model_pairs.append((rewards, eval_models))
+  
+  with open('./{0}/{0}.pkl'.format(out_file_prefix), 'wb') as f:
+    pickle.dump(zip(*all_reward_model_pairs))
+
+
+def generate_plot(out_file_prefix, is_random=False):
+  with open('./{0}/{0}.pkl'.format(out_file_prefix), 'rb') as f:
+    if not is_random:
+      all_rewards, _, _, eval_models = pickle.load(f)
+    else:
+      all_rewards, eval_models = pickle.load(f)
 
   all_rewards_matrix = np.array([np.array(curr_model_rewards) for curr_model_rewards in all_rewards])
 
@@ -62,14 +90,15 @@ def generate_plot(out_file_prefix):
   models_avg_rewards = np.average(all_rewards_matrix, axis=1)
   models_std_rewards = np.std(all_rewards_matrix, axis=1)
   
-  x_range = list(map(lambda x: get_file_number(x) + 1, eval_models))
+  x_range = list(range(len(all_rewards))) if is_random else list(map(lambda x: get_file_number(x) + 1, eval_models))
   plt.plot(x_range, models_avg_rewards)
   plt.xlabel("Iterations (i'th meta learn epoch)")
   plt.ylabel('Average Total Reward')
   plt.title('Model Performance')
 
-  plt.fill_between(x_range, models_avg_rewards-models_std_rewards, models_avg_rewards+models_std_rewards, color = 'blue', alpha=0.3, lw=0.001)
-  plt.savefig('{}.png'.format(out_file_prefix))
+  if (not is_random):
+    plt.fill_between(x_range, models_avg_rewards-models_std_rewards, models_avg_rewards+models_std_rewards, color = 'blue', alpha=0.3, lw=0.001)
+  plt.savefig('./{0}/{0}.png'.format(out_file_prefix))
 
 
 def get_file_number(filename):
@@ -103,8 +132,10 @@ def main():
     num_workers = args.num_workers
 
   evaluate_result(args.algo, env_name, tasks, num_actions, args.num_traj, args.traj_len, args.models_dir, args.out_file, num_workers, args.num_fake_update)
+  
+  merge_result(args.out_file)
 
-  generate_plot(args.out_file)
+  generate_plot(args.out_file, args.algo == 'random')
 
 if __name__ == '__main__':
   main()
