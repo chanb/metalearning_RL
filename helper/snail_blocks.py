@@ -52,7 +52,6 @@ class TCBlock(nn.Module):
 class AttentionBlock(nn.Module):
     def __init__(self, in_channels, key_size, value_size):
         super(AttentionBlock, self).__init__()
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.linear_query = nn.Linear(in_channels, key_size)
         self.linear_keys = nn.Linear(in_channels, key_size)
         self.linear_values = nn.Linear(in_channels, value_size)
@@ -62,7 +61,7 @@ class AttentionBlock(nn.Module):
         # input is dim (N, T, in_channels) where N is the batch_size, and T is
         # the sequence length
         mask = np.array([[1 if i > j else 0 for i in range(input.shape[1])] for j in range(input.shape[1])])
-        mask = torch.ByteTensor(mask).to(self.device)
+        mask = torch.ByteTensor(mask)
 
         # import pdb; pdb.set_trace()
         keys = self.linear_keys(input)  # shape: (N, T, key_size)
