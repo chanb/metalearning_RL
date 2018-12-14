@@ -82,14 +82,15 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
     - GRU: **Not Started**
     - SNAIL: **Not Started**
 
-## References:
+## References:  
+### Papers:  
 - RL2: https://arxiv.org/abs/1611.02779
 - SNAIL: https://arxiv.org/abs/1707.03141
 - MAML: https://arxiv.org/abs/1703.03400
 - PPO: https://arxiv.org/abs/1707.06347
 - GAE: https://arxiv.org/abs/1506.02438
 
-### Reference Codes:  
+### Codes:  
 - MAML-PyTorch: https://github.com/tristandeleu/pytorch-maml-rl
 - RL-Adventure-2: https://github.com/higgsfield/RL-Adventure-2/blob/master/3.ppo.ipynb  
 - pytorch-ppo-acktr-a2c: https://github.com/ikostrikov/pytorch-a2c-ppo-acktr
