@@ -83,19 +83,19 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
     - SNAIL: **Not Started**
 
 ## References:
-https://github.com/higgsfield/RL-Adventure-2/blob/master/3.ppo.ipynb  
-https://arxiv.org/abs/1707.06347  
-https://github.com/VashishtMadhavan/rl2  
-https://github.com/noahgolmant/RL-squared  
-https://github.com/pytorch/examples/blob/master/reinforcement_learning/reinforce.py  
-https://medium.com/@sanketgujar95/trust-region-policy-optimization-trpo-and-proximal-policy-optimization-ppo-e6e7075f39ed  
-https://towardsdatascience.com/understanding-gru-networks-2ef37df6c9be  
-https://github.com/eambutu/snail-pytorch
+- https://arxiv.org/abs/1611.02779
+- https://arxiv.org/abs/1707.03141
+- https://arxiv.org/abs/1703.03400
+- https://arxiv.org/abs/1707.06347
+- https://arxiv.org/abs/1506.02438
+- https://medium.com/@sanketgujar95/trust-region-policy-optimization-trpo-and-proximal-policy-optimization-ppo-e6e7075f39ed
+- https://towardsdatascience.com/understanding-gru-networks-2ef37df6c9be  
 
-### Reference codes:  
-- MAML-PyTorch
-- RL-Adventure-2
-- pytorch-ppo-acktr-a2c
-- openAI baselines
-- openAI spinup
-- snail-pytorch
+### Reference Codes:  
+- MAML-PyTorch: https://github.com/tristandeleu/pytorch-maml-rl
+- RL-Adventure-2: https://github.com/higgsfield/RL-Adventure-2/blob/master/3.ppo.ipynb  
+- pytorch-ppo-acktr-a2c: https://github.com/ikostrikov/pytorch-a2c-ppo-acktr
+- openAI baselines: https://github.com/openai/baselines/tree/master/baselines/ppo2
+- openAI spinup: https://spinningup.openai.com/en/latest/_modules/spinup/algos/ppo/ppo.html
+- snail-pytorch: https://github.com/eambutu/snail-pytorch
+- rl2: https://github.com/VashishtMadhavan/rl2
