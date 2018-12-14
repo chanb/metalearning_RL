@@ -83,13 +83,11 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
     - SNAIL: **Not Started**
 
 ## References:
-- https://arxiv.org/abs/1611.02779
-- https://arxiv.org/abs/1707.03141
-- https://arxiv.org/abs/1703.03400
-- https://arxiv.org/abs/1707.06347
-- https://arxiv.org/abs/1506.02438
-- https://medium.com/@sanketgujar95/trust-region-policy-optimization-trpo-and-proximal-policy-optimization-ppo-e6e7075f39ed
-- https://towardsdatascience.com/understanding-gru-networks-2ef37df6c9be  
+- RL2: https://arxiv.org/abs/1611.02779
+- SNAIL: https://arxiv.org/abs/1707.03141
+- MAML: https://arxiv.org/abs/1703.03400
+- PPO: https://arxiv.org/abs/1707.06347
+- GAE: https://arxiv.org/abs/1506.02438
 
 ### Reference Codes:  
 - MAML-PyTorch: https://github.com/tristandeleu/pytorch-maml-rl
