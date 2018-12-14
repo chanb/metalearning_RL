@@ -1,4 +1,4 @@
-# SNAIL_Pytorch
+# metalearning_RL
 
 This project follows RL^2 and SNAIL paper and attempts to reproduce the results presented.
 `rl2_train.py` trains a model, given the arguments:
