@@ -5,7 +5,7 @@ from helper.snail_blocks import TCBlock, AttentionBlock
 
 
 class SNAILValue(nn.Module):
-  def __init__(self, input_size, max_num_traj, max_traj_len, encoders, encoders_output_size, hidden_size=32):
+  def __init__(self, input_size, max_num_traj, max_traj_len, encoders, encoders_output_size, device, hidden_size=32):
     super(SNAILValue, self).__init__()
 
     self.input_size = input_size
