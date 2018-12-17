@@ -36,4 +36,4 @@ class CausalConv1D(nn.Module):
   def forward(self, x):
     # Input shape: (batch_size N, input_size C, sequence_length T)
     # Output shape: (batch_size N, output_size D, sequence length T)
-    return self.conv1d(x)[:, :, :-self.dilation_rate]
+    return self.conv1d(x)[:, :, :]

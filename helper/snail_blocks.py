@@ -50,25 +50,23 @@ class TCBlock(nn.Module):
 
 
 class AttentionBlock(nn.Module):
-    def __init__(self, in_channels, key_size, value_size):
+    def __init__(self, in_channels, key_size, value_size, T):
         super(AttentionBlock, self).__init__()
         self.linear_query = nn.Linear(in_channels, key_size)
         self.linear_keys = nn.Linear(in_channels, key_size)
         self.linear_values = nn.Linear(in_channels, value_size)
         self.sqrt_key_size = math.sqrt(key_size)
+        self.mask = torch.ByteTensor(np.array([[1 if i > j else 0 for i in range(T)] for j in range(T)]))
+        
 
     def forward(self, input):
         # input is dim (N, T, in_channels) where N is the batch_size, and T is
         # the sequence length
-        mask = np.array([[1 if i > j else 0 for i in range(input.shape[1])] for j in range(input.shape[1])])
-        mask = torch.ByteTensor(mask)
-
-        # import pdb; pdb.set_trace()
         keys = self.linear_keys(input)  # shape: (N, T, key_size)
         query = self.linear_query(input)  # shape: (N, T, key_size)
         values = self.linear_values(input)  # shape: (N, T, value_size)
         logits = torch.bmm(query, torch.transpose(keys, 1, 2))  # shape: (N, T, T)
-        logits.data.masked_fill_(mask, -float('inf'))
+        logits.data.masked_fill_(self.mask, -float('inf'))
         probs = F.softmax(logits / self.sqrt_key_size,
                           dim=1)  # shape: (N, T, T), broadcasting over any slice [:, x, :], each row of the matrix
         read = torch.bmm(probs, values)  # shape: (N, T, value_size)

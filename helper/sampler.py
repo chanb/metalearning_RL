@@ -71,9 +71,9 @@ class Sampler():
   # Concatenate storage for more accessibility
   def concat_storage(self):
     # Store in better format
-    self.returns = torch.cat(self.returns)
-    self.values = torch.cat(self.values)
-    self.log_probs = torch.cat(self.log_probs)
+    self.returns = torch.cat(self.returns).detach()
+    self.values = torch.cat(self.values).detach()
+    self.log_probs = torch.cat(self.log_probs).detach()
     self.states = torch.cat(self.states)
     self.actions = torch.cat(self.actions)
     self.advantages = self.returns - self.values
