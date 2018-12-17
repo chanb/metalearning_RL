@@ -37,6 +37,7 @@ parser.add_argument('--vf_coef', type=float, default=0.5, help='value loss coeff
 parser.add_argument('--ent_coef', type=float, default=0.01, help='entropy coefficient (default: 0.01)')
 parser.add_argument('--max_grad_norm', type=float, default=0.9, help='max norm of gradients (default: 0.9)')
 parser.add_argument('--target_kl', type=float, default=0.01, help='max target kl (default: 0.01)')
+parser.add_argument('--device', type=str, help='the device to use to train the model')
 
 parser.add_argument('--out_file', type=str, help='the output file that stores the model')
 
@@ -95,6 +96,7 @@ def meta_train(device, num_workers, model_type, metalearn_epochs, task, num_acti
   return model
 
 def main():
+  assert not args.device or args.device == 'cpu' or args.device == 'gpu', 'Either device is not provided, or either cpu or gpu'
   assert args.num_workers > 0, 'Need to have at least one worker'
   assert (args.model_type == 'gru' or args.model_type == 'snail'), 'Invalid model'
   assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid Task'
@@ -112,7 +114,7 @@ def main():
   if (not os.path.exists(tmp_folder)):
     os.mkdir(tmp_folder)
 
-  device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+  device = torch.device("cuda" if torch.cuda.is_available() and (args.device == 'gpu' or not args.device) else "cpu")
 
   model = meta_train(device, args.num_workers, args.model_type, args.metalearn_epochs, task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
     args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, args.vf_coef, 
