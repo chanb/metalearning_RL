@@ -22,7 +22,7 @@ class SNAILValue(nn.Module):
     self.tc_2 = TCBlock(num_channels, self.T, hidden_size)
     num_channels += num_filters * hidden_size
 
-    self.attention_1 = AttentionBlock(num_channels, hidden_size, hidden_size, self.T)
+    self.attention_1 = AttentionBlock(num_channels, hidden_size, hidden_size, self.T, device)
     num_channels += hidden_size
 
     self.affine = nn.Linear(num_channels, 1)

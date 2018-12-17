@@ -50,13 +50,13 @@ class TCBlock(nn.Module):
 
 
 class AttentionBlock(nn.Module):
-    def __init__(self, in_channels, key_size, value_size, T):
+    def __init__(self, in_channels, key_size, value_size, T, device):
         super(AttentionBlock, self).__init__()
         self.linear_query = nn.Linear(in_channels, key_size)
         self.linear_keys = nn.Linear(in_channels, key_size)
         self.linear_values = nn.Linear(in_channels, value_size)
         self.sqrt_key_size = math.sqrt(key_size)
-        self.mask = torch.ByteTensor(np.array([[1 if i > j else 0 for i in range(T)] for j in range(T)]))
+        self.mask = torch.ByteTensor(np.array([[1 if i > j else 0 for i in range(T)] for j in range(T)])).to(device)
         
 
     def forward(self, input):
