@@ -78,11 +78,7 @@ class Sampler():
     self.actions = torch.cat(self.actions)
     self.advantages = self.returns - self.values
     self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + EPS)
-
-
-  # Concatenate hidden states
-  def get_hidden_states(self):
-    return torch.stack(self.hidden_states)
+    self.hidden_states = torch.stack(self.hidden_states)
 
 
   # Insert a sample into the storage
