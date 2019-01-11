@@ -120,7 +120,6 @@ def main():
   assert (args.algo != 'ppo' or args.models_dir), 'Missing models'
   assert (args.algo == 'ppo' or args.algo == 'random'), 'Invalid algorithm'
   assert (args.task == 'bandit' or args.task == 'mdp'), 'Invalid task'
-
   env_name = ''
   if args.task == 'bandit':
     env_name = "Bandit-K{}-v0".format(args.num_actions)
