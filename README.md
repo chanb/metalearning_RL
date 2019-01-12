@@ -12,6 +12,7 @@ This project follows RL^2 and SNAIL paper and attempts to reproduce the results 
 - `num_tasks (int)`: (Default: `1000`) This specifies the number of tasks to learn from
 - `num_traj (int)`: (Default: `10`) This specifies the number of trajectories to interact with given a task
 - `traj_len (int)`: (Default: `1`) This specifies the length of the trajectory to sample from
+- `use_gae (bool)`: (Default: `False`) This specifies whether or not to use GAE
 - `tau (float)`: (Default: `0.95`) This is the GAE lambda parameter
 - `mini_batch_size (int)`: (Default: `256`) This is the minibatch size `M` from PPO paper. This needs to be less than or equal to `batch_size`
 - `batch_size (int)`: (Default: `10000`) This is the batch size `T` from the PPO paper. This essentially means we sample `T` actions before a PPO update
@@ -41,6 +42,7 @@ $ python rl2_train.py --out_file test_mdp_snail.pt --batch_size 100 --num_tasks 
 - MAML: https://arxiv.org/abs/1703.03400
 - PPO: https://arxiv.org/abs/1707.06347
 - GAE: https://arxiv.org/abs/1506.02438
+- REINFORCE: https://arxiv.org/pdf/1604.06778
 
 ### Codes:  
 - MAML-PyTorch: https://github.com/tristandeleu/pytorch-maml-rl

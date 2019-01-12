@@ -1,13 +1,13 @@
 import numpy as np
 import torch
+from helper.algo.algorithm import PolicyGradientAlgorithm
 
 CLIP_BASE = 1.0
 
 # This performs PPO update using the Sampler storage
-class PPO:
+class PPO(PolicyGradientAlgorithm):
   def __init__(self, model, optimizer, ppo_epochs, mini_batchsize, batchsize, clip_param, vf_coef, ent_coef, max_grad_norm, target_kl):
-    self.model = model
-    self.optimizer = optimizer
+    super(PPO, self).__init__(model, optimizer)
     self.ppo_epochs = ppo_epochs
     self.batchsize = batchsize
     self.mini_batchsize = mini_batchsize

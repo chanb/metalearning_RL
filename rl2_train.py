@@ -27,6 +27,7 @@ parser.add_argument('--num_tasks', type=int, default=1000, help='number of simil
 parser.add_argument('--num_traj', type=int, default=10, help='number of trajectories to interact with (default: 10)')
 parser.add_argument('--traj_len', type=int, default=1, help='fixed trajectory length (default: 1)')
 
+parser.add_argument('--use_gae', type=bool, default=False, help='Use GAE (default: False)')
 parser.add_argument('--tau', type=float, default=0.95, help='GAE parameter (default: 0.95)')
 parser.add_argument('--mini_batch_size', type=int, default=256, help='minibatch size for ppo update (default: 256)')
 parser.add_argument('--batch_size', type=int, default=10000, help='batch size (default: 10000)')
@@ -46,7 +47,7 @@ eps = np.finfo(np.float32).eps.item()
 
 # Performs meta training
 def meta_train(device, num_workers, model_type, metalearn_epochs, task, num_actions, num_states, num_tasks, num_traj, traj_len, ppo_epochs, mini_batchsize, batchsize, gamma, 
-  tau, clip_param, learning_rate, vf_coef, ent_coef, max_grad_norm, target_kl, out_file):
+  use_gae, tau, clip_param, learning_rate, vf_coef, ent_coef, max_grad_norm, target_kl, out_file):
 
   num_feature = 2 + num_states + num_actions
 
@@ -70,7 +71,7 @@ def meta_train(device, num_workers, model_type, metalearn_epochs, task, num_acti
   
   # Create the agent that uses PPO
   agent = PPO(model, optimizer, ppo_epochs, mini_batchsize, batchsize, clip_param, vf_coef, ent_coef, max_grad_norm, target_kl)
-  meta_learner = MetaLearner(device, model, num_workers, task, num_actions, num_states, num_tasks, num_traj, traj_len, gamma, tau)
+  meta_learner = MetaLearner(device, model, num_workers, task, num_actions, num_states, num_tasks, num_traj, traj_len, gamma, tau, use_gae=use_gae)
 
   for i in range(metalearn_epochs):
     print('Meta-train epoch {}'.format(i + 1))
@@ -113,9 +114,9 @@ def main():
     os.mkdir(tmp_folder)
 
   device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+  
   model = meta_train(device, args.num_workers, args.model_type, args.metalearn_epochs, task, num_actions, num_states, args.num_tasks, args.num_traj, args.traj_len, args.ppo_epochs, 
-    args.mini_batch_size, args.batch_size, args.gamma, args.tau, args.clip_param, args.learning_rate, args.vf_coef, 
+    args.mini_batch_size, args.batch_size, args.gamma, args.use_gae, args.tau, args.clip_param, args.learning_rate, args.vf_coef, 
     args.ent_coef, args.max_grad_norm, args.target_kl, args.out_file)
 
   if (model):

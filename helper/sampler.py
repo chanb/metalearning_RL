@@ -16,7 +16,7 @@ def make_env(env_name):
 
 # This samples from the current environment using the provided model
 class Sampler():
-  def __init__(self, device, model, env_name, num_actions, deterministic=False, gamma=0.99, tau=0.3, num_workers=mp.cpu_count() - 1, evaluate=False):
+  def __init__(self, device, model, env_name, num_actions, use_gae=True, deterministic=False, gamma=0.99, tau=0.3, num_workers=mp.cpu_count() - 1, evaluate=False):
     self.device = device
     self.model = model
     self.env_name = env_name
@@ -27,6 +27,7 @@ class Sampler():
     self.get_next_action = self.exploit if deterministic else self.random_sample
     self.save_evaluate = self.store_clean if evaluate else lambda action, state, reward: None
     self.reset_evaluate = self.reset_clean if evaluate else lambda: None
+    self.compute_returns = self.compute_gae if use_gae else self.compute_default_return
 
     self.reset_storage()
 
@@ -35,15 +36,28 @@ class Sampler():
     self.envs = SubprocVecEnv([make_env(env_name) for _ in range(num_workers)])
 
   # Computes the advantage where lambda = tau
-  def compute_gae(self, next_value, rewards, masks, values, gamma=0.99, tau=0.95):
-    values = values + [next_value]
+  def compute_gae(self, next_value):
+    all_values = self.values + [next_value]
     gae = 0
     returns = []
     
-    for step in reversed(range(len(rewards))):
-      delta = rewards[step] + gamma * values[step + 1] * masks[step] - values[step]
-      gae = delta + gamma * tau * masks[step] * gae
-      returns.insert(0, gae + values[step])
+    for step in range(len(self.rewards) - 1, -1, -1):
+      delta = self.rewards[step] + self.gamma * all_values[step + 1] * self.masks[step] - all_values[step]
+      gae = delta + self.gamma * self.tau * self.masks[step] * gae
+      returns.insert(0, gae + all_values[step])
+
+    return returns
+
+
+  # Compute the classic return
+  def compute_default_return(self, next_value):
+    returns = []
+
+    discounted_reward = next_value
+
+    for step in range(len(self.rewards) - 1, -1, -1):
+      discounted_reward = self.rewards[step] + self.gamma * self.masks[step] * discounted_reward
+      returns.insert(0, discounted_reward)
 
     return returns
 
@@ -87,9 +101,9 @@ class Sampler():
 
   # Insert a sample into the storage
   def insert_storage(self, log_prob, state, action, reward, done, value, hidden_state):
-    self.log_probs.append(log_prob)
+    self.log_probs.append(log_prob.unsqueeze(0))
     self.states.append(state.unsqueeze(0))
-    self.actions.append(action.unsqueeze(0))
+    self.actions.append(action.unsqueeze(0).unsqueeze(0))
     self.rewards.append(torch.Tensor(reward).unsqueeze(1).to(self.device))
     self.masks.append(torch.Tensor(1 - done).unsqueeze(1).to(self.device))
     self.values.append(value)
@@ -161,7 +175,7 @@ class Sampler():
       done = torch.from_numpy(done).float()
         
       # Store the information
-      self.insert_storage(log_prob.unsqueeze(0), state, action.unsqueeze(0), reward, done, value, hidden_state)
+      self.insert_storage(log_prob, state, action, reward, done, value, hidden_state)
       self.save_evaluate(action, state, reward)
 
       # Update to the next value
@@ -193,7 +207,7 @@ class Sampler():
     with torch.no_grad():
       _, next_val, _, = self.model(state, hidden_state)
 
-    self.returns = self.compute_gae(next_val.detach(), self.rewards, self.masks, self.values, self.gamma, self.tau)
+    self.returns = self.compute_returns(next_val.detach())
 
 
   # Storing this for evaluation
