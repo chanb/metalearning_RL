@@ -15,7 +15,7 @@ mkl-random==1.0.1
 numpy==1.21.0
 olefile==0.46
 pachi-py==0.0.21
-Pillow==9.0.1
+Pillow==9.3.0
 pycparser==2.19
 pyglet==1.4.0a1
 pyOpenSSL==18.0.0
