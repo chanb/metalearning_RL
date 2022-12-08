@@ -1,7 +1,7 @@
 asn1crypto==0.24.0
 atari-py==0.1.1
 Box2D==2.3.2
-certifi==2018.11.29
+certifi==2022.12.7
 cffi==1.11.5
 chardet==3.0.4
 cryptography==3.2
